@@ -19,25 +19,12 @@ limitations under the License. -->
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MediaPipe TouchDesigner</title>
 </head>
 
 <body>
-  <div id="app"></div>
   <script type="module" src="/src/main.js"></script>
-  <section id="demos" class="invisible">
-    <h2>Media Pipe</h2>
-    <p>
-      Step in front of the camera to start testing out the landmark detection.
-    </p>
-
-    <div id="liveView" class="videoView">
-      <div style="position: relative">
-        <video id="webcam" style="position: absolute;" autoplay playsinline></video>
-        <canvas class="output_canvas" id="output_canvas" style="position: absolute; left: 0px; top: 0px"></canvas>
-      </div>
-    </div>
-  </section>
+    <video id="webcam" style="position: absolute; left: 0px; top: 0px" autoplay playsinline></video>
+    <canvas class="output_canvas" id="output_canvas" style="position: absolute; left: 0px; top: 0px"></canvas>
 </body>
 
 </html>
