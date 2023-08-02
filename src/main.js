@@ -76,7 +76,7 @@ function enableCam(webcamState, video) {
       },
       frameRate: {
         ideal: 60,
-        min: 30
+        min: 25
       }
     }
   };
