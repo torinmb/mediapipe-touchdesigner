@@ -17,7 +17,7 @@ import { createFaceLandmarker, drawFaceLandmarks } from "./faceTracking.js";
 import { createHandLandmarker, drawHandLandmarks } from "./handTracking.js";
 import { createPoseLandmarker, drawPoseLandmarks } from "./poseTracking.js";
 
-const WASM_PATH = "./mediapipe/tasks-vision/0.10.2/wasm";
+const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
 const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
