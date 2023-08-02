@@ -1,3 +1,4 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 src/mediapipe/** filter=lfs diff=lfs merge=lfs -text
+dist/mediapipe/** filter=lfs diff=lfs merge=lfs -text
