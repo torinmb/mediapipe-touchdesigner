@@ -85,7 +85,11 @@ function enableCam(webcamState, video) {
     video.srcObject = stream;
     video.addEventListener("loadeddata", () => predictWebcam(landmarkerState, webcamState, video));
     webcamState.webcamRunning = true;
-  });
+  })
+  .catch(function (err) {
+    document.body.style.backgroundColor = "red";
+    console.log(err.name + ": " + err.message);
+  });  
 }
 
 function safeSocketSend(ws, data) {
