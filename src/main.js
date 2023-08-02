@@ -17,75 +17,69 @@ import { createFaceLandmarker, drawFaceLandmarks } from "./faceTracking.js";
 import { createHandLandmarker, drawHandLandmarks } from "./handTracking.js";
 import { createPoseLandmarker, drawPoseLandmarks } from "./poseTracking.js";
 
-let handLandmarker = undefined;
-let faceLandmarker = undefined;
-let poseLandmarker = undefined;
-
-let webcamRunning = false;
-let ws = undefined;
-let webcamDevices = [];
-let webcamId = 'default';
-let wsURL = 'ws://localhost:9980';
-
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.2/wasm";
+const video = document.getElementById("webcam");
+const canvasElement = document.getElementById("output_canvas");
+const canvasCtx = canvasElement.getContext("2d");
 
-async function setup(){
-  handelQueryParams()
-  webcamDevices = await getWebcamDevices();
-  handLandmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
-  faceLandmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
-  poseLandmarker = await createPoseLandmarker(WASM_PATH, `./mediapipe/pose_landmarker_lite.task`);
-  setupWebSocket(wsURL);
-  enableCam();
-}
+let landmarkerState = {
+  handLandmarker: undefined,
+  faceLandmarker: undefined,
+  poseLandmarker: undefined,
+  handResults: undefined,
+  faceResults: undefined,
+  poseResults: undefined,
+};
 
-function handelQueryParams() {
+let webcamState = {
+  webcamRunning: false,
+  webcamDevices: [],
+  webcamId: 'default',
+  lastVideoTime: -1,
+  drawingUtils: new DrawingUtils(canvasCtx),
+};
+
+let socketState = {
+  ws: undefined,
+  wsURL: 'ws://localhost:9980',
+};
+
+(async function setup(){
+  handleQueryParams(socketState, webcamState);
+  webcamState.webcamDevices = await getWebcamDevices();
+  landmarkerState.handLandmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
+  landmarkerState.faceLandmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
+  landmarkerState.poseLandmarker = await createPoseLandmarker(WASM_PATH, `./mediapipe/pose_landmarker_lite.task`);
+  setupWebSocket(socketState.wsURL, socketState);
+  enableCam(webcamState, video);
+})();
+
+function handleQueryParams(socketState, webcamState) {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has('wsURL')) {
-    wsURL = urlParams.get('wsURL')
+    socketState.wsURL = urlParams.get('wsURL')
   }
   if (urlParams.has('webcamId')) {
     let camID =  urlParams.get('webcamId');
-    if (checkDeviceIds(webcamId, webcamDevices)) {
-      webcamId = camID;
+    if (checkDeviceIds(camID, webcamState.webcamDevices)) {
+      webcamState.webcamId = camID;
     }
   }
 }
 
-setup();
-
-const video = document.getElementById("webcam");
-let canvasElement = document.getElementById("output_canvas");
-const canvasCtx = canvasElement.getContext("2d");
-const drawingUtils = new DrawingUtils(canvasCtx);
-
-const hasGetUserMedia = () => !!navigator.mediaDevices?.getUserMedia;
-
-if (hasGetUserMedia()) {
-} else {
-  console.warn("getUserMedia() is not supported by your browser");
-}
-
-function enableCam() {
-  console.log("enableCam")
+function enableCam(webcamState, video) {
   const constraints = {
     video: {
-      deviceId: webcamId,
+      deviceId: webcamState.webcamId,
     }
   };
 
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
     video.srcObject = stream;
-    video.addEventListener("loadeddata", predictWebcam);
-    webcamRunning = true;
+    video.addEventListener("loadeddata", () => predictWebcam(landmarkerState, webcamState, video));
+    webcamState.webcamRunning = true;
   });
 }
-
-let lastVideoTime = -1;
-let handResults = undefined;
-let faceResults = undefined;
-let poseResults = undefined;
-console.log(video);
 
 function safeSocketSend(ws, data) {
   if (ws.readyState === ws.OPEN) {
@@ -93,84 +87,67 @@ function safeSocketSend(ws, data) {
   }
 }
 
-async function predictWebcam() {
-  canvasElement.style.width = video.videoWidth;;
+async function predictWebcam(landmarkerState, webcamState, video) {
+  canvasElement.style.width = video.videoWidth;
   canvasElement.style.height = video.videoHeight;
   canvasElement.width = video.videoWidth;
   canvasElement.height = video.videoHeight;
 
   if (video.videoWidth === 0 || video.videoHeight === 0)  {
     console.log('videoWidth or videoHeight is 0')
-    // window.requestAnimationFrame(predictWebcam);
     return;
   }
+
   let startTimeMs = performance.now();
-  if (lastVideoTime !== video.currentTime) {
-    lastVideoTime = video.currentTime;
-    if(handLandmarker){
-      handResults = handLandmarker.detectForVideo(video, startTimeMs);
-      safeSocketSend(ws, JSON.stringify({ handResults }));
+  if (webcamState.lastVideoTime !== video.currentTime) {
+    webcamState.lastVideoTime = video.currentTime;
+    if(landmarkerState.handLandmarker){
+      landmarkerState.handResults = await landmarkerState.handLandmarker.detectForVideo(video, startTimeMs);
+      safeSocketSend(socketState.ws, JSON.stringify({ handResults: landmarkerState.handResults }));
     }
-    if(faceLandmarker){
-      faceResults = faceLandmarker.detectForVideo(video, startTimeMs);
-      safeSocketSend(ws, JSON.stringify({ faceResults }));
+    if(landmarkerState.faceLandmarker){
+      landmarkerState.faceResults = await landmarkerState.faceLandmarker.detectForVideo(video, startTimeMs);
+      safeSocketSend(socketState.ws, JSON.stringify({ faceResults: landmarkerState.faceResults }));
     }
-    if(poseLandmarker){
-      poseResults = poseLandmarker.detectForVideo(video, startTimeMs);
-      safeSocketSend(ws, JSON.stringify({ poseResults }));
+    if(landmarkerState.poseLandmarker){
+      landmarkerState.poseResults = await landmarkerState.poseLandmarker.detectForVideo(video, startTimeMs);
+      safeSocketSend(socketState.ws, JSON.stringify({ poseResults: landmarkerState.poseResults }));
     }
   }
 
-  drawFaceLandmarks(faceResults, drawingUtils);
-  drawHandLandmarks(handResults, drawingUtils);
-  drawPoseLandmarks(poseResults, drawingUtils);
-  
-  if (webcamRunning === true) {
-    window.requestAnimationFrame(predictWebcam);
+  drawFaceLandmarks(landmarkerState.faceResults, webcamState.drawingUtils);
+  drawHandLandmarks(landmarkerState.handResults, webcamState.drawingUtils);
+  drawPoseLandmarks(landmarkerState.poseResults, webcamState.drawingUtils);
+
+  if (webcamState.webcamRunning) {
+    window.requestAnimationFrame(() => predictWebcam(landmarkerState, webcamState, video));
   }
 }
 
+function setupWebSocket(socketURL, socketState) {
+  socketState.ws = new WebSocket(socketURL);
 
-function setupWebSocket(socketURL) {
-  ws = new WebSocket(socketURL);
-
-  ws.addEventListener('open', () => {
-    console.log('WebSocket connection opened:', event);
-    ws.send('pong');
+  socketState.ws.addEventListener('open', () => {
+    console.log('WebSocket connection opened:');
+    socketState.ws.send('pong');
     
     getWebcamDevices().then(devices => {
       console.log('devices', devices)
-      ws.send(JSON.stringify({ type: 'webcamDevices', devices }));
+      socketState.ws.send(JSON.stringify({ type: 'webcamDevices', devices }));
     });
   });
 
-  ws.addEventListener('message', async (event) => {
-    if (event && event.data ) {
-      if (event.data === "ping") {
-        ws.send("pong");
-        return;
-      } else if (event.data === "pong") {
-        return;
-      }
-    }
-    const message = JSON.parse(event.data);
-    if (message.type === 'selectWebcam') {
-      console.log("GOT selectwebcam message", message)
-      const deviceId = message.deviceId;
-      
-      if (checkDeviceIds(deviceId, webcamDevices)) {
-        // TODO reset webcam
-        // webcamId = deviceId;
-        // enableCam();
-      }
-    }
+  socketState.ws.addEventListener('message', async (event) => {
+    // Process received messages as needed
+    const data = JSON.parse(event.data);
+    console.log("Data received: ", data);
   });  
 
-  ws.addEventListener('error', (error) => {
+  socketState.ws.addEventListener('error', (error) => {
     console.error('Error in websocket connection', error);
   });
 
-  ws.addEventListener('close', () => {
+  socketState.ws.addEventListener('close', () => {
     console.log('Socket connection closed');
   });
 }
@@ -188,11 +165,9 @@ async function getWebcamDevices() {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
     const webcams = devices.filter(device => device.kind === 'videoinput');
-    console.log('webcams', webcams)
     return webcams.map(({ deviceId, label }) => ({ deviceId, label }));
   } catch (error) {
     console.error('Error getting webcam devices:', error);
     return [];
   }
 }
-
