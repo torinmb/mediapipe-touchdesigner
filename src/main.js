@@ -175,6 +175,7 @@ async function getWebcamDevices() {
     return webcams.map(({ deviceId, label }) => ({ deviceId, label }));
   } catch (error) {
     console.error('Error getting webcam devices:', error);
+    document.body.style.backgroundColor = "red";
     return [];
   }
 }
