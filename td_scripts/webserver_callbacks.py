@@ -53,13 +53,13 @@ def onWebSocketClose(webServerDAT, client):
 def onWebSocketReceiveText(webServerDAT, client, data):
 	# If we receive results data, dump it directly into the relevant DAT
 	# Doing this here as TD 2022.33910 is much faster processing this at the WS server than WS client
-	if(data.find('handResults', 2, 100)):
+	if(data.find('handResults', 2, 100) != -1):
 		op('hand_results').text = data
 		return
-	elif(data.find('faceResults', 2, 100)):
+	elif(data.find('faceResults', 2, 100) != -1):
 		op('face_results').text = data
 		return
-	elif(data.find('poseResults', 2, 100)):
+	elif(data.find('poseResults', 2, 100) != -1):
 		op('pose_results').text = data
 		return
 	# If this is any other type of message, forward it to the other clients
