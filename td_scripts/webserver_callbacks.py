@@ -51,9 +51,24 @@ def onWebSocketClose(webServerDAT, client):
 	return
 
 def onWebSocketReceiveText(webServerDAT, client, data):
-	for key in clients.keys():
-		if key != client:
-			webServerDAT.webSocketSendText(key, data)
+	# If we receive results data, dump it directly into the relevant DAT
+	# Doing this here as TD 2022.33910 is much faster processing this at the WS server than WS client
+	if(data.find('handResults', 2, 100)):
+		op('hand_results').text = data
+		return
+	elif(data.find('faceResults', 2, 100)):
+		op('face_results').text = data
+		return
+	elif(data.find('poseResults', 2, 100)):
+		op('pose_results').text = data
+		return
+	# If this is any other type of message, forward it to the other clients
+	else:
+		print('received WS from client: ' +client)
+		for key in clients.keys():
+			if key != client:
+				# print('forwaring WS message to client: ' +key)
+				webServerDAT.webSocketSendText(key, data)
 	return
 
 def onWebSocketReceiveBinary(webServerDAT, client, data):
