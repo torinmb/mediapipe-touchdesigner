@@ -12,6 +12,7 @@ def onPulse(par):
 	return
 
 def onCook(scriptOp):
+	scriptOp.clear()
 	rawdata = json.loads(op('in1').text)
 	digits = scriptOp.digits -1
 	# print("digits: " +str(digits))
@@ -23,7 +24,6 @@ def onCook(scriptOp):
 		# print(rawdata['faceResults']['faceLandmarks'])
 		landmarks = rawdata['faceResults']['faceLandmarks'][digits]
 
-		scriptOp.clear()
 		scriptOp.appendChan('x')
 		scriptOp.appendChan('y')
 		scriptOp.appendChan('z')
