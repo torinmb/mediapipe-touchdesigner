@@ -18,11 +18,13 @@ def onPulse(par):
 
 def onCook(scriptOp):
 	rawdata = json.loads(op('in1').text)
+	digits = scriptOp.digits -1
+
 	# Check to see if we have a face
-	if(len(rawdata['faceResults']) > 0 and len(rawdata['faceResults']['faceLandmarks']) >0 and rawdata['faceResults']['faceLandmarks'][0]):
+	if(len(rawdata['faceResults']) > 0 and len(rawdata['faceResults']['faceLandmarks']) > digits and rawdata['faceResults']['faceLandmarks'][digits]):
 
 		# Load the relevant JSON array
-		landmarks = rawdata['faceResults']['faceLandmarks'][0]
+		landmarks = rawdata['faceResults']['faceLandmarks'][digits]
 
 		# For every point we have, edit the position of the existing face points
 		i=0
