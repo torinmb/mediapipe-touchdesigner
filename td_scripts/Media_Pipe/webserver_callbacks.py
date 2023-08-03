@@ -47,7 +47,8 @@ def onWebSocketOpen(webServerDAT, client, uri):
 	return
 
 def onWebSocketClose(webServerDAT, client):
-	del clients[client]
+	if(clients[client]):
+		del clients[client]
 	return
 
 def onWebSocketReceiveText(webServerDAT, client, data):
@@ -76,7 +77,7 @@ def onWebSocketReceiveBinary(webServerDAT, client, data):
 	return
 
 def onWebSocketReceivePing(webServerDAT, client, data):
-	webServerDAT.webSocketSendPong(client, data=data);
+	webServerDAT.webSocketSendPong(client, data=data)
 	return
 
 def onWebSocketReceivePong(webServerDAT, client, data):
