@@ -22,6 +22,8 @@ const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 
+let lastDetect = 0;
+
 let landmarkerState = {
   handLandmarker: undefined,
   faceLandmarker: undefined,
@@ -111,6 +113,13 @@ async function predictWebcam(landmarkerState, webcamState, video) {
 
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
+    // Figure out how long this took
+    // Note that this is not the same as the video time
+    let thisDetect = Date.now();
+    let timeToDetect = Math.round(thisDetect - lastDetect);
+    lastDetect = thisDetect;
+    safeSocketSend(socketState.ws, JSON.stringify({ detectTime: timeToDetect }));
+
     webcamState.lastVideoTime = video.currentTime;
     if(landmarkerState.handLandmarker){
       landmarkerState.handResults = await landmarkerState.handLandmarker.detectForVideo(video, startTimeMs);
