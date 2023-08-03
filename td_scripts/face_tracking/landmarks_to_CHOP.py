@@ -31,7 +31,7 @@ def onCook(scriptOp):
 
 		for i in range (len(landmarks)):
 			scriptOp['x'][i] = landmarks[i]['x']
-			scriptOp['y'][i] = 1- landmarks[i]['y']
+			scriptOp['y'][i] = landmarks[i]['y']
 			scriptOp['z'][i] = landmarks[i]['z']
 
 	else:
