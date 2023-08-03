@@ -73,13 +73,15 @@ def onReceiveText(dat, rowIndex, message):
 			dat.sendText(json.dumps(modelData))
 			op('prev_camera_options').text = op('camera_options').text
 			op('camera_options').text = json.dumps(data['devices'])
-		elif 'faceResults' in data:
-			op('face_results').text = message
-		elif 'poseResults' in data:
-			op('pose_results').text = message
-		elif 'handResults' in data:
-			op('hand_results').text = message
-		#op('pose_data').text = message
+		# Not extracting the data here, as the WS client in TD 2022.33910 is too slow (5-6ms)
+		# It's much to extract this at WS server than WS client, so check there for it
+		# elif 'faceResults' in data:
+		#	op('face_results').text = message
+		# elif 'poseResults' in data:
+		#	op('pose_results').text = message
+		# elif 'handResults' in data:
+		#	op('hand_results').text = message
+		# op('pose_data').text = message
 
 	except Exception as e:
 		return
