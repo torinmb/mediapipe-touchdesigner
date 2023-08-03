@@ -11,6 +11,7 @@ def onSetupParameters(scriptOp):
 
 # called whenever custom pulse parameter is pushed
 def onPulse(par):
+	# Load the SOP from the first input (this is hopefully our 478 point face mesh!)
 	if par.name == 'Load':
 		scriptOp.clear()
 		scriptOp.copy(scriptOp.inputs[0])
