@@ -65,7 +65,7 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 		return
 	# If this is any other type of message, forward it to the other clients
 	else:
-		print('received WS from client: ' +client)
+		# print('received WS from client: ' +client)
 		for key in clients.keys():
 			if key != client:
 				# print('forwaring WS message to client: ' +key)
