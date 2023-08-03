@@ -71,8 +71,8 @@ function enableCam(webcamState, video) {
   const constraints = {
     video: {
       deviceId: webcamState.webcamId,
-      width: {
-        exact: 1280
+      height: {
+        exact: 720
       },
       frameRate: {
         ideal: 60,
