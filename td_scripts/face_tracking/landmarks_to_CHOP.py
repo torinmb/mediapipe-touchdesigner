@@ -13,12 +13,15 @@ def onPulse(par):
 
 def onCook(scriptOp):
 	rawdata = json.loads(op('in1').text)
+	digits = scriptOp.digits -1
+	# print("digits: " +str(digits))
+	# print(str(len(rawdata['faceResults']['faceLandmarks'])))
 
 	# Check to see if we have a face
-	if(len(rawdata['faceResults']) > 0 and len(rawdata['faceResults']['faceLandmarks']) >0 and rawdata['faceResults']['faceLandmarks'][0]):
+	if(len(rawdata['faceResults']) > 0 and len(rawdata['faceResults']['faceLandmarks']) > digits and rawdata['faceResults']['faceLandmarks'][digits]):
 
-		# print(rawdata['faceLandmarks'])
-		landmarks = rawdata['faceResults']['faceLandmarks'][0]
+		# print(rawdata['faceResults']['faceLandmarks'])
+		landmarks = rawdata['faceResults']['faceLandmarks'][digits]
 
 		scriptOp.clear()
 		scriptOp.appendChan('x')
