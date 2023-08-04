@@ -156,8 +156,6 @@ async function predictWebcam(landmarkerState, webcamState, video) {
   canvasElement.width = video.videoWidth;
   canvasElement.height = video.videoHeight;
 
-
-
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
     webcamState.lastVideoTime = video.currentTime;
@@ -257,6 +255,11 @@ function setupWebSocket(socketURL, socketState) {
       console.log("detectPoses: " + data.Detectposes);
       landmarkerState.poseResults = null;
       detectPoses = parseInt(data.Detectposes)  === 1;
+    }
+    if (data.Detectobjects) {
+      console.log("detectPoses: " + data.Detectobjects);
+      landmarkerState.objectResults = null;
+      objectResults = parseInt(data.Detectobjects)  === 1;
     }
   });
 
