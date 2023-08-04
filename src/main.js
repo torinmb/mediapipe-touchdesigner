@@ -92,7 +92,6 @@ function handleQueryParams(socketState, webcamState) {
   if (urlParams.has('Detectposes')) {
     detectPoses = parseInt(urlParams.get('Detectposes')) === 1;
   }
-
 }
 
 function enableCam(webcamState, video) {
@@ -141,8 +140,6 @@ async function predictWebcam(landmarkerState, webcamState, video) {
   canvasElement.width = video.videoWidth;
   canvasElement.height = video.videoHeight;
 
-
-
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
     webcamState.lastVideoTime = video.currentTime;
@@ -161,10 +158,10 @@ async function predictWebcam(landmarkerState, webcamState, video) {
   }
 
   if (showOverlays) {
-    if (detectFaces) {
+    if (detectHands) {
       drawHandLandmarks(landmarkerState.handResults, webcamState.drawingUtils);
     }
-    if (detectHands) {
+    if (detectFaces) {
       drawFaceLandmarks(landmarkerState.faceResults, webcamState.drawingUtils);
     }
     if (detectPoses) {
