@@ -205,7 +205,7 @@ async function predictWebcam(landmarkerState, webcamState, video) {
     if (detectPoses) {
       drawPoseLandmarks(landmarkerState.poseResults, webcamState.drawingUtils);
     }
-    if (detectObjects) {
+    if (detectObjects && landmarkerState.objectResults) {
       drawObjects(landmarkerState.objectResults, children, objectsDiv);
     }
   }
