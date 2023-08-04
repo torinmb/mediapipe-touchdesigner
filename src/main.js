@@ -15,7 +15,7 @@
 import { DrawingUtils } from "@mediapipe/tasks-vision";
 import { createFaceLandmarker, drawFaceLandmarks } from "./faceTracking.js";
 import { createHandLandmarker, drawHandLandmarks } from "./handTracking.js";
-import { createPoseLandmarker, drawPoseLandmarks } from "./poseTracking.js";
+import { createPoseLandmarker, drawPoseLandmarks, poseModelTypes } from "./poseTracking.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
 const video = document.getElementById("webcam");
@@ -26,7 +26,7 @@ let showOverlays = true;
 let detectHands = true;
 let detectFaces = true;
 let detectPoses = true;
-
+let poseModelPath = poseModelTypes['full'];
 
 let landmarkerState = {
   handLandmarker: undefined,
@@ -55,7 +55,8 @@ let socketState = {
   webcamState.webcamDevices = await getWebcamDevices();
   landmarkerState.handLandmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
   landmarkerState.faceLandmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
-  landmarkerState.poseLandmarker = await createPoseLandmarker(WASM_PATH, `./mediapipe/pose_landmarker_lite.task`);
+  console.log(poseModelPath)
+  landmarkerState.poseLandmarker = await createPoseLandmarker(WASM_PATH, poseModelPath);
   setupWebSocket(socketState.wsURL, socketState);
   enableCam(webcamState, video);
 })();
@@ -69,6 +70,14 @@ function handleQueryParams(socketState, webcamState) {
     let camID = urlParams.get('webcamId');
     if (checkDeviceIds(camID, webcamState.webcamDevices)) {
       webcamState.webcamId = camID;
+    }
+  }
+  if (urlParams.has('poseModelType')) {
+    let modelType = urlParams.get('poseModelType');
+    if (poseModelTypes.hasOwnProperty(modelType)) {
+      poseModelPath = poseModelTypes[modelType];
+    } else {
+      console.error(`Invalid poseModelType: ${modelType}`);
     }
   }
   if (urlParams.has('Showoverlays')) {
@@ -99,7 +108,6 @@ function enableCam(webcamState, video) {
       }
     }
   };
-
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
     video.srcObject = stream;
     video.addEventListener("loadeddata", () => predictWebcam(landmarkerState, webcamState, video));
@@ -122,6 +130,7 @@ function safeSocketSend(ws, data) {
 
 async function predictWebcam(landmarkerState, webcamState, video) {
   let startDetect = Date.now();
+
   canvasElement.style.width = video.videoWidth;
   canvasElement.style.height = video.videoHeight;
   canvasElement.width = video.videoWidth;
@@ -186,6 +195,7 @@ function setupWebSocket(socketURL, socketState) {
 
   socketState.ws.addEventListener('message', async (event) => {
     // Process received messages as needed
+
     const data = JSON.parse(event.data);
     // console.log("Data received: ", data);
     if (data.type == "selectWebcam") {
