@@ -17,6 +17,7 @@ import { createFaceLandmarker, drawFaceLandmarks } from "./faceTracking.js";
 import { createHandLandmarker, drawHandLandmarks } from "./handTracking.js";
 import { createGestureLandmarker, drawHandGestures } from "./handGestures.js";
 import { createPoseLandmarker, drawPoseLandmarks, poseModelTypes } from "./poseTracking.js";
+import { createObjectDetector } from "./objectDetection.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
 const video = document.getElementById("webcam");
@@ -24,21 +25,24 @@ const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 
 let showOverlays = true;
-let detectHands = true;
+let detectHands = false;
 let detectGestures = true;
 let detectFaces = true;
 let detectPoses = true;
 let poseModelPath = poseModelTypes['full'];
+let detectObjects = false;
 
 let landmarkerState = {
   handLandmarker: undefined,
   handGestures: undefined,
   faceLandmarker: undefined,
   poseLandmarker: undefined,
+  objectDetector: undefined,
   handResults: undefined,
   gestureResults: undefined,
   faceResults: undefined,
   poseResults: undefined,
+  objectResults: undefined,
 };
 
 let webcamState = {
@@ -59,9 +63,11 @@ let socketState = {
   webcamState.webcamDevices = await getWebcamDevices();
   landmarkerState.handGestures = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
   landmarkerState.handLandmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
+  landmarkerState.handGestures = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
   landmarkerState.faceLandmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
   console.log(poseModelPath)
   landmarkerState.poseLandmarker = await createPoseLandmarker(WASM_PATH, poseModelPath);
+  landmarkerState.objectDetector = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`);
   setupWebSocket(socketState.wsURL, socketState);
   enableCam(webcamState, video);
 })();
@@ -100,6 +106,9 @@ function handleQueryParams(socketState, webcamState) {
   if (urlParams.has('Detectposes')) {
     detectPoses = parseInt(urlParams.get('Detectposes')) === 1;
   }
+  if (urlParams.has('Detectobjects')) {
+    detectObjects = parseInt(urlParams.get('Detectobjects')) === 1;
+  }
 }
 
 function enableCam(webcamState, video) {
@@ -120,7 +129,7 @@ function enableCam(webcamState, video) {
     video.addEventListener("loadeddata", () => predictWebcam(landmarkerState, webcamState, video));
     webcamState.webcamRunning = true;
     stream.getTracks().forEach(function (track) {
-      console.log(track.getSettings());
+      console.log("Webcam settings: ", track.getSettings());
     })
   })
     .catch(function (err) {
@@ -167,6 +176,10 @@ async function predictWebcam(landmarkerState, webcamState, video) {
       landmarkerState.poseResults = await landmarkerState.poseLandmarker.detectForVideo(video, startTimeMs);
       safeSocketSend(socketState.ws, JSON.stringify({ poseResults: landmarkerState.poseResults }));
     }
+    if (detectObjects && landmarkerState.objectDetector) {
+      landmarkerState.objectResults = await landmarkerState.objectDetector.detectForVideo(video, startTimeMs);
+      safeSocketSend(socketState.ws, JSON.stringify({ objectResults: landmarkerState.objectResults }));
+    }
   }
 
   if (showOverlays) {
@@ -202,7 +215,7 @@ function setupWebSocket(socketURL, socketState) {
     socketState.ws.send('pong');
 
     getWebcamDevices().then(devices => {
-      console.log('devices', devices)
+      console.log('Availalbe webcam devices: ', devices)
       socketState.ws.send(JSON.stringify({ type: 'webcamDevices', devices }));
     });
   });
@@ -243,6 +256,11 @@ function setupWebSocket(socketURL, socketState) {
       console.log("detectPoses: " + data.Detectposes);
       landmarkerState.poseResults = null;
       detectPoses = parseInt(data.Detectposes)  === 1;
+    }
+    if (data.Detectobjects) {
+      console.log("detectObjects: " + data.Detectobjects);
+      landmarkerState.objectResults = null;
+      detectObjects = parseInt(data.Detectobjects)  === 1;
     }
   });
 
