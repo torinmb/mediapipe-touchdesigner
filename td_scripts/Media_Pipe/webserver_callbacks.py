@@ -57,12 +57,20 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 	if(data.find('handResults', 2, 100) != -1):
 		op('hand_results').text = data
 		return
+	if(data.find('gestureResults', 2, 100) != -1):
+		op('hand_results').text = data
+		return
 	elif(data.find('faceResults', 2, 100) != -1):
 		op('face_results').text = data
 		return
 	elif(data.find('poseResults', 2, 100) != -1):
 		op('pose_results').text = data
 		return
+	elif(data.find('detectTime', 2, 100) != -1):
+		# print(json.dumps(data['detectTime']))
+		op('detectTime').clear()
+		t = op('detectTime').appendChan('detectTime')
+		t[0] = json.loads(data)['detectTime']
 	# If this is any other type of message, forward it to the other clients
 	else:
 		# print('received WS from client: ' +client)
