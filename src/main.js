@@ -257,9 +257,9 @@ function setupWebSocket(socketURL, socketState) {
       detectPoses = parseInt(data.Detectposes)  === 1;
     }
     if (data.Detectobjects) {
-      console.log("detectPoses: " + data.Detectobjects);
+      console.log("detectObjects: " + data.Detectobjects);
       landmarkerState.objectResults = null;
-      objectResults = parseInt(data.Detectobjects)  === 1;
+      detectObjects = parseInt(data.Detectobjects)  === 1;
     }
   });
 
