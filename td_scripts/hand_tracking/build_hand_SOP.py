@@ -16,7 +16,7 @@ def onPulse(par):
 
 		# Clear the existing SOP and fill out the points
 		par.owner.clear()
-		landmarks = rawdata['handResults']['landmarks'][0]
+		landmarks = rawdata['gestureResults']['landmarks'][0]
 
 		# Draw all the points
 		for i in range (len(landmarks)):
