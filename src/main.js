@@ -25,7 +25,11 @@ const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 
 let showOverlays = true;
+<<<<<<< HEAD
 let detectHands = false;
+=======
+let detectHands = true;
+>>>>>>> cc64a0d49e15504285a537ad1d038a6a0e387df9
 let detectGestures = true;
 let detectFaces = true;
 let detectPoses = true;
@@ -61,6 +65,7 @@ let socketState = {
 (async function setup() {
   handleQueryParams(socketState, webcamState);
   webcamState.webcamDevices = await getWebcamDevices();
+  landmarkerState.handGestures = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
   landmarkerState.handLandmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
   landmarkerState.handGestures = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
   landmarkerState.faceLandmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
@@ -105,9 +110,12 @@ function handleQueryParams(socketState, webcamState) {
   if (urlParams.has('Detectposes')) {
     detectPoses = parseInt(urlParams.get('Detectposes')) === 1;
   }
+<<<<<<< HEAD
   if (urlParams.has('Detectobjects')) {
     detectObjects = parseInt(urlParams.get('Detectobjects')) === 1;
   }
+=======
+>>>>>>> cc64a0d49e15504285a537ad1d038a6a0e387df9
 }
 
 function enableCam(webcamState, video) {
