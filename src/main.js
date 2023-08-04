@@ -15,6 +15,7 @@
 import { DrawingUtils } from "@mediapipe/tasks-vision";
 import { createFaceLandmarker, drawFaceLandmarks } from "./faceTracking.js";
 import { createHandLandmarker, drawHandLandmarks } from "./handTracking.js";
+import { createGestureLandmarker, drawHandGestures } from "./handGestures.js";
 import { createPoseLandmarker, drawPoseLandmarks, poseModelTypes } from "./poseTracking.js";
 import { createObjectDetector } from "./objectDetection.js";
 
@@ -33,10 +34,12 @@ let detectObjects = false;
 
 let landmarkerState = {
   handLandmarker: undefined,
+  handGestures: undefined,
   faceLandmarker: undefined,
   poseLandmarker: undefined,
   objectDetector: undefined,
   handResults: undefined,
+  gestureResults: undefined,
   faceResults: undefined,
   poseResults: undefined,
   objectResults: undefined,
@@ -59,6 +62,7 @@ let socketState = {
   handleQueryParams(socketState, webcamState);
   webcamState.webcamDevices = await getWebcamDevices();
   landmarkerState.handLandmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
+  landmarkerState.handGestures = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
   landmarkerState.faceLandmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
   console.log(poseModelPath)
   landmarkerState.poseLandmarker = await createPoseLandmarker(WASM_PATH, poseModelPath);
@@ -91,6 +95,9 @@ function handleQueryParams(socketState, webcamState) {
   }
   if (urlParams.has('Detecthands')) {
     detectHands = parseInt(urlParams.get('Detecthands')) === 1;
+  }
+  if (urlParams.has('Detectgestures')) {
+    detectGestures = parseInt(urlParams.get('Detectgestures')) === 1;
   }
   if (urlParams.has('Detectfaces')) {
     detectFaces = parseInt(urlParams.get('Detectfaces')) === 1;
@@ -158,6 +165,10 @@ async function predictWebcam(landmarkerState, webcamState, video) {
       landmarkerState.handResults = await landmarkerState.handLandmarker.detectForVideo(video, startTimeMs);
       safeSocketSend(socketState.ws, JSON.stringify({ handResults: landmarkerState.handResults }));
     }
+    if (detectGestures && landmarkerState.handGestures) {
+      landmarkerState.gestureResults = await landmarkerState.handGestures.recognizeForVideo(video, startTimeMs);
+      safeSocketSend(socketState.ws, JSON.stringify({ gestureResults: landmarkerState.gestureResults }));
+    }
     if (detectFaces && landmarkerState.faceLandmarker) {
       landmarkerState.faceResults = await landmarkerState.faceLandmarker.detectForVideo(video, startTimeMs);
       safeSocketSend(socketState.ws, JSON.stringify({ faceResults: landmarkerState.faceResults }));
@@ -173,10 +184,13 @@ async function predictWebcam(landmarkerState, webcamState, video) {
   }
 
   if (showOverlays) {
-    if (detectFaces) {
+    if (detectFacesdetectHands) {
       drawHandLandmarks(landmarkerState.handResults, webcamState.drawingUtils);
     }
-    if (detectHands) {
+    if (detectGestures) {
+      drawHandGestures(landmarkerState.gestureResults, webcamState.drawingUtils);
+    }
+    if (detectFaces) {
       drawFaceLandmarks(landmarkerState.faceResults, webcamState.drawingUtils);
     }
     if (detectPoses) {
@@ -233,6 +247,11 @@ function setupWebSocket(socketURL, socketState) {
       console.log("detectHands: " + data.Detecthands);
       landmarkerState.handResults = null;
       detectHands = parseInt(data.Detecthands)  === 1;
+    }
+    if (data.Detectgestures) {
+      console.log("detectGestures: " + data.Detectgestures);
+      landmarkerState.gestureResults = null;
+      detectGestures = parseInt(data.Detectgestures)  === 1;
     }
     if (data.Detectposes) {
       console.log("detectPoses: " + data.Detectposes);
