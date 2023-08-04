@@ -18,13 +18,16 @@ limitations under the License. -->
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <link href="/src/style.css" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
 
 <body>
   <script type="module" src="/src/main.js"></script>
-    <video id="webcam" style="position: absolute; left: 0px; top: 0px" autoplay playsinline></video>
-    <canvas class="output_canvas" id="output_canvas" style="position: absolute; left: 0px; top: 0px"></canvas>
+  <video id="webcam" style="position: absolute; left: 0px; top: 0px" autoplay playsinline></video>
+  <div class="objects" id="objects" style="position: absolute; left: 0px; top: 0px;"></div>
+  <canvas class="output_canvas" id="output_canvas" style="position: absolute; left: 0px; top: 0px">
+  </canvas>
 </body>
 
 </html>

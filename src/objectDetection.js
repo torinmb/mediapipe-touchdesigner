@@ -12,3 +12,59 @@ export const createObjectDetector = async (WASM_PATH, modelAssetPath) => {
     });
     return objectDetector;
 };
+
+export function drawObjects(result, children, objectsDiv) {
+	console.log("offsetWidth: ",objectsDiv.offsetWidth);
+	console.log("Width: ",objectsDiv.width);
+	// Remove any highlighting from previous frame.
+	for (let child of children) {
+        objectsDiv.removeChild(child);
+	}
+	children.splice(0);
+	// Iterate through predictions and draw them to the live view
+	for (let detection of result.detections) {
+	  const p = document.createElement("p");
+	  p.innerText =
+		detection.categories[0].categoryName +
+		" - with " +
+		Math.round(parseFloat(detection.categories[0].score) * 100) +
+		"% confidence";
+	  p.style =
+		"left: " +
+		(objectsDiv.width -
+		  detection.boundingBox.width +
+		  detection.boundingBox.originX) +
+		"px;" +
+		"top: " +
+		detection.boundingBox.originY +
+		"px; " +
+		"width: " +
+		(detection.boundingBox.width - 10) +
+		"px;";
+  
+	  const highlighter = document.createElement("div");
+	  highlighter.setAttribute("class", "highlighter");
+	  highlighter.style =
+		"left: " +
+		(objectsDiv.width -
+		  detection.boundingBox.width +
+		  detection.boundingBox.originX) +
+		"px;" +
+		"top: " +
+		detection.boundingBox.originY +
+		"px;" +
+		"width: " +
+		(detection.boundingBox.width - 10) +
+		"px;" +
+		"height: " +
+		detection.boundingBox.height +
+		"px;";
+  
+        objectsDiv.appendChild(highlighter);
+        objectsDiv.appendChild(p);
+  
+	  // Store drawn objects in memory so they are queued to delete at next call.
+	  children.push(highlighter);
+	  children.push(p);
+	}
+  }
