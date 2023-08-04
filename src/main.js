@@ -25,11 +25,7 @@ const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 
 let showOverlays = true;
-<<<<<<< HEAD
 let detectHands = false;
-=======
-let detectHands = true;
->>>>>>> cc64a0d49e15504285a537ad1d038a6a0e387df9
 let detectGestures = true;
 let detectFaces = true;
 let detectPoses = true;
@@ -110,12 +106,9 @@ function handleQueryParams(socketState, webcamState) {
   if (urlParams.has('Detectposes')) {
     detectPoses = parseInt(urlParams.get('Detectposes')) === 1;
   }
-<<<<<<< HEAD
   if (urlParams.has('Detectobjects')) {
     detectObjects = parseInt(urlParams.get('Detectobjects')) === 1;
   }
-=======
->>>>>>> cc64a0d49e15504285a537ad1d038a6a0e387df9
 }
 
 function enableCam(webcamState, video) {
