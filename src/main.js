@@ -184,7 +184,7 @@ async function predictWebcam(landmarkerState, webcamState, video) {
   }
 
   if (showOverlays) {
-    if (detectFacesdetectHands) {
+    if (detectHands) {
       drawHandLandmarks(landmarkerState.handResults, webcamState.drawingUtils);
     }
     if (detectGestures) {
