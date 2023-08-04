@@ -14,8 +14,6 @@ export const createObjectDetector = async (WASM_PATH, modelAssetPath) => {
 };
 
 export function drawObjects(result, children, objectsDiv) {
-	console.log("offsetWidth: ",objectsDiv.offsetWidth);
-	console.log("Width: ",objectsDiv.width);
 	// Remove any highlighting from previous frame.
 	for (let child of children) {
         objectsDiv.removeChild(child);
@@ -31,24 +29,17 @@ export function drawObjects(result, children, objectsDiv) {
 		"% confidence";
 	  p.style =
 		"left: " +
-		(objectsDiv.width -
-		  detection.boundingBox.width +
-		  detection.boundingBox.originX) +
+		(detection.boundingBox.originX) +
 		"px;" +
 		"top: " +
 		detection.boundingBox.originY +
-		"px; " +
-		"width: " +
-		(detection.boundingBox.width - 10) +
 		"px;";
   
 	  const highlighter = document.createElement("div");
 	  highlighter.setAttribute("class", "highlighter");
 	  highlighter.style =
 		"left: " +
-		(objectsDiv.width -
-		  detection.boundingBox.width +
-		  detection.boundingBox.originX) +
+		(detection.boundingBox.originX) +
 		"px;" +
 		"top: " +
 		detection.boundingBox.originY +
