@@ -98,7 +98,6 @@ function handleQueryParams(socketState, webcamState) {
   if (urlParams.has('Detectposes')) {
     detectPoses = parseInt(urlParams.get('Detectposes')) === 1;
   }
-
   if (urlParams.has('Detectobjects')) {
     detectObjects = parseInt(urlParams.get('Detectobjects')) === 1;
   }
