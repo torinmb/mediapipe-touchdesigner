@@ -210,22 +210,22 @@ function setupWebSocket(socketURL, socketState) {
     }
     if (data.Showoverlays) {
       console.log("showOverlays: " + data.Showoverlays);
-      showOverlays = data.Showoverlays;
+      showOverlays = parseInt(data.Showoverlays) === 1;
     }
     if (data.Detectfaces) {
       console.log("detectFaces: " + data.Detectfaces);
       landmarkerState.faceResults = null;
-      detectFaces = data.Detectfaces;
+      detectFaces = parseInt(data.Detectfaces) === 1;
     }
     if (data.Detecthands) {
       console.log("detectHands: " + data.Detecthands);
       landmarkerState.handResults = null;
-      detectHands = data.Detecthands;
+      detectHands = parseInt(data.Detecthands)  === 1;
     }
     if (data.Detectposes) {
       console.log("detectPoses: " + data.Detectposes);
       landmarkerState.poseResults = null;
-      detectPoses = data.Detectposes;
+      detectPoses = parseInt(data.Detectposes)  === 1;
     }
   });
 
