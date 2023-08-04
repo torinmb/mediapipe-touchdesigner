@@ -22,10 +22,11 @@ const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 
-let showOverlays = 1;
-let detectHands = 1;
-let detectFaces = 1;
-let detectPoses = 1;
+let showOverlays = true;
+let detectHands = true;
+let detectFaces = true;
+let detectPoses = true;
+
 
 let landmarkerState = {
   handLandmarker: undefined,
@@ -71,16 +72,16 @@ function handleQueryParams(socketState, webcamState) {
     }
   }
   if (urlParams.has('Showoverlays')) {
-    showOverlays = urlParams.get('Showoverlays');
+    showOverlays = parseInt(urlParams.get('Showoverlays')) === 1;
   }
   if (urlParams.has('Detecthands')) {
-    detectHands = urlParams.get('Detecthands');
+    detectHands = parseInt(urlParams.get('Detecthands')) === 1;
   }
   if (urlParams.has('Detectfaces')) {
-    detectFaces = urlParams.get('Detectfaces');
+    detectFaces = parseInt(urlParams.get('Detectfaces')) === 1;
   }
   if (urlParams.has('Detectposes')) {
-    detectPoses = urlParams.get('Detectposes');
+    detectPoses = parseInt(urlParams.get('Detectposes')) === 1;
   }
 
 }
@@ -134,21 +135,21 @@ async function predictWebcam(landmarkerState, webcamState, video) {
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
     webcamState.lastVideoTime = video.currentTime;
-    if (detectHands > 0 && landmarkerState.handLandmarker) {
+    if (detectHands && landmarkerState.handLandmarker) {
       landmarkerState.handResults = await landmarkerState.handLandmarker.detectForVideo(video, startTimeMs);
       safeSocketSend(socketState.ws, JSON.stringify({ handResults: landmarkerState.handResults }));
     }
-    if (detectFaces > 0 && landmarkerState.faceLandmarker) {
+    if (detectFaces && landmarkerState.faceLandmarker) {
       landmarkerState.faceResults = await landmarkerState.faceLandmarker.detectForVideo(video, startTimeMs);
       safeSocketSend(socketState.ws, JSON.stringify({ faceResults: landmarkerState.faceResults }));
     }
-    if (detectPoses > 0 && landmarkerState.poseLandmarker) {
+    if (detectPoses && landmarkerState.poseLandmarker) {
       landmarkerState.poseResults = await landmarkerState.poseLandmarker.detectForVideo(video, startTimeMs);
       safeSocketSend(socketState.ws, JSON.stringify({ poseResults: landmarkerState.poseResults }));
     }
   }
 
-  if (showOverlays > 0) {
+  if (showOverlays) {
     if (detectFaces) {
       drawHandLandmarks(landmarkerState.handResults, webcamState.drawingUtils);
     }
