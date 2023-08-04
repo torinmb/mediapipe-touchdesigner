@@ -1,5 +1,11 @@
 import { FilesetResolver, PoseLandmarker, DrawingUtils } from "@mediapipe/tasks-vision";
 
+export const poseModelTypes = {
+    'lite': './mediapipe/pose_landmarker_lite.task',
+    'full': './mediapipe/pose_landmarker_full.task',
+    'heavy': './mediapipe/pose_landmarker_heavy.task',
+}
+
 export const createPoseLandmarker = async (WASM_PATH, modelAssetPath) => {
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
     let poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
