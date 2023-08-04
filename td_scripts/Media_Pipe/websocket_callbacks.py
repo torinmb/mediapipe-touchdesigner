@@ -73,11 +73,11 @@ def onReceiveText(dat, rowIndex, message):
 			op('prev_camera_options').text = op('camera_options').text
 			op('camera_options').text = json.dumps(data['devices'])
 		
-		elif 'detectTime' in data:
-			# print(json.dumps(data['detectTime']))
-			op('detectTime').clear()
-			t = op('detectTime').appendChan('detectTime')
-			t[0] = json.dumps(data['detectTime'])
+		# elif 'detectTime' in data:
+		# 	# print(json.dumps(data['detectTime']))
+		# 	op('detectTime').clear()
+		# 	t = op('detectTime').appendChan('detectTime')
+		# 	t[0] = json.dumps(data['detectTime'])
 			
 		# Not extracting the data here, as the WS client in TD 2022.33910 is too slow (5-6ms)
 		# It's much to extract this at WS server than WS client, so check there for it
