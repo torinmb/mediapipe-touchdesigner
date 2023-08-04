@@ -8,21 +8,20 @@ video {
 }
 .highlighter {
   background: rgba(0, 255, 0, 0);
-  border: 2px solid cyan;
+  border: 5px solid #9D44F8;
   z-index: 1;
   position: absolute;
 }
 .objects p {
   display: block;
+  white-space: nowrap;
   position: absolute;
-  padding-bottom: 5px;
-  padding-top: 5px;
-  background-color: #007f8b;
+  background-color: #9D44F8;
   color: #fff;
-  border: 2px solid rgba(255, 255, 255, 0.7);
+  /* border: 5px solid rgba(255, 255, 255, 0.7); */
   z-index: 2;
   font-family: roboto;
-  font-size: 12px;
-  margin: 0;
-  padding: 0;
+  font-size: 24px;
+  margin: 5px;
+  padding: 0px 10px 5px 5px 
 }
