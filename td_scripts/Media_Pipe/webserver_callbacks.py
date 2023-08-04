@@ -47,7 +47,8 @@ def onWebSocketOpen(webServerDAT, client, uri):
 	return
 
 def onWebSocketClose(webServerDAT, client):
-	del clients[client]
+	if(clients[client]):
+		del clients[client]
 	return
 
 def onWebSocketReceiveText(webServerDAT, client, data):
@@ -64,7 +65,7 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 		return
 	# If this is any other type of message, forward it to the other clients
 	else:
-		print('received WS from client: ' +client)
+		# print('received WS from client: ' +client)
 		for key in clients.keys():
 			if key != client:
 				# print('forwaring WS message to client: ' +key)
@@ -76,7 +77,7 @@ def onWebSocketReceiveBinary(webServerDAT, client, data):
 	return
 
 def onWebSocketReceivePing(webServerDAT, client, data):
-	webServerDAT.webSocketSendPong(client, data=data);
+	webServerDAT.webSocketSendPong(client, data=data)
 	return
 
 def onWebSocketReceivePong(webServerDAT, client, data):

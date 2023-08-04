@@ -22,6 +22,11 @@ const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 
+let showOverlays = 1;
+let detectHands = 1;
+let detectFaces = 1;
+let detectPoses = 1;
+
 let landmarkerState = {
   handLandmarker: undefined,
   faceLandmarker: undefined,
@@ -44,7 +49,7 @@ let socketState = {
   wsURL: 'ws://localhost:9980',
 };
 
-(async function setup(){
+(async function setup() {
   handleQueryParams(socketState, webcamState);
   webcamState.webcamDevices = await getWebcamDevices();
   landmarkerState.handLandmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
@@ -60,11 +65,24 @@ function handleQueryParams(socketState, webcamState) {
     socketState.wsURL = urlParams.get('wsURL')
   }
   if (urlParams.has('webcamId')) {
-    let camID =  urlParams.get('webcamId');
+    let camID = urlParams.get('webcamId');
     if (checkDeviceIds(camID, webcamState.webcamDevices)) {
       webcamState.webcamId = camID;
     }
   }
+  if (urlParams.has('Showoverlays')) {
+    showOverlays = urlParams.get('Showoverlays');
+  }
+  if (urlParams.has('Detecthands')) {
+    detectHands = urlParams.get('Detecthands');
+  }
+  if (urlParams.has('Detectfaces')) {
+    detectFaces = urlParams.get('Detectfaces');
+  }
+  if (urlParams.has('Detectposes')) {
+    detectPoses = urlParams.get('Detectposes');
+  }
+
 }
 
 function enableCam(webcamState, video) {
@@ -85,11 +103,14 @@ function enableCam(webcamState, video) {
     video.srcObject = stream;
     video.addEventListener("loadeddata", () => predictWebcam(landmarkerState, webcamState, video));
     webcamState.webcamRunning = true;
+    stream.getTracks().forEach(function (track) {
+      console.log(track.getSettings());
+    })
   })
-  .catch(function (err) {
-    document.body.style.backgroundColor = "red";
-    console.log(err.name + ": " + err.message);
-  });  
+    .catch(function (err) {
+      document.body.style.backgroundColor = "red";
+      console.log(err.name + ": " + err.message);
+    });
 }
 
 function safeSocketSend(ws, data) {
@@ -99,12 +120,13 @@ function safeSocketSend(ws, data) {
 }
 
 async function predictWebcam(landmarkerState, webcamState, video) {
+  let startDetect = Date.now();
   canvasElement.style.width = video.videoWidth;
   canvasElement.style.height = video.videoHeight;
   canvasElement.width = video.videoWidth;
   canvasElement.height = video.videoHeight;
 
-  if (video.videoWidth === 0 || video.videoHeight === 0)  {
+  if (video.videoWidth === 0 || video.videoHeight === 0) {
     console.log('videoWidth or videoHeight is 0')
     return;
   }
@@ -112,27 +134,40 @@ async function predictWebcam(landmarkerState, webcamState, video) {
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
     webcamState.lastVideoTime = video.currentTime;
-    if(landmarkerState.handLandmarker){
+    if (detectHands > 0 && landmarkerState.handLandmarker) {
       landmarkerState.handResults = await landmarkerState.handLandmarker.detectForVideo(video, startTimeMs);
       safeSocketSend(socketState.ws, JSON.stringify({ handResults: landmarkerState.handResults }));
     }
-    if(landmarkerState.faceLandmarker){
+    if (detectFaces > 0 && landmarkerState.faceLandmarker) {
       landmarkerState.faceResults = await landmarkerState.faceLandmarker.detectForVideo(video, startTimeMs);
       safeSocketSend(socketState.ws, JSON.stringify({ faceResults: landmarkerState.faceResults }));
     }
-    if(landmarkerState.poseLandmarker){
+    if (detectPoses > 0 && landmarkerState.poseLandmarker) {
       landmarkerState.poseResults = await landmarkerState.poseLandmarker.detectForVideo(video, startTimeMs);
       safeSocketSend(socketState.ws, JSON.stringify({ poseResults: landmarkerState.poseResults }));
     }
   }
 
-  drawFaceLandmarks(landmarkerState.faceResults, webcamState.drawingUtils);
-  drawHandLandmarks(landmarkerState.handResults, webcamState.drawingUtils);
-  drawPoseLandmarks(landmarkerState.poseResults, webcamState.drawingUtils);
+  if (showOverlays > 0) {
+    if (detectFaces) {
+      drawHandLandmarks(landmarkerState.handResults, webcamState.drawingUtils);
+    }
+    if (detectHands) {
+      drawFaceLandmarks(landmarkerState.faceResults, webcamState.drawingUtils);
+    }
+    if (detectPoses) {
+      drawPoseLandmarks(landmarkerState.poseResults, webcamState.drawingUtils);
+    }
+  }
 
   if (webcamState.webcamRunning) {
     window.requestAnimationFrame(() => predictWebcam(landmarkerState, webcamState, video));
   }
+  // Figure out how long this took
+  // Note that this is not the same as the video time
+  let endDetect = Date.now();
+  let timeToDetect = Math.round(endDetect - startDetect);
+  safeSocketSend(socketState.ws, JSON.stringify({ detectTime: timeToDetect }));
 }
 
 function setupWebSocket(socketURL, socketState) {
@@ -141,7 +176,7 @@ function setupWebSocket(socketURL, socketState) {
   socketState.ws.addEventListener('open', () => {
     console.log('WebSocket connection opened:');
     socketState.ws.send('pong');
-    
+
     getWebcamDevices().then(devices => {
       console.log('devices', devices)
       socketState.ws.send(JSON.stringify({ type: 'webcamDevices', devices }));
@@ -151,8 +186,34 @@ function setupWebSocket(socketURL, socketState) {
   socketState.ws.addEventListener('message', async (event) => {
     // Process received messages as needed
     const data = JSON.parse(event.data);
-    console.log("Data received: ", data);
-  });  
+    // console.log("Data received: ", data);
+    if (data.type == "selectWebcam") {
+      console.log("Got webcamId via WS: " + data.deviceId);
+      if (checkDeviceIds(data.deviceId, webcamState.webcamDevices)) {
+        webcamState.webcamId = data.deviceId;
+      }
+      enableCam(webcamState, video);
+    }
+    if (data.Showoverlays) {
+      console.log("showOverlays: " + data.Showoverlays);
+      showOverlays = data.Showoverlays;
+    }
+    if (data.Detectfaces) {
+      console.log("detectFaces: " + data.Detectfaces);
+      landmarkerState.faceResults = null;
+      detectFaces = data.Detectfaces;
+    }
+    if (data.Detecthands) {
+      console.log("detectHands: " + data.Detecthands);
+      landmarkerState.handResults = null;
+      detectHands = data.Detecthands;
+    }
+    if (data.Detectposes) {
+      console.log("detectPoses: " + data.Detectposes);
+      landmarkerState.poseResults = null;
+      detectPoses = data.Detectposes;
+    }
+  });
 
   socketState.ws.addEventListener('error', (error) => {
     console.error('Error in websocket connection', error);

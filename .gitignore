@@ -7,6 +7,8 @@ yarn-error.log*
 yarn.lock
 pnpm-debug.log*
 lerna-debug.log*
+Backup/
+*.*.toe
 
 node_modules
 dist

@@ -1,7 +1,7 @@
 # me - this DAT
 # dat - the WebSocket DAT
 
-createModelData = mod('datexec1').createModelData
+createModelData = mod('parameter_change_WS').createModelData
 
 def find_matching_camera(old_cameras, new_cameras, key):
     old_camera_name = None
@@ -51,8 +51,7 @@ def onReceiveText(dat, rowIndex, message):
 		return
 	if not message:
 		return
-	
-	
+
 	try:
 		data = json.loads(message)
 		if 'type' in data:
@@ -73,6 +72,13 @@ def onReceiveText(dat, rowIndex, message):
 			dat.sendText(json.dumps(modelData))
 			op('prev_camera_options').text = op('camera_options').text
 			op('camera_options').text = json.dumps(data['devices'])
+		
+		elif 'detectTime' in data:
+			# print(json.dumps(data['detectTime']))
+			op('detectTime').clear()
+			t = op('detectTime').appendChan('detectTime')
+			t[0] = json.dumps(data['detectTime'])
+			
 		# Not extracting the data here, as the WS client in TD 2022.33910 is too slow (5-6ms)
 		# It's much to extract this at WS server than WS client, so check there for it
 		# elif 'faceResults' in data:
