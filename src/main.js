@@ -131,15 +131,17 @@ function safeSocketSend(ws, data) {
 async function predictWebcam(landmarkerState, webcamState, video) {
   let startDetect = Date.now();
 
+  if (video.videoWidth === 0 || video.videoHeight === 0) {
+    console.log('videoWidth or videoHeight is 0')
+    return;
+  }
+
   canvasElement.style.width = video.videoWidth;
   canvasElement.style.height = video.videoHeight;
   canvasElement.width = video.videoWidth;
   canvasElement.height = video.videoHeight;
 
-  if (video.videoWidth === 0 || video.videoHeight === 0) {
-    console.log('videoWidth or videoHeight is 0')
-    return;
-  }
+
 
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
