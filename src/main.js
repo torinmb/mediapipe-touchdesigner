@@ -24,7 +24,6 @@ const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 
 let showOverlays = true;
-let detectHands = true;
 let detectHands = false;
 let detectGestures = true;
 let detectFaces = true;
