@@ -197,6 +197,7 @@ function setupWebSocket(socketURL, socketState) {
 
   socketState.ws.addEventListener('message', async (event) => {
     // Process received messages as needed
+    if(event.data === 'ping' || event.data === 'pong') return;
 
     const data = JSON.parse(event.data);
     // console.log("Data received: ", data);
