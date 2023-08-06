@@ -3,3 +3,25 @@ html, body {
   margin: 0;
   overflow: hidden; /* Hide scrollbars */
 }
+video {
+  opacity: 1;
+}
+.highlighter {
+  background: rgba(0, 255, 0, 0);
+  border: 5px solid #9D44F8;
+  z-index: 1;
+  position: absolute;
+}
+.objects p {
+  display: block;
+  white-space: nowrap;
+  position: absolute;
+  background-color: #9D44F8;
+  color: #fff;
+  /* border: 5px solid rgba(255, 255, 255, 0.7); */
+  z-index: 2;
+  font-family: roboto;
+  font-size: 24px;
+  margin: 5px;
+  padding: 0px 10px 5px 5px 
+}

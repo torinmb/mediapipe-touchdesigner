@@ -17,11 +17,12 @@ import { createFaceLandmarker, drawFaceLandmarks } from "./faceTracking.js";
 import { createHandLandmarker, drawHandLandmarks } from "./handTracking.js";
 import { createGestureLandmarker, drawHandGestures } from "./handGestures.js";
 import { createPoseLandmarker, drawPoseLandmarks, poseModelTypes } from "./poseTracking.js";
-import { createObjectDetector } from "./objectDetection.js";
+import { createObjectDetector, drawObjects } from "./objectDetection.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
 const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
+const objectsDiv = document.getElementById("objects");
 const canvasCtx = canvasElement.getContext("2d");
 
 let showOverlays = true;
@@ -31,6 +32,10 @@ let detectFaces = true;
 let detectPoses = true;
 let poseModelPath = poseModelTypes['full'];
 let detectObjects = false;
+
+// Keep a reference of all the child elements we create
+// so we can remove them easilly on each render.
+var children = [];
 
 let landmarkerState = {
   handLandmarker: undefined,
@@ -157,6 +162,11 @@ async function predictWebcam(landmarkerState, webcamState, video) {
   canvasElement.width = video.videoWidth;
   canvasElement.height = video.videoHeight;
 
+  objectsDiv.style.width = video.videoWidth;
+  objectsDiv.style.height = video.videoHeight;
+  objectsDiv.width = video.videoWidth;
+  objectsDiv.height = video.videoHeight;
+
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
     webcamState.lastVideoTime = video.currentTime;
@@ -195,6 +205,9 @@ async function predictWebcam(landmarkerState, webcamState, video) {
     if (detectPoses) {
       drawPoseLandmarks(landmarkerState.poseResults, webcamState.drawingUtils);
     }
+    if (detectObjects && landmarkerState.objectResults) {
+      drawObjects(landmarkerState.objectResults, children, objectsDiv);
+    }
   }
 
   if (webcamState.webcamRunning) {
@@ -222,7 +235,7 @@ function setupWebSocket(socketURL, socketState) {
 
   socketState.ws.addEventListener('message', async (event) => {
     // Process received messages as needed
-    if(event.data === 'ping' || event.data === 'pong') return;
+    if (event.data === 'ping' || event.data === 'pong') return;
 
     const data = JSON.parse(event.data);
     // console.log("Data received: ", data);
@@ -236,6 +249,10 @@ function setupWebSocket(socketURL, socketState) {
     if (data.Showoverlays) {
       console.log("showOverlays: " + data.Showoverlays);
       showOverlays = parseInt(data.Showoverlays) === 1;
+      for (let child of children) {
+        objectsDiv.removeChild(child);
+      }
+      children.splice(0);
     }
     if (data.Detectfaces) {
       console.log("detectFaces: " + data.Detectfaces);
@@ -245,22 +262,26 @@ function setupWebSocket(socketURL, socketState) {
     if (data.Detecthands) {
       console.log("detectHands: " + data.Detecthands);
       landmarkerState.handResults = null;
-      detectHands = parseInt(data.Detecthands)  === 1;
+      detectHands = parseInt(data.Detecthands) === 1;
     }
     if (data.Detectgestures) {
       console.log("detectGestures: " + data.Detectgestures);
       landmarkerState.gestureResults = null;
-      detectGestures = parseInt(data.Detectgestures)  === 1;
+      detectGestures = parseInt(data.Detectgestures) === 1;
     }
     if (data.Detectposes) {
       console.log("detectPoses: " + data.Detectposes);
       landmarkerState.poseResults = null;
-      detectPoses = parseInt(data.Detectposes)  === 1;
+      detectPoses = parseInt(data.Detectposes) === 1;
     }
     if (data.Detectobjects) {
       console.log("detectObjects: " + data.Detectobjects);
       landmarkerState.objectResults = null;
-      detectObjects = parseInt(data.Detectobjects)  === 1;
+      detectObjects = parseInt(data.Detectobjects) === 1;
+      for (let child of children) {
+        objectsDiv.removeChild(child);
+      }
+      children.splice(0);
     }
   });
 
