@@ -17,7 +17,8 @@ import { createFaceLandmarker, drawFaceLandmarks } from "./faceTracking.js";
 import { createHandLandmarker, drawHandLandmarks } from "./handTracking.js";
 import { createGestureLandmarker, drawHandGestures } from "./handGestures.js";
 import { createPoseLandmarker, drawPoseLandmarks, poseModelTypes } from "./poseTracking.js";
-import { createObjectDetector } from "./objectDetection.js";
+import { createObjectDetector, drawObjects } from "./objectDetection.js";
+import { createImageSegmenter, segmentationModelTypes, drawSegmentation } from "./imageSegmentation.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
 const video = document.getElementById("webcam");
@@ -31,6 +32,8 @@ let detectFaces = true;
 let detectPoses = true;
 let poseModelPath = poseModelTypes['full'];
 let detectObjects = false;
+let segmentation = true;
+let segmentationModelPath = segmentationModelTypes['selfieSquare'];
 
 let landmarkerState = {
   handLandmarker: undefined,
@@ -38,11 +41,14 @@ let landmarkerState = {
   faceLandmarker: undefined,
   poseLandmarker: undefined,
   objectDetector: undefined,
+  segmenter: undefined,
+
   handResults: undefined,
   gestureResults: undefined,
   faceResults: undefined,
   poseResults: undefined,
   objectResults: undefined,
+  segmentationResults: undefined,
 };
 
 let webcamState = {
@@ -68,6 +74,7 @@ let socketState = {
   console.log(poseModelPath)
   landmarkerState.poseLandmarker = await createPoseLandmarker(WASM_PATH, poseModelPath);
   landmarkerState.objectDetector = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`);
+  landmarkerState.segmenter = await createImageSegmenter(WASM_PATH, segmentationModelPath);
   setupWebSocket(socketState.wsURL, socketState);
   enableCam(webcamState, video);
 })();
@@ -180,6 +187,10 @@ async function predictWebcam(landmarkerState, webcamState, video) {
       landmarkerState.objectResults = await landmarkerState.objectDetector.detectForVideo(video, startTimeMs);
       safeSocketSend(socketState.ws, JSON.stringify({ objectResults: landmarkerState.objectResults }));
     }
+    if (segmentation && landmarkerState.segmenter) {
+      landmarkerState.segmentationResults = await landmarkerState.segmenter.segmentForVideo(video, startTimeMs);
+      // console.log("got a segment");
+    }
   }
 
   if (showOverlays) {
@@ -194,6 +205,13 @@ async function predictWebcam(landmarkerState, webcamState, video) {
     }
     if (detectPoses) {
       drawPoseLandmarks(landmarkerState.poseResults, webcamState.drawingUtils);
+    }
+    if (detectObjects && landmarkerState.objectResults) {
+      drawObjects(landmarkerState.objectResults, children, objectsDiv);
+    }
+    if(segmentation && landmarkerState.segmentationResults) {
+      drawSegmentation(landmarkerState.segmentationResults, video);
+      landmarkerState.segmentationResults.close();
     }
   }
 

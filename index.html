@@ -23,8 +23,11 @@ limitations under the License. -->
 
 <body>
   <script type="module" src="/src/main.js"></script>
-    <video id="webcam" style="position: absolute; left: 0px; top: 0px" autoplay playsinline></video>
-    <canvas class="output_canvas" id="output_canvas" style="position: absolute; left: 0px; top: 0px"></canvas>
+  <video id="webcam" style="position: absolute; left: 0px; top: 0px" autoplay playsinline></video>
+  <div class="objects" id="objects" style="position: absolute; left: 0px; top: 0px;"></div>
+  <canvas class="segmentation" id="segmentation" style="position: absolute; left: 0px; top: 0px;"></canvas>
+  <canvas class="output_canvas" id="output_canvas" style="position: absolute; left: 0px; top: 0px">
+  </canvas>
 </body>
 
 </html>
