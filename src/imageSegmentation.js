@@ -57,20 +57,24 @@ export function drawSegmentation(result, video) {
     let eightBitMap = result.categoryMask.getAsUint8Array();
     // let floatBitMap = result.categoryMask.getAsFloat32Array();
 
-    const maskCanvas = result.categoryMask.canvas;
-    const gl = maskCanvas.getContext("webgl2");
+    let imageData = ImageData(video.videoWidth, video.videoHeight);
 
-    // console.log(gl);
-    // console.log(eightBitMap);
-    // https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas/transferToImageBitmap
-    // const renderedBitmap = maskCanvas.transferToImageBitmap();
-    // const two = segmentationCanvas.getContext("bitmaprenderer");
-
-    // two.transferFromImageBitmap(renderedBitmap);
-
-    // Tell WebGL how to convert from clip space to pixels
-    // console.log(result.categoryMask.canvas);
-
-
-    // result.close();
+      const mask = result.categoryMask.getAsFloat32Array();
+      let j = 0;
+      for (let i = 0; i < mask.length; ++i) {
+        const maskVal = Math.round(mask[i] * 255.0);
+        const legendColor = legendColors[maskVal % legendColors.length];
+        imageData[j] = legendColor[0];
+        imageData[j + 1] = legendColor[1];
+        imageData[j + 2] = legendColor[2];
+        imageData[j + 3] = legendColor[3];
+        j += 4;
+      }
+      const uint8Array = new Uint8ClampedArray(imageData.buffer);
+      const dataNew = new ImageData(
+        uint8Array,
+        video.videoWidth,
+        video.videoHeight
+      );
+      segmentCtx.putImageData(dataNew, 0, 0);
 }
