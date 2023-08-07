@@ -9,6 +9,13 @@ export const createGestureLandmarker = async (WASM_PATH, modelAssetPath) => {
         },
         runningMode: "VIDEO",
         numHands: 2,
+        minHandDetectionConfidence: 0.5,
+        minHandPresenceConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+        cannedGesturesClassifierOptions: {
+            maxResults: -1,
+            scoreThreshold: 0.5,
+        },
     });
     return handGestures;
 };
