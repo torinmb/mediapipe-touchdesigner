@@ -18,6 +18,7 @@ import { createHandLandmarker, drawHandLandmarks } from "./handTracking.js";
 import { createGestureLandmarker, drawHandGestures } from "./handGestures.js";
 import { createPoseLandmarker, drawPoseLandmarks, poseModelTypes } from "./poseTracking.js";
 import { createObjectDetector, drawObjects } from "./objectDetection.js";
+import { allowedPars } from "./defaultPars.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
 const video = document.getElementById("webcam");
@@ -60,7 +61,6 @@ let webcamState = {
 
 let socketState = {
   ws: undefined,
-  wsURL: 'ws://localhost:9980',
 };
 
 (async function setup() {
@@ -73,15 +73,18 @@ let socketState = {
   console.log(poseModelPath)
   landmarkerState.poseLandmarker = await createPoseLandmarker(WASM_PATH, poseModelPath);
   landmarkerState.objectDetector = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`);
-  setupWebSocket(socketState.wsURL, socketState);
+  setupWebSocket(allowedPars['Wsaddress'] + ":" + allowedPars['Wsport'], socketState);
   enableCam(webcamState, video);
 })();
 
 function handleQueryParams(socketState, webcamState) {
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has('wsURL')) {
-    socketState.wsURL = urlParams.get('wsURL')
-  }
+  urlParams.forEach((value, key) => {
+    //  console.log("Got this: "+ key + " : " + value);
+    if(key in allowedPars) {
+      allowedPars[key] = value;
+    }
+  });
   if (urlParams.has('webcamId')) {
     let camID = urlParams.get('webcamId');
     if (checkDeviceIds(camID, webcamState.webcamDevices)) {
