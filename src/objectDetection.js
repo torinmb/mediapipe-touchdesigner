@@ -45,7 +45,7 @@ export function drawObjects(result, children, objectsDiv) {
 		detection.boundingBox.originY +
 		"px;" +
 		"width: " +
-		(detection.boundingBox.width - 10) +
+		detection.boundingBox.width +
 		"px;" +
 		"height: " +
 		detection.boundingBox.height +

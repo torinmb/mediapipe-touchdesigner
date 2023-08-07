@@ -19,7 +19,7 @@ class CustomRequestHandler(http.server.SimpleHTTPRequestHandler):
 #         return os.path.join(self.directory, os.path.relpath(path, os.path.curdir))
 
 # Define the port and handler
-PORT = int(parent().par.Movenetport)
+PORT = int(parent().par.Mediapipeport)
 Handler = CustomRequestHandler
 
 def start_server():

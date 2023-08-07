@@ -1,0 +1,24 @@
+{
+	"objectResults": {
+		"detections": [
+			{
+				"categories": [
+					{
+						"score": 0.96142578125,
+						"index": -1,
+						"categoryName": "person",
+						"displayName": ""
+					}
+				],
+				"keypoints": [],
+				"boundingBox": {
+					"originX": 15,
+					"originY": 0,
+					"width": 1267,
+					"height": 715,
+					"angle": 0
+				}
+			}
+		]
+	}
+}

@@ -38,7 +38,8 @@ modelLookup = {
     "modelVersion": "heavy"
   }
 }
- 
+
+noReloadPars = ['Detectfaces', 'Detectgestures', 'Detecthands', 'Detectposes', 'Detectobjects', 'Showoverlays']
 
 def onTableChange(dat):
 	return
@@ -53,12 +54,15 @@ def onColChange(dat, cols):
 def onCellChange(dat, cells, prev):
 	cell = cells[0]
 	data = {}
-	if cell.row == 1:
+	url="http://localhost:" + dat['Mediapipeport',1] + "?"
+	reloadRequired = True
+
+	if (dat[cell.row,1] == "Webcam"):
 		data = {
 			'type': 'selectWebcam',
 			'deviceId': str(cell)
 		}
-	elif cell.row == 2:
+	elif dat[cell.row,1] == "Model":
 		data = createModelData(str(cell))
 		#data = modelLookup[str(cell)]
 		#data['type'] = 'selectModel'
@@ -68,6 +72,9 @@ def onCellChange(dat, cells, prev):
 		# 	'modelType': str(cell)
 		# }
 	else:
+		if(dat[cell.row,0] in noReloadPars):
+			print("not reloading")
+			reloadRequired = False
 		data = {
 			str(dat[cell.row,0]) : str(cell)
 		}
@@ -75,6 +82,13 @@ def onCellChange(dat, cells, prev):
 		# print(data)
 	op('websocket1').sendText(json.dumps(data))
 	print('data change send ws', data)
+
+	for i in range(dat.numRows):
+		if(dat[i,0] != "name" and dat[i,0] != "Mediapipeport"):
+			url = url + "&" + str(dat[i,0]) +"="+ str(dat[i,1])
+	op('current_url').text = url
+	if(reloadRequired):
+		op('webBrowser1').par.Address = url
 	return
 
 def createModelData(name):

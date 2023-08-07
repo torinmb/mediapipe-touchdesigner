@@ -9,6 +9,9 @@ export const createHandLandmarker = async (WASM_PATH, modelAssetPath) => {
         },
         runningMode: "VIDEO",
         numHands: 2,
+        minHandDetectionConfidence: 0.5,
+        minHandPresenceConfidence: 0.5,
+        minTrackingConfidence: 0.5,
     });
     return handLandmarker;
 };
