@@ -208,7 +208,7 @@ function setupWebSocket(socketURL, socketState) {
     if (data.Showoverlays) {
       console.log("showOverlays: " + data.Showoverlays);
       showOverlays = parseInt(data.Showoverlays) === 1;
-      for (let child of children) {
+      for (let child of objectState.children) {
         objectsDiv.removeChild(child);
       }
       objectState.children.splice(0);
@@ -216,28 +216,28 @@ function setupWebSocket(socketURL, socketState) {
     if (data.Detectfaces) {
       console.log("detectFaces: " + data.Detectfaces);
       faceState.results = null;
-      detectFaces = parseInt(data.Detectfaces) === 1;
+      faceState.detect = parseInt(data.Detectfaces) === 1;
     }
     if (data.Detecthands) {
       console.log("detectHands: " + data.Detecthands);
       handState.results = null;
-      detectHands = parseInt(data.Detecthands) === 1;
+      handState.detect = parseInt(data.Detecthands) === 1;
     }
     if (data.Detectgestures) {
       console.log("detectGestures: " + data.Detectgestures);
       gestureState.results = null;
-      detectGestures = parseInt(data.Detectgestures) === 1;
+      gestureState.detect = parseInt(data.Detectgestures) === 1;
     }
     if (data.Detectposes) {
       console.log("detectPoses: " + data.Detectposes);
       poseState.results = null;
-      detectPoses = parseInt(data.Detectposes) === 1;
+      poseState.detect = parseInt(data.Detectposes) === 1;
     }
     if (data.Detectobjects) {
       console.log("detectObjects: " + data.Detectobjects);
       objectState.results = null;
-      detectObjects = parseInt(data.Detectobjects) === 1;
-      for (let child of children) {
+      objectState.detect = parseInt(data.Detectobjects) === 1;
+      for (let child of objectState.children) {
         objectState.objectsDiv.removeChild(child);
       }
       objectState.children.splice(0);
