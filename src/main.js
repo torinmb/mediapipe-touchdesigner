@@ -72,7 +72,6 @@ function handleQueryParams(socketState, webcamState) {
     showOverlays = parseInt(urlParams.get('Showoverlays')) === 1;
   }
   if (urlParams.has('Detecthands')) {
-    
     handState.detect = parseInt(urlParams.get('Detecthands')) === 1;
   }
   if (urlParams.has('Detectgestures')) {
@@ -152,7 +151,9 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
         } else {
           landmarker.results = await marker.detectForVideo(video, startTimeMs);
         }
-        safeSocketSend(socketState.ws, JSON.stringify({ [landmarker['resultsName']] : landmarker.results }));
+        safeSocketSend(socketState.ws, JSON.stringify({ [landmarker['resultsName']] : landmarker.results,
+          'resolution': {'width': video.videoWidth, 'height': video.videoHeight}
+        }));
       }
     }
   }
