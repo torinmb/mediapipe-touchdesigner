@@ -11,6 +11,7 @@
 # If rows or columns are deleted, sizeChange will be called instead of row/col/cellChange.
 
 import json
+import urllib.parse
 
 modelLookup = {
   "lightning": {
@@ -82,11 +83,13 @@ def onCellChange(dat, cells, prev):
 		# print(data)
 	op('websocket1').sendText(json.dumps(data))
 	print('data change send ws', data)
-
+	
+	datParams= {}
 	for i in range(dat.numRows):
 		if(dat[i,0] != "name" and dat[i,0] != "Mediapipeport"):
-			url = url + "&" + str(dat[i,0]) +"="+ str(dat[i,1])
-	op('current_url').text = url
+			datParams[str(dat[i,0])] = dat[i,1]	
+	op('current_url').text = url + urllib.parse.urlencode(datParams)
+	
 	if(reloadRequired):
 		op('webBrowser1').par.Address = url
 	return
