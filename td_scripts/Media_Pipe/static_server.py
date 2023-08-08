@@ -22,6 +22,8 @@ class CustomRequestHandler(http.server.SimpleHTTPRequestHandler):
 PORT = int(parent().par.Mediapipeport)
 Handler = CustomRequestHandler
 
+
+
 def start_server():
     try:
         with socketserver.TCPServer(("", PORT), Handler) as httpd:
@@ -38,24 +40,24 @@ async def startServer():
 	# Arrange for func to be called in the specified executor. 
 	r = await loop.run_in_executor(None, start_server)
 
-started = False;
+started = False
 
-def onStart():
+def startup():
 	global started
 	if not started:
+		op('webBrowser1').par.Address = op('current_url').text
 		coroutines = [startServer()]
 		op.TDAsyncIO.Run(coroutines)
 		op('setup_menu_names').run()
 	started = True
 	return
 
+def onStart():
+	startup()
+	return
+
 def onCreate():
-	global started
-	if not started:
-		coroutines = [startServer()]
-		op.TDAsyncIO.Run(coroutines)
-		op('setup_menu_names').run()
-	started = True
+	startup()
 	return
 
 def onExit():
