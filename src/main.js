@@ -91,8 +91,8 @@ function handleQueryParams(socketState, webcamState) {
       webcamState.webcamId = camID;
     }
   }
-  if (urlParams.has('poseModelType')) {
-    let modelType = urlParams.get('poseModelType');
+  if (urlParams.has('Posemodeltype')) {
+    let modelType = urlParams.get('Posemodeltype');
     if (poseModelTypes.hasOwnProperty(modelType)) {
       poseModelPath = poseModelTypes[modelType];
     } else {
