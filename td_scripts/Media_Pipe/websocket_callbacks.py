@@ -68,8 +68,6 @@ def onReceiveText(dat, rowIndex, message):
 					'deviceId': match
 				}
 				dat.sendText(json.dumps(camData))
-			modelData = createModelData(parent().par.Model.menuNames[parent().par.Model])
-			dat.sendText(json.dumps(modelData))
 			op('prev_camera_options').text = op('camera_options').text
 			op('camera_options').text = json.dumps(data['devices'])
 		
