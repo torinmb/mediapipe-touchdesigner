@@ -12,81 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { DrawingUtils } from "@mediapipe/tasks-vision";
-import { createFaceLandmarker, drawFaceLandmarks } from "./faceTracking.js";
-import { createHandLandmarker, drawHandLandmarks } from "./handTracking.js";
-import { createGestureLandmarker, drawHandGestures } from "./handGestures.js";
-import { createPoseLandmarker, drawPoseLandmarks, poseModelTypes } from "./poseTracking.js";
-import { createObjectDetector, drawObjects } from "./objectDetection.js";
+import { createFaceLandmarker } from "./faceTracking.js";
+import { createHandLandmarker } from "./handTracking.js";
+import { createGestureLandmarker } from "./handGestures.js";
+import { createPoseLandmarker, poseModelTypes } from "./poseTracking.js";
+import { createObjectDetector } from "./objectDetection.js";
 import { allowedPars } from "./defaultPars.js";
+import { faceState, handState, gestureState, poseState, objectState, webcamState, socketState } from "./state.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
 const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
 const objectsDiv = document.getElementById("objects");
-const canvasCtx = canvasElement.getContext("2d");
 
 let showOverlays = true;
 // Keep a reference of all the child elements we create
 // so we can remove them easilly on each render.
 
-let faceState = {
-  detect: true,
-  landmarker: undefined,
-  results: undefined,
-  resultsName: "faceResults",
-  draw: (state, canvas) => drawFaceLandmarks(state, canvas),
-};
-
-let handState = {
-  detect: false,
-  landmarker: undefined,
-  results: undefined,
-  resultsName: "handResults",
-  draw: (state, canvas) => drawHandLandmarks(state, canvas),
-};
-
-let gestureState = {
-  detect: true,
-  landmarker: undefined,
-  results: undefined,
-  resultsName: "gestureResults",
-  draw: (state, canvas) => drawHandGestures(state, canvas),
-};
-
-let poseState = {
-  detect: true,
-  poseModelPath: poseModelTypes['full'],
-  landmarker: undefined,
-  results: undefined,
-  resultsName: "poseResults",
-  draw: (state, canvas) => drawPoseLandmarks(state, canvas),
-};
-
-let objectState = {
-  detect: false,
-  detector: undefined,
-  results: undefined,
-  objectsDiv: undefined,
-  children: [],
-  resultsName: "objectResults",
-  draw: (state, canvas) => drawObjects(state, canvas),
-};
-
 let allModelState = [faceState, handState, gestureState, poseState, objectState];
 let landmarkerModelState = [faceState, handState, gestureState, poseState];
 
-let webcamState = {
-  webcamRunning: false,
-  webcamDevices: [],
-  webcamId: 'default',
-  lastVideoTime: -1,
-  drawingUtils: new DrawingUtils(canvasCtx),
-};
-
-let socketState = {
-  ws: undefined,
-};
 
 (async function setup() {
   handleQueryParams(socketState, webcamState);
