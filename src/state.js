@@ -43,11 +43,11 @@ export let objectState = {
   detect: false,
   detector: undefined,
   results: undefined,
-  objectsDiv: undefined,
   children: [],
   resultsName: "objectResults",
-  draw: (state, canvas) => drawObjects(state, canvas),
+  draw: (result, children, objectsDiv) => drawObjects(result, children, objectsDiv),
 };
+
 const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 

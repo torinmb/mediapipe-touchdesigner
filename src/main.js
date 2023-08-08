@@ -165,7 +165,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     }
     // unique draw function for object detection
     if(objectState.detect && objectState.results) {
-      objectState.draw(objectState.results, objectState.children, objectState.objectsDiv);
+      objectState.draw(objectState.results, objectState.children, objectsDiv);
     }
   }
 
@@ -238,7 +238,7 @@ function setupWebSocket(socketURL, socketState) {
       objectState.results = null;
       objectState.detect = parseInt(data.Detectobjects) === 1;
       for (let child of objectState.children) {
-        objectState.objectsDiv.removeChild(child);
+        objectsDiv.removeChild(child);
       }
       objectState.children.splice(0);
     }
