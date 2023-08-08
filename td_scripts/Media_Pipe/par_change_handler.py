@@ -87,11 +87,11 @@ def onCellChange(dat, cells, prev):
 	datParams= {}
 	for i in range(dat.numRows):
 		if(dat[i,0] != "name" and dat[i,0] != "Mediapipeport"):
-			datParams[str(dat[i,0])] = dat[i,1]	
-	op('current_url').text = url + urllib.parse.urlencode(datParams)
-	
+			datParams[str(dat[i,0])] = dat[i,1]
+	finalUrl = url + urllib.parse.urlencode(datParams)
+	op('current_url').text = finalUrl
 	if(reloadRequired):
-		op('webBrowser1').par.Address = url
+		op('webBrowser1').par.Address = finalUrl
 	return
 
 def createModelData(name):
