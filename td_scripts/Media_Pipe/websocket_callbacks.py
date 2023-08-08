@@ -1,7 +1,7 @@
 # me - this DAT
 # dat - the WebSocket DAT
 
-createModelData = mod('parameter_change_WS').createModelData
+createModelData = mod('par_change_handler').createModelData
 
 def find_matching_camera(old_cameras, new_cameras, key):
     old_camera_name = None
