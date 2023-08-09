@@ -31,7 +31,7 @@ export const configMap = {
     'Ftrackconf': value => faceState.minTrackingConfidence = value,
 
     'Onumobjects': value => objectState.maxResults = value,
-    'Omodel': value => modelCheck(objectState.modelPath, objectState.modelTypes, value),
+    'OmodelType': value => modelCheck(objectState.modelPath, objectState.modelTypes, value),
     'Oscore': value => objectState.scoreThreshold = value,
     //'Omodel': value => modelCheck(objectState.modelPath, objectState.modelTypes, value),
 };
@@ -40,7 +40,7 @@ function modelCheck(modelPath, modelTypes, value) {
     if (modelTypes.hasOwnProperty(value)) {
         return value[value];
     } else {
-        console.error(`Invalid poseModelType: ${modelType}`);
+        console.error(`Invalid modelType: ${modelType}`);
         return modelPath;
     }
 }
