@@ -39,7 +39,7 @@ export let faceLandmarkState = {
 export let faceDetectorState = {
   modelTypes: faceDetectorModelTypes,
   modelPath: faceDetectorModelTypes['shortrange'],
-  detect: false,
+  detect: true,
   landmarker: undefined,
   results: undefined,
   resultsName: "faceDetectorResults",

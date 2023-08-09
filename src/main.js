@@ -30,7 +30,7 @@ const objectsDiv = document.getElementById("objects");
 // Keep a reference of all the child elements we create
 // so we can remove them easilly on each render.
 
-let allModelState = [faceLandmarkState, handState, gestureState, poseState, objectState];
+let allModelState = [faceLandmarkState, faceDetectorState, handState, gestureState, poseState, objectState];
 let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseState];
 
 
