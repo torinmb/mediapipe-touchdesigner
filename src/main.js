@@ -15,7 +15,7 @@
 import { createFaceLandmarker } from "./faceTracking.js";
 import { createHandLandmarker } from "./handTracking.js";
 import { createGestureLandmarker } from "./handGestures.js";
-import { createPoseLandmarker, poseModelTypes } from "./poseTracking.js";
+import { createPoseLandmarker } from "./poseTracking.js";
 import { createObjectDetector } from "./objectDetection.js";
 import { allowedPars } from "./defaultPars.js";
 import { faceState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState } from "./state.js";
@@ -34,7 +34,7 @@ let landmarkerModelState = [faceState, handState, gestureState, poseState];
 
 
 (async function setup() {
-  handleQueryParams(webcamState);
+  handleQueryParams();
   webcamState.webcamDevices = await getWebcamDevices();
   handState.landmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
   gestureState.landmarker = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
@@ -46,30 +46,13 @@ let landmarkerModelState = [faceState, handState, gestureState, poseState];
   enableCam(webcamState, video);
 })();
 
-function handleQueryParams(webcamState) {
+function handleQueryParams() {
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has('webcamId')) {
-    let camID = urlParams.get('webcamId');
-    if (checkDeviceIds(camID, webcamState.webcamDevices)) {
-      webcamState.webcamId = camID;
+  urlParams.forEach((value, key) => {
+    if (key in configMap) {
+      configMap[key](value);
     }
-  }
-  if (urlParams.has('Posemodeltype')) {
-    let modelType = urlParams.get('Posemodeltype');
-    if (poseModelTypes.hasOwnProperty(modelType)) {
-      poseState.modelPath = poseModelTypes[modelType];
-    } else {
-      console.error(`Invalid poseModelType: ${modelType}`);
-    }
-  }
-  else {
-    urlParams.forEach((value, key) => {
-      if (key in configMap) {
-        console.print(key + " : " + value);
-        configMap[key](value);
-      }
-    });
-  }
+  });
 }
 
 function enableCam(webcamState, video) {
@@ -183,7 +166,7 @@ function setupWebSocket(socketURL, socketState) {
     if (event.data === 'ping' || event.data === 'pong') return;
 
     const data = JSON.parse(event.data);
-    // console.log("Data received: ", data);
+    console.log("Data received: ", data);
     if (data.type == "selectWebcam") {
       console.log("Got webcamId via WS: " + data.deviceId);
       if (checkDeviceIds(data.deviceId, webcamState.webcamDevices)) {
@@ -191,7 +174,7 @@ function setupWebSocket(socketURL, socketState) {
       }
       enableCam(webcamState, video);
     }
-    if (data.Showoverlays) {
+    else if (data.Showoverlays) {
       console.log("showOverlays: " + data.Showoverlays);
       overlayState.show = parseInt(data.Showoverlays) === 1;
       for (let child of objectState.children) {
@@ -199,27 +182,27 @@ function setupWebSocket(socketURL, socketState) {
       }
       objectState.children.splice(0);
     }
-    if (data.Detectfaces) {
+    else if (data.Detectfaces) {
       console.log("detectFaces: " + data.Detectfaces);
       faceState.results = null;
       faceState.detect = parseInt(data.Detectfaces) === 1;
     }
-    if (data.Detecthands) {
+    else if (data.Detecthands) {
       console.log("detectHands: " + data.Detecthands);
       handState.results = null;
       handState.detect = parseInt(data.Detecthands) === 1;
     }
-    if (data.Detectgestures) {
+    else if (data.Detectgestures) {
       console.log("detectGestures: " + data.Detectgestures);
       gestureState.results = null;
       gestureState.detect = parseInt(data.Detectgestures) === 1;
     }
-    if (data.Detectposes) {
+    else if (data.Detectposes) {
       console.log("detectPoses: " + data.Detectposes);
       poseState.results = null;
       poseState.detect = parseInt(data.Detectposes) === 1;
     }
-    if (data.Detectobjects) {
+    else if (data.Detectobjects) {
       console.log("detectObjects: " + data.Detectobjects);
       objectState.results = null;
       objectState.detect = parseInt(data.Detectobjects) === 1;
@@ -230,6 +213,7 @@ function setupWebSocket(socketURL, socketState) {
     }
     else for (let [key, value] of Object.entries(data)) {
       if (key in configMap) {
+        console.log("Got WS dats: "+key + " : " + value);
         configMap[key](value);
       }
     }

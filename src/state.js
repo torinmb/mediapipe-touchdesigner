@@ -2,9 +2,14 @@ import { DrawingUtils } from "@mediapipe/tasks-vision";
 import { drawFaceLandmarks } from "./faceTracking.js";
 import { drawHandLandmarks } from "./handTracking.js";
 import { drawHandGestures } from "./handGestures.js";
-import { drawPoseLandmarks, poseModelTypes } from "./poseTracking.js";
+import { drawPoseLandmarks } from "./poseTracking.js";
 import { drawObjects } from "./objectDetection.js";
 
+let poseModelTypes = {
+  'lite': './mediapipe/pose_landmarker_lite.task',
+  'full': './mediapipe/pose_landmarker_full.task',
+  'heavy': './mediapipe/pose_landmarker_heavy.task',
+}
 
 export let faceState = {
   detect: true,
@@ -43,6 +48,7 @@ export let gestureState = {
 };
 
 export let poseState = {
+  modelTypes: poseModelTypes,
   detect: true,
   modelPath: poseModelTypes['full'],
   landmarker: undefined,
