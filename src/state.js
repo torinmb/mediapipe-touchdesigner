@@ -1,5 +1,5 @@
 import { DrawingUtils } from "@mediapipe/tasks-vision";
-import { drawFaceLandmarks } from "./faceTracking.js";
+import { drawFaceLandmarks } from "./faceLandmarks.js";
 import { drawHandLandmarks } from "./handTracking.js";
 import { drawHandGestures } from "./handGestures.js";
 import { drawPoseLandmarks } from "./poseTracking.js";
