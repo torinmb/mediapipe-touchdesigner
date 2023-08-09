@@ -4,7 +4,7 @@ import { faceDetectorState } from "./state";
 export const createFaceDetector = async (wasm_path, modelAssetPath) => {
     console.log(faceDetectorState);
     const vision = await FilesetResolver.forVisionTasks(wasm_path);
-    let FaceDetector = await FaceDetector.createFromOptions(vision, {
+    let faceDetector = await FaceDetector.createFromOptions(vision, {
         baseOptions: {
             modelAssetPath: modelAssetPath,
             delegate: "GPU",
@@ -16,7 +16,7 @@ export const createFaceDetector = async (wasm_path, modelAssetPath) => {
     return faceDetector;
 };
 
-export function displayImageDetections() {
+export function displayFaceDetections() {
 
 	// Remove any highlighting from previous frame.
 	for (let child of faceDetectorState.children) {

@@ -1,5 +1,6 @@
 import { DrawingUtils } from "@mediapipe/tasks-vision";
 import { drawFaceLandmarks } from "./faceLandmarks.js";
+// import { displayFaceDetections } from "./faceDetector.js";
 import { drawHandLandmarks } from "./handTracking.js";
 import { drawHandGestures } from "./handGestures.js";
 import { drawPoseLandmarks } from "./poseTracking.js";
@@ -38,7 +39,7 @@ export let faceLandmarkState = {
 export let faceDetectorState = {
   modelTypes: faceDetectorModelTypes,
   modelPath: faceDetectorModelTypes['shortrange'],
-  detect: true,
+  detect: false,
   landmarker: undefined,
   results: undefined,
   resultsName: "faceDetectorResults",

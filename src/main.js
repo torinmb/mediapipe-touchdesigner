@@ -13,12 +13,13 @@
 // limitations under the License.
 
 import { createFaceLandmarker } from "./faceLandmarks.js";
+import { createFaceDetector } from "./faceDetector.js";
 import { createHandLandmarker } from "./handTracking.js";
 import { createGestureLandmarker } from "./handGestures.js";
 import { createPoseLandmarker } from "./poseTracking.js";
 import { createObjectDetector } from "./objectDetection.js";
 import { allowedPars } from "./defaultPars.js";
-import { faceLandmarkState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState } from "./state.js";
+import { faceLandmarkState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState, faceDetectorState } from "./state.js";
 import { configMap } from "./modelParams.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
@@ -39,6 +40,7 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
   handState.landmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
   gestureState.landmarker = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
   faceLandmarkState.landmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
+  faceDetectorState.landmarker = await createFaceDetector(WASM_PATH, faceDetectorState.modelPath);
   console.log(poseState.modelPath)
   poseState.landmarker = await createPoseLandmarker(WASM_PATH, poseState.poseModelPath);
   objectState.landmarker = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`, objectsDiv);
