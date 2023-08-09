@@ -2,6 +2,7 @@ import { FilesetResolver, FaceLandmarker } from "@mediapipe/tasks-vision";
 import { faceLandmarkState } from "./state";
 
 export const createFaceLandmarker = async (wasm_path, modelAssetPath) => {
+    console.log(faceLandmarkState);
     const vision = await FilesetResolver.forVisionTasks(wasm_path);
     let faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
         baseOptions: {
