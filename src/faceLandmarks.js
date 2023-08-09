@@ -14,8 +14,8 @@ export const createFaceLandmarker = async (wasm_path, modelAssetPath) => {
         minDetectionConfidence: faceLandmarkState.minDetectionConfidence,
         minPresenceConfidence: faceLandmarkState.minPresenceConfidence,
         minTrackingConfidence: faceLandmarkState.minTrackingConfidence,
-        outputBlendshapes: faceLandmarkState.outputBlendshapes,
-        outputTransformationMatrixes: faceLandmarkState.outputTransformationMatrixes,
+        outputFaceBlendshapes: faceLandmarkState.outputBlendshapes,
+        outputFacialTransformationMatrixes: faceLandmarkState.outputTransformationMatrixes,
     });
     return faceLandmarker;
 };
