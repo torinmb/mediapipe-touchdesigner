@@ -1,5 +1,5 @@
 import { FilesetResolver, FaceLandmarker } from "@mediapipe/tasks-vision";
-import { faceState } from "./state";
+import { faceLandmarkState } from "./state";
 
 export const createFaceLandmarker = async (wasm_path, modelAssetPath) => {
     const vision = await FilesetResolver.forVisionTasks(wasm_path);
@@ -9,12 +9,12 @@ export const createFaceLandmarker = async (wasm_path, modelAssetPath) => {
             delegate: "GPU",
         },
         runningMode: "VIDEO",
-        numFaces: faceState.numFaces,
-        minDetectionConfidence: faceState.minDetectionConfidence,
-        minPresenceConfidence: faceState.minPresenceConfidence,
-        minTrackingConfidence: faceState.minTrackingConfidence,
-        outputBlendshapes: faceState.outputBlendshapes,
-        outputTransformationMatrixes: faceState.outputTransformationMatrixes,
+        numFaces: faceLandmarkState.numFaces,
+        minDetectionConfidence: faceLandmarkState.minDetectionConfidence,
+        minPresenceConfidence: faceLandmarkState.minPresenceConfidence,
+        minTrackingConfidence: faceLandmarkState.minTrackingConfidence,
+        outputBlendshapes: faceLandmarkState.outputBlendshapes,
+        outputTransformationMatrixes: faceLandmarkState.outputTransformationMatrixes,
     });
     return faceLandmarker;
 };

@@ -18,7 +18,7 @@ import { createGestureLandmarker } from "./handGestures.js";
 import { createPoseLandmarker } from "./poseTracking.js";
 import { createObjectDetector } from "./objectDetection.js";
 import { allowedPars } from "./defaultPars.js";
-import { faceState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState } from "./state.js";
+import { faceLandmarkState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState } from "./state.js";
 import { configMap } from "./modelParams.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
@@ -29,8 +29,8 @@ const objectsDiv = document.getElementById("objects");
 // Keep a reference of all the child elements we create
 // so we can remove them easilly on each render.
 
-let allModelState = [faceState, handState, gestureState, poseState, objectState];
-let landmarkerModelState = [faceState, handState, gestureState, poseState];
+let allModelState = [faceLandmarkState, handState, gestureState, poseState, objectState];
+let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseState];
 
 
 (async function setup() {
@@ -38,7 +38,7 @@ let landmarkerModelState = [faceState, handState, gestureState, poseState];
   webcamState.webcamDevices = await getWebcamDevices();
   handState.landmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
   gestureState.landmarker = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
-  faceState.landmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
+  faceLandmarkState.landmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
   console.log(poseState.modelPath)
   poseState.landmarker = await createPoseLandmarker(WASM_PATH, poseState.poseModelPath);
   objectState.landmarker = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`, objectsDiv);

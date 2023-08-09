@@ -1,10 +1,10 @@
-import { faceState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState } from './state.js';
+import { faceLandmarkState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState } from './state.js';
 
 export const configMap = {
     'Wsaddress': value => socketState.adddress = value,
     'Wsport': value => socketState.port = value,
 
-    'Detectfaces': value => detectSwitch(faceState, parseInt(value) === 1),
+    'Detectfaces': value => detectSwitch(faceLandmarkState, parseInt(value) === 1),
     'Detectgestures': value => detectSwitch(gestureState, parseInt(value) === 1),
     'Detecthands': value => detectSwitch(handState, parseInt(value) === 1),
     'Detectposes': value => detectSwitch(poseState, parseInt(value) === 1),
@@ -25,17 +25,16 @@ export const configMap = {
     'Ppresconf': value => poseState.minPresenceConfidence = value,
     'Ptrackconf': value => poseState.minTrackingConfidence = value,
 
-    'Fnumfaces': value => faceState.numFaces = value,
-    'Fblendshapes': value => faceState.outputBlendshapes = parseInt(value) === 1,
-    'Ftransmtrx': value => faceState.outputTransformationMatrixes = parseInt(value) === 1,
-    'Fpresconf': value => faceState.minPresenceConfidence = value,
-    'Fdetectconf': value => faceState.minDetectionConfidence = value,
-    'Ftrackconf': value => faceState.minTrackingConfidence = value,
+    'Fnumfaces': value => faceLandmarkState.numFaces = value,
+    'Fblendshapes': value => faceLandmarkState.outputBlendshapes = parseInt(value) === 1,
+    'Ftransmtrx': value => faceLandmarkState.outputTransformationMatrixes = parseInt(value) === 1,
+    'Fpresconf': value => faceLandmarkState.minPresenceConfidence = value,
+    'Fdetectconf': value => faceLandmarkState.minDetectionConfidence = value,
+    'Ftrackconf': value => faceLandmarkState.minTrackingConfidence = value,
 
     'Onumobjects': value => objectState.maxResults = value,
     'OmodelType': value => modelCheck(objectState.modelPath, objectState.modelTypes, value),
     'Oscore': value => objectState.scoreThreshold = value,
-    //'Omodel': value => modelCheck(objectState.modelPath, objectState.modelTypes, value),
 };
 
 function modelCheck(modelPath, modelTypes, value) {

@@ -17,11 +17,15 @@ let objectModelTypes = {
   'accurate': './mediapipe/efficientdet_lite2.tflite.task',
 }
 
-export let faceState = {
+let faceDetectorModelTypes = {
+  'shortrange': './mediapipe/blaze_face_short_range.tflite',
+}
+
+export let faceLandmarkState = {
   detect: true,
-  landmarker: undefined,
+  detector: undefined,
   results: undefined,
-  resultsName: "faceResults",
+  resultsName: "faceLandmarkResults",
   numFaces: 1,
   minDetectionConfidence: 0.5,
   minPresenceConfidence: 0.5,
@@ -29,6 +33,18 @@ export let faceState = {
   outputBlendshapes: true,
   outputTransformationMatrixes: true,
   draw: (state, canvas) => drawFaceLandmarks(state, canvas),
+};
+
+export let faceDetectorState = {
+  modelTypes: faceDetectorModelTypes,
+  modelPath: faceDetectorModelTypes['shortrange'],
+  detect: true,
+  landmarker: undefined,
+  results: undefined,
+  resultsName: "faceDetectorResults",
+  minDetectionConfidence: 0.5,
+  minSuppressionThreshold: 0.3,
+  draw: (state, canvas) => drawFaceDetectors(state, canvas),
 };
 
 export let handState = {
