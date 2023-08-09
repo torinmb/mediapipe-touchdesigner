@@ -32,7 +32,7 @@ export let gestureState = {
 
 export let poseState = {
   detect: true,
-  poseModelPath: poseModelTypes['full'],
+  modelPath: poseModelTypes['full'],
   landmarker: undefined,
   results: undefined,
   resultsName: "poseResults",

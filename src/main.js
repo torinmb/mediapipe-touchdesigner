@@ -39,7 +39,7 @@ let landmarkerModelState = [faceState, handState, gestureState, poseState];
   handState.landmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
   gestureState.landmarker = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
   faceState.landmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
-  console.log(poseState.poseModelPath)
+  console.log(poseState.modelPath)
   poseState.landmarker = await createPoseLandmarker(WASM_PATH, poseState.poseModelPath);
   objectState.landmarker = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`);
   setupWebSocket(allowedPars['Wsaddress'] + ":" + allowedPars['Wsport'], socketState);
@@ -63,7 +63,7 @@ function handleQueryParams(socketState, webcamState) {
   if (urlParams.has('Posemodeltype')) {
     let modelType = urlParams.get('Posemodeltype');
     if (poseModelTypes.hasOwnProperty(modelType)) {
-      poseState.poseModelPath = poseModelTypes[modelType];
+      poseState.modelPath = poseModelTypes[modelType];
     } else {
       console.error(`Invalid poseModelType: ${modelType}`);
     }
