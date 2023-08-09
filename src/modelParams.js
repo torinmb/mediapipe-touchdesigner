@@ -1,10 +1,11 @@
-import { faceLandmarkState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState } from './state.js';
+import { faceLandmarkState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState, faceDetectorState } from './state.js';
 
 export const configMap = {
     'Wsaddress': value => socketState.adddress = value,
     'Wsport': value => socketState.port = value,
 
-    'Detectfaces': value => detectSwitch(faceLandmarkState, parseInt(value) === 1),
+    'DetectfaceLandmarks': value => detectSwitch(faceLandmarkState, parseInt(value) === 1),
+    'Detectfaces': value => detectSwitch(faceDetectorState, parseInt(value) === 1),
     'Detectgestures': value => detectSwitch(gestureState, parseInt(value) === 1),
     'Detecthands': value => detectSwitch(handState, parseInt(value) === 1),
     'Detectposes': value => detectSwitch(poseState, parseInt(value) === 1),
@@ -31,6 +32,9 @@ export const configMap = {
     'Fpresconf': value => faceLandmarkState.minPresenceConfidence = value,
     'Fdetectconf': value => faceLandmarkState.minDetectionConfidence = value,
     'Ftrackconf': value => faceLandmarkState.minTrackingConfidence = value,
+
+    'Fdminconf': value => faceDetectorState.minDetectionConfidence = value,
+    'Fdminsuppression': value => faceDetectorState.minSuppressionThreshold = value,
 
     'Onumobjects': value => objectState.maxResults = value,
     'OmodelType': value => modelCheck(objectState.modelPath, objectState.modelTypes, value),
