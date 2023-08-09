@@ -47,13 +47,13 @@ function modelCheck(modelPath, modelTypes, value) {
     }
 }
 
-function detectSwitch(stateObj, value) {
+function detectSwitch(state, value) {
     if (value) {
-        stateObj.detect = true;
+        state.detect = true;
     }
     else {
-        stateObj.detect = false;
-        stateObj.results = null;
+        state.detect = false;
+        state.results = null;
         for (let child of objectState.children) {
             objectState.objectsDiv.removeChild(child);
         }
