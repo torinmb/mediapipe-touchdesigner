@@ -9,7 +9,10 @@ export const createPoseLandmarker = async (WASM_PATH, modelAssetPath) => {
             delegate: "GPU",
         },
         runningMode: "VIDEO",
-        numPoses: 2,
+        numPoses: poseState.numHands,
+        minHandDetectionConfidence: poseState.minDetectionConfidence,
+        minHandPresenceConfidence: poseState.minPresenceConfidence,
+        minTrackingConfidence: poseState.minTrackingConfidence,
     });
     return poseLandmarker;
 };

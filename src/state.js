@@ -60,6 +60,10 @@ export let poseState = {
   landmarker: undefined,
   results: undefined,
   resultsName: "poseResults",
+  numPoses: 2,
+  minDetectionConfidence: 0.5,
+  minPresenceConfidence: 0.5,
+  minTrackingConfidence: 0.5,
   draw: (state, canvas) => drawPoseLandmarks(state, canvas),
 };
 

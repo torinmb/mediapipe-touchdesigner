@@ -20,8 +20,10 @@ export const configMap = {
     'Gscore': value => gestureState.scoreThreshold = value,
 
     'Jointthreshold': '',
-    'Model': value => modelCheck(poseState.modelPath, poseState.modelTypes, value),
-    'Movenetcameraresolution': '',
+    'Posemodeltype': value => modelCheck(poseState.modelPath, poseState.modelTypes, value),
+    'Pdetectconf': value => poseState.minDetectionConfidence = value,
+    'Ppresconf': value => poseState.minPresenceConfidence = value,
+    'Ptrackconf': value => poseState.minTrackingConfidence = value,
 
     'Fnumfaces': value => faceState.numFaces = value,
     'Fblendshapes': value => faceState.outputBlendshapes = parseInt(value) === 1,
