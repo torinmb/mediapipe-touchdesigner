@@ -213,7 +213,7 @@ function setupWebSocket(socketURL, socketState) {
     }
     else for (let [key, value] of Object.entries(data)) {
       if (key in configMap) {
-        console.log("Got WS dats: "+key + " : " + value);
+        console.log("Got WS dats: " + key + " : " + value);
         configMap[key](value);
       }
     }
