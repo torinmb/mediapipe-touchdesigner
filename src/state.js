@@ -11,6 +11,12 @@ let poseModelTypes = {
   'heavy': './mediapipe/pose_landmarker_heavy.task',
 }
 
+let objectModelTypes = {
+  'fast': './mediapipe/pose_landmarker_lite.task',
+  'full': './mediapipe/efficientdet_lite0.tflite.task',
+  'accurate': './mediapipe/efficientdet_lite2.tflite.task',
+}
+
 export let faceState = {
   detect: true,
   landmarker: undefined,
@@ -58,7 +64,9 @@ export let poseState = {
 };
 
 export let objectState = {
+  modelTypes: objectModelTypes,
   detect: false,
+  modelPath: objectModelTypes['full'],
   detector: undefined,
   results: undefined,
   objectsDiv: "",

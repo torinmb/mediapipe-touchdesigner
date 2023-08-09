@@ -31,6 +31,7 @@ export const configMap = {
     'Ftrackconf': value => faceState.minTrackingConfidence = value,
 
     'Onumobjects': value => objectState.maxResults = value,
+    'Omodel': value => modelCheck(objectState.modelPath, objectState.modelTypes, value),
     'Oscore': value => objectState.scoreThreshold = value,
     //'Omodel': value => modelCheck(objectState.modelPath, objectState.modelTypes, value),
 };
