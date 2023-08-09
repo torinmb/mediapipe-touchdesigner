@@ -1,4 +1,5 @@
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
+import { objectState } from "./state";
 
 export const createObjectDetector = async (WASM_PATH, modelAssetPath) => {
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
@@ -8,7 +9,8 @@ export const createObjectDetector = async (WASM_PATH, modelAssetPath) => {
             delegate: "GPU",
         },
         runningMode: "VIDEO",
-        scoreThreshold: 0.5,
+		maxResults: objectState.maxResults,
+        scoreThreshold: objectState.scoreThreshold,
     });
     return objectDetector;
 };

@@ -11,6 +11,12 @@ export let faceState = {
   landmarker: undefined,
   results: undefined,
   resultsName: "faceResults",
+  numFaces: 1,
+  minDetectionConfidence: 0.5,
+  minPresenceConfidence: 0.5,
+  minTrackingConfidence: 0.5,
+  outputBlendshapes: true,
+  outputTransformationMatrixes: true,
   draw: (state, canvas) => drawFaceLandmarks(state, canvas),
 };
 
@@ -19,6 +25,10 @@ export let handState = {
   landmarker: undefined,
   results: undefined,
   resultsName: "handResults",
+  numHands: 2,
+  minDetectionConfidence: 0.5,
+  minPresenceConfidence: 0.5,
+  minTrackingConfidence: 0.5,
   draw: (state, canvas) => drawHandLandmarks(state, canvas),
 };
 
@@ -27,6 +37,8 @@ export let gestureState = {
   landmarker: undefined,
   results: undefined,
   resultsName: "gestureResults",
+  maxResults: -1,
+  scoreThreshold: 0.5,
   draw: (state, canvas) => drawHandGestures(state, canvas),
 };
 
@@ -45,6 +57,8 @@ export let objectState = {
   results: undefined,
   children: [],
   resultsName: "objectResults",
+  maxResults: -1,
+  scoreThreshold: 0.5,
   draw: (result, children, objectsDiv) => drawObjects(result, children, objectsDiv),
 };
 
@@ -60,5 +74,11 @@ export let webcamState = {
 };
   
 export let socketState = {
+    adddress: 'ws://localhost',
+    port: '9980',
     ws: undefined,
 };
+
+export let overlayState = {
+  show: true,
+}

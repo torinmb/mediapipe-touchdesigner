@@ -1,4 +1,5 @@
 import { FilesetResolver, PoseLandmarker, DrawingUtils } from "@mediapipe/tasks-vision";
+import { poseState } from "./state";
 
 export const poseModelTypes = {
     'lite': './mediapipe/pose_landmarker_lite.task',
@@ -10,7 +11,7 @@ export const createPoseLandmarker = async (WASM_PATH, modelAssetPath) => {
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
     let poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
         baseOptions: {
-            modelAssetPath: modelAssetPath,
+            modelAssetPath: poseState.modelPath,
             delegate: "GPU",
         },
         runningMode: "VIDEO",

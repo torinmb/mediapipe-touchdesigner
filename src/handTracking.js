@@ -1,4 +1,5 @@
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
+import { handState } from "./state";
 
 export const createHandLandmarker = async (WASM_PATH, modelAssetPath) => {
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
@@ -8,10 +9,10 @@ export const createHandLandmarker = async (WASM_PATH, modelAssetPath) => {
             delegate: "GPU",
         },
         runningMode: "VIDEO",
-        numHands: 2,
-        minHandDetectionConfidence: 0.5,
-        minHandPresenceConfidence: 0.5,
-        minTrackingConfidence: 0.5,
+        numHands: handState.numHands,
+        minHandDetectionConfidence: handState.minDetectionConfidence,
+        minHandPresenceConfidence: handState.minPresenceConfidence,
+        minTrackingConfidence: handState.minTrackingConfidence,
     });
     return handLandmarker;
 };
