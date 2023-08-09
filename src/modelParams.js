@@ -54,6 +54,10 @@ function detectSwitch(stateObj, value) {
     else {
         stateObj.detect = false;
         stateObj.results = null;
+        for (let child of objectState.children) {
+            objectState.objectsDiv.removeChild(child);
+        }
+        objectState.children.splice(0);
     }
 }
 
@@ -61,6 +65,6 @@ function overlaySwitch(value) {
     overlayState.show = value;
     for (let child of objectState.children) {
         objectState.objectsDiv.removeChild(child);
-      }
-      objectState.children.splice(0);
+    }
+    objectState.children.splice(0);
 }
