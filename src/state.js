@@ -61,6 +61,7 @@ export let objectState = {
   detect: false,
   detector: undefined,
   results: undefined,
+  objectsDiv: "",
   children: [],
   resultsName: "objectResults",
   maxResults: -1,

@@ -41,7 +41,7 @@ let landmarkerModelState = [faceState, handState, gestureState, poseState];
   faceState.landmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
   console.log(poseState.modelPath)
   poseState.landmarker = await createPoseLandmarker(WASM_PATH, poseState.poseModelPath);
-  objectState.landmarker = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`);
+  objectState.landmarker = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`, objectsDiv);
   setupWebSocket(allowedPars['Wsaddress'] + ":" + allowedPars['Wsport'], socketState);
   enableCam(webcamState, video);
 })();
@@ -134,7 +134,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     }
     // unique draw function for object detection
     if (objectState.detect && objectState.results) {
-      objectState.draw(objectState.results, objectState.children, objectsDiv);
+      objectState.draw();
     }
   }
 
@@ -173,43 +173,6 @@ function setupWebSocket(socketURL, socketState) {
         webcamState.webcamId = data.deviceId;
       }
       enableCam(webcamState, video);
-    }
-    else if (data.Showoverlays) {
-      console.log("showOverlays: " + data.Showoverlays);
-      overlayState.show = parseInt(data.Showoverlays) === 1;
-      for (let child of objectState.children) {
-        objectsDiv.removeChild(child);
-      }
-      objectState.children.splice(0);
-    }
-    else if (data.Detectfaces) {
-      console.log("detectFaces: " + data.Detectfaces);
-      faceState.results = null;
-      faceState.detect = parseInt(data.Detectfaces) === 1;
-    }
-    else if (data.Detecthands) {
-      console.log("detectHands: " + data.Detecthands);
-      handState.results = null;
-      handState.detect = parseInt(data.Detecthands) === 1;
-    }
-    else if (data.Detectgestures) {
-      console.log("detectGestures: " + data.Detectgestures);
-      gestureState.results = null;
-      gestureState.detect = parseInt(data.Detectgestures) === 1;
-    }
-    else if (data.Detectposes) {
-      console.log("detectPoses: " + data.Detectposes);
-      poseState.results = null;
-      poseState.detect = parseInt(data.Detectposes) === 1;
-    }
-    else if (data.Detectobjects) {
-      console.log("detectObjects: " + data.Detectobjects);
-      objectState.results = null;
-      objectState.detect = parseInt(data.Detectobjects) === 1;
-      for (let child of objectState.children) {
-        objectsDiv.removeChild(child);
-      }
-      objectState.children.splice(0);
     }
     else for (let [key, value] of Object.entries(data)) {
       if (key in configMap) {

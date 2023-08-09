@@ -4,12 +4,12 @@ export const configMap = {
     'Wsaddress': value => socketState.adddress = value,
     'Wsport': value => socketState.port = value,
 
-    'Detectfaces': value => faceState.detect = parseInt(value) === 1,
-    'Detectgestures': value => gestureState.detect = parseInt(value) === 1,
-    'Detecthands': value => handState.detect = parseInt(value) === 1,
-    'Detectposes': value => poseState.detect = parseInt(value) === 1,
-    'Detectobjects': value => objectState.detect = parseInt(value) === 1,
-    'Showoverlays': value => overlayState.show = parseInt(value) === 1,
+    'Detectfaces': value => detectSwitch(faceState, parseInt(value) === 1),
+    'Detectgestures': value => detectSwitch(gestureState, parseInt(value) === 1),
+    'Detecthands': value => detectSwitch(handState, parseInt(value) === 1),
+    'Detectposes': value => detectSwitch(poseState, parseInt(value) === 1),
+    'Detectobjects': value => detectSwitch(objectState, parseInt(value) === 1),
+    'Showoverlays': value => overlaySwitch(parseInt(value) === 1),
 
     'Hnumhands': value => handState.numHands = value,
     'Hdetectconf': value => handState.minDetectionConfidence = value,
@@ -35,11 +35,29 @@ export const configMap = {
     //'Omodel': value => modelCheck(objectState.modelPath, objectState.modelTypes, value),
 };
 
-function modelCheck (modelPath, modelTypes, value){
+function modelCheck(modelPath, modelTypes, value) {
     if (modelTypes.hasOwnProperty(value)) {
-      return value[value];
+        return value[value];
     } else {
-      console.error(`Invalid poseModelType: ${modelType}`);
-      return modelPath;
+        console.error(`Invalid poseModelType: ${modelType}`);
+        return modelPath;
     }
-  }
+}
+
+function detectSwitch(stateObj, value) {
+    if (value) {
+        stateObj.detect = true;
+    }
+    else {
+        stateObj.detect = false;
+        stateObj.results = null;
+    }
+}
+
+function overlaySwitch(value) {
+    overlayState.show = value;
+    for (let child of objectState.children) {
+        objectState.objectsDiv.removeChild(child);
+      }
+      objectState.children.splice(0);
+}
