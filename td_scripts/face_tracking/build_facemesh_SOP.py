@@ -21,7 +21,7 @@ def onPulse(par):
 
 		# Clear the existing SOP and fill out the points
 		par.owner.clear()
-		landmarks = rawdata['faceResults']['faceLandmarks'][0]
+		landmarks = rawdata['faceLandmarkResults']['faceLandmarks'][0]
 
 		for i in range (len(landmarks)):
 			p = par.owner.appendPoint()

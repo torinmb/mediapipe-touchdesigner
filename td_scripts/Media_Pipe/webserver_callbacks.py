@@ -60,7 +60,7 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 	elif(data.find('gestureResults', 2, 100) != -1):
 		op('hand_results').text = data
 		return
-	elif(data.find('faceLandmarkerResults', 2, 100) != -1):
+	elif(data.find('faceLandmarkResults', 2, 150) != -1):
 		op('face_results').text = data
 		return
 	elif(data.find('faceDetectorResults', 2, 100) != -1):

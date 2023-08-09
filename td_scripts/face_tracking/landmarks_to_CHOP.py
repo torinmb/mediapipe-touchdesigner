@@ -19,10 +19,10 @@ def onCook(scriptOp):
 	# print(str(len(rawdata['faceResults']['faceLandmarks'])))
 
 	# Check to see if we have a face
-	if(len(rawdata['faceResults']) > 0 and len(rawdata['faceResults']['faceLandmarks']) > digits and rawdata['faceResults']['faceLandmarks'][digits]):
+	if(len(rawdata['faceLandmarkResults']) > 0 and len(rawdata['faceLandmarkResults']['faceLandmarks']) > digits and rawdata['faceLandmarkResults']['faceLandmarks'][digits]):
 
 		# print(rawdata['faceResults']['faceLandmarks'])
-		landmarks = rawdata['faceResults']['faceLandmarks'][digits]
+		landmarks = rawdata['faceLandmarkResults']['faceLandmarks'][digits]
 
 		scriptOp.appendChan('x')
 		scriptOp.appendChan('y')

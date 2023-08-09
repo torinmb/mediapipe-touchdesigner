@@ -23,10 +23,10 @@ def onCook(scriptOp):
 	digits = scriptOp.digits -1
 
 	# Check to see if we have a face
-	if(len(rawdata['faceResults']) > 0 and len(rawdata['faceResults']['faceLandmarks']) > digits and rawdata['faceResults']['faceLandmarks'][digits]):
+	if(len(rawdata['faceLandmarkResults']) > 0 and len(rawdata['faceLandmarkResults']['faceLandmarks']) > digits and rawdata['faceLandmarkResults']['faceLandmarks'][digits]):
 		scriptOp.copy(scriptOp.inputs[0])
 		# Load the relevant JSON array
-		landmarks = rawdata['faceResults']['faceLandmarks'][digits]
+		landmarks = rawdata['faceLandmarkResults']['faceLandmarks'][digits]
 
 		# For every point we have, edit the position of the existing face points
 		i=0
