@@ -1,0 +1,59 @@
+name: GitHub Actions Demo
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on:
+  push:
+    paths:
+      - 'package.json'
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js with Yarn caching
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16.13.x'
+        cache: 'yarn'
+    
+    - name: Install Yarn
+      run: npm install -g yarn
+
+    - name: Install dependencies
+      run: yarn install
+
+    - name: Build
+      run: yarn build
+      
+    - name: Create Zip of specified folders
+      run: |
+        zip -r release.zip "/MediaPipe TouchDesigner.toe" "/td_scripts" "/toxes" "/dist"
+
+    - name: Extract version and commit message
+      id: extract_details
+      run: |
+        # Extract version from package.json
+        VERSION=$(jq -r .version package.json)
+        # Extract the latest commit message
+        COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+        echo "::set-output name=package_version::$VERSION"
+        echo "::set-output name=commit_message::$COMMIT_MESSAGE"
+
+    - name: Create Release and Upload Asset
+      run: |
+        # Create Release
+        RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --data '{
+          "tag_name": "v${{ steps.extract_details.outputs.package_version }}",
+          "name": "Release v${{ steps.extract_details.outputs.package_version }}",
+          "body": "${{ steps.extract_details.outputs.commit_message }}",
+          "draft": false,
+          "prerelease": true
+        }' "https://api.github.com/repos/$GITHUB_REPOSITORY/releases")
+
+        # Extract the upload_url value
+        UPLOAD_URL=$(echo "$RESPONSE" | jq -r .upload_url | sed -e "s/{?name,label}//")
+
+        # Upload Asset
+        curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/zip" --data-binary @release.zip "$UPLOAD_URL?name=release.zip"
