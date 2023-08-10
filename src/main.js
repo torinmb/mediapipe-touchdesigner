@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createFaceLandmarker } from "./faceLandmarks.js";
-import { createFaceDetector } from "./faceDetector.js";
-import { createHandLandmarker } from "./handTracking.js";
-import { createGestureLandmarker } from "./handGestures.js";
-import { createPoseLandmarker } from "./poseTracking.js";
-import { createObjectDetector } from "./objectDetection.js";
+import { faceLandmarkState, createFaceLandmarker } from "./faceLandmarks.js";
+import { faceDetectorState, createFaceDetector } from "./faceDetector.js";
+import { handState, createHandLandmarker } from "./handTracking.js";
+import { gestureState, createGestureLandmarker } from "./handGestures.js";
+import { poseState, createPoseLandmarker } from "./poseTracking.js";
+import { objectState, createObjectDetector } from "./objectDetection.js";
 import { allowedPars } from "./defaultPars.js";
-import { faceLandmarkState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState, faceDetectorState } from "./state.js";
+import { webcamState, socketState, overlayState } from "./state.js";
 import { configMap } from "./modelParams.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
