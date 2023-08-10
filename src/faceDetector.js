@@ -1,7 +1,7 @@
 import { FilesetResolver, FaceDetector } from "@mediapipe/tasks-vision";
 
 let faceDetectorModelTypes = {
-	'shortrange': './mediapipe/blaze_face_short_range.tflite',
+	'shortrange': './mediapipe/models/face_detection/blaze_face_short_range.tflite',
 }
 
 export let faceDetectorState = {
@@ -18,13 +18,14 @@ export let faceDetectorState = {
 	draw: () => displayFaceDetections(),
 };
 
-export const createFaceDetector = async (wasm_path, modelAssetPath, facesDiv) => {
-	faceDetectorState.facesDiv = facesDiv;
+export const createFaceDetector = async (wasm_path, facesDiv) => {
+	console.log("Starting face detection");
 	console.log(faceDetectorState);
+	faceDetectorState.facesDiv = facesDiv;
 	const vision = await FilesetResolver.forVisionTasks(wasm_path);
 	let faceDetector = await FaceDetector.createFromOptions(vision, {
 		baseOptions: {
-			modelAssetPath: modelAssetPath,
+			modelAssetPath: faceDetectorState.modelPath,
 			delegate: "GPU",
 		},
 		runningMode: "VIDEO",

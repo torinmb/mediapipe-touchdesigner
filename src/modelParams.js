@@ -4,6 +4,7 @@ import { gestureState } from "./handGestures";
 import { poseState } from "./poseTracking";
 import { objectState } from "./objectDetection";
 import { faceDetectorState } from "./faceDetector";
+import { imageState } from "./imageClassification";
 import { webcamState, socketState, overlayState } from './state.js';
 
 export const configMap = {
@@ -16,6 +17,7 @@ export const configMap = {
     'Detecthands': value => detectSwitch(handState, parseInt(value) === 1),
     'Detectposes': value => detectSwitch(poseState, parseInt(value) === 1),
     'Detectobjects': value => detectSwitch(objectState, parseInt(value) === 1),
+    'Detectimages': value => detectSwitch(imageState, parseInt(value) === 1),
     'Showoverlays': value => overlaySwitch(parseInt(value) === 1),
 
     'Hnumhands': value => handState.numHands = value,
@@ -50,6 +52,10 @@ export const configMap = {
     'Onumobjects': value => objectState.maxResults = value,
     'OmodelType': value => modelCheck(objectState.modelPath, objectState.modelTypes, value),
     'Oscore': value => objectState.scoreThreshold = value,
+
+    'Inumoresults': value => imageState.maxResults = value,
+    'ImodelType': value => modelCheck(imageState.modelPath, imageState.modelTypes, value),
+    'Iscore': value => imageState.scoreThreshold = value,
 };
 
 function modelCheck(modelPath, modelTypes, value) {

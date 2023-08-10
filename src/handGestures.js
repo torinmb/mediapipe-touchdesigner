@@ -15,6 +15,8 @@ export let gestureState = {
 };
 
 export const createGestureLandmarker = async (WASM_PATH, modelAssetPath) => {
+    console.log("Starting gesture detection");
+	console.log(gestureState);
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
     let handGestures = await GestureRecognizer.createFromOptions(vision, {
         baseOptions: {

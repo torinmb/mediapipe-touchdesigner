@@ -1,9 +1,9 @@
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
 
 let objectModelTypes = {
-	'fast': './mediapipe/pose_landmarker_lite.task',
-	'full': './mediapipe/efficientdet_lite0.tflite.task',
-	'accurate': './mediapipe/efficientdet_lite2.tflite.task',
+	'fast': './mediapipe/models/object_detection/ssd_mobilenet_v2.tflite',
+	'full': './mediapipe/models/object_detection/efficientdet_lite0.tflite',
+	'accurate': './mediapipe/models/object_detection/efficientdet_lite2.tflite',
 }
 
 export let objectState = {
@@ -20,12 +20,14 @@ export let objectState = {
 	draw: () => drawObjects(),
 };
 
-export const createObjectDetector = async (WASM_PATH, modelAssetPath, objectsDiv) => {
+export const createObjectDetector = async (WASM_PATH, objectsDiv) => {
+	console.log("Starting object detection");
+	console.log(objectState);
 	objectState.objectsDiv = objectsDiv;
 	const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
 	let objectDetector = await ObjectDetector.createFromOptions(vision, {
 		baseOptions: {
-			modelAssetPath: modelAssetPath,
+			modelAssetPath: objectState.modelPath,
 			delegate: "GPU",
 		},
 		runningMode: "VIDEO",

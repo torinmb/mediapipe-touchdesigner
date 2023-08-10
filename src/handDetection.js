@@ -13,6 +13,8 @@ export let handState = {
   };
 
 export const createHandLandmarker = async (WASM_PATH, modelAssetPath) => {
+    console.log("Starting hand landmark detection");
+	console.log(handState);
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
     let handLandmarker = await HandLandmarker.createFromOptions(vision, {
         baseOptions: {

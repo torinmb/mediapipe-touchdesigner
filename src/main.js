@@ -18,6 +18,7 @@ import { handState, createHandLandmarker } from "./handDetection.js";
 import { gestureState, createGestureLandmarker } from "./handGestures.js";
 import { poseState, createPoseLandmarker } from "./poseTracking.js";
 import { objectState, createObjectDetector } from "./objectDetection.js";
+import { imageState, createImageClassifier } from "./imageClassification.js";
 import { webcamState, socketState, overlayState } from "./state.js";
 import { configMap } from "./modelParams.js";
 
@@ -30,20 +31,21 @@ const facesDiv = document.getElementById("faces");
 // Keep a reference of all the child elements we create
 // so we can remove them easilly on each render.
 
-let allModelState = [faceLandmarkState, faceDetectorState, handState, gestureState, poseState, objectState];
+let allModelState = [faceLandmarkState, faceDetectorState, handState, gestureState, poseState, objectState, imageState];
 let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseState];
 
 
 (async function setup() {
   handleQueryParams();
   webcamState.webcamDevices = await getWebcamDevices();
-  handState.landmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
-  gestureState.landmarker = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
-  faceLandmarkState.landmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
-  faceDetectorState.landmarker = await createFaceDetector(WASM_PATH, faceDetectorState.modelPath, facesDiv);
+  handState.landmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/models/hand_landmark_detection/hand_landmarker.task`);
+  gestureState.landmarker = await createGestureLandmarker(WASM_PATH, `./mediapipe/models/gesture_recognition/gesture_recognizer.task`);
+  faceLandmarkState.landmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/models/face_landmark_detection/face_landmarker.task`);
+  faceDetectorState.landmarker = await createFaceDetector(WASM_PATH, facesDiv);
   console.log(poseState.modelPath)
-  poseState.landmarker = await createPoseLandmarker(WASM_PATH, poseState.poseModelPath);
-  objectState.landmarker = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`, objectsDiv);
+  poseState.landmarker = await createPoseLandmarker(WASM_PATH);
+  objectState.landmarker = await createObjectDetector(WASM_PATH, objectsDiv);
+  imageState.landmarker = await createImageClassifier(WASM_PATH);
   setupWebSocket(socketState.adddress + ":" + socketState.port, socketState);
   enableCam(webcamState, video);
 })();
@@ -122,7 +124,11 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
         let marker = landmarker.landmarker;
         if (landmarker.resultsName === 'gestureResults') {
           landmarker.results = await marker.recognizeForVideo(video, startTimeMs);
-        } else {
+        }
+        else if (landmarker.resultsName === 'imageResults') {
+          landmarker.results = await marker.classifyForVideo(video, startTimeMs);
+        }
+        else {
           landmarker.results = await marker.detectForVideo(video, startTimeMs);
         }
         safeSocketSend(socketState.ws, JSON.stringify({

@@ -40,7 +40,7 @@ modelLookup = {
   }
 }
 
-noReloadPars = ['Webcam', 'Detectfaces', 'Detectfacelandmarks', 'Detectgestures', 'Detecthands', 'Detectposes', 'Detectobjects', 'Showoverlays']
+noReloadPars = ['Webcam', 'Detectfaces', 'Detectfacelandmarks', 'Detectgestures', 'Detecthands', 'Detectposes', 'Detectobjects', 'Detectimages', 'Showoverlays']
 
 def onTableChange(dat):
 	return
