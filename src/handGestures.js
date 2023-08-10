@@ -26,7 +26,7 @@ export const createGestureLandmarker = async (WASM_PATH) => {
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
     let handGestures = await GestureRecognizer.createFromOptions(vision, {
         baseOptions: {
-            modelAssetPath: gestureModelTypes.modelPath,
+            modelAssetPath: gestureState.modelPath,
             delegate: "GPU",
         },
         runningMode: "VIDEO",
