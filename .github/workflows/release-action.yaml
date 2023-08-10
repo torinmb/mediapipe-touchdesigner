@@ -32,22 +32,21 @@ jobs:
         zip -r release.zip "MediaPipe TouchDesigner.toe" "td_scripts" "toxes" "dist"
 
     - name: Extract version and commit message
-      id: extract_details
       run: |
         # Extract version from package.json
         VERSION=$(jq -r .version package.json)
         # Extract the latest commit message
         COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-        echo "::set-output name=package_version::$VERSION"
-        echo "::set-output name=commit_message::$COMMIT_MESSAGE"
-
+        echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
+        echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
+        
     - name: Create Release and Upload Asset
       run: |
         # Create Release
         RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --data '{
-          "tag_name": "v${{ steps.extract_details.outputs.package_version }}",
-          "name": "Release v${{ steps.extract_details.outputs.package_version }}",
-          "body": "${{ steps.extract_details.outputs.commit_message }}",
+          "tag_name": "v$PACKAGE_VERSION",
+          "name": "Release v$PACKAGE_VERSION",
+          "body": "$COMMIT_MESSAGE",
           "draft": false,
           "prerelease": true
         }' "https://api.github.com/repos/$GITHUB_REPOSITORY/releases")
