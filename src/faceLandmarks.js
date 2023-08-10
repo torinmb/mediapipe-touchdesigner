@@ -1,5 +1,18 @@
 import { FilesetResolver, FaceLandmarker } from "@mediapipe/tasks-vision";
-import { faceLandmarkState } from "./state";
+
+export let faceLandmarkState = {
+    detect: true,
+    detector: undefined,
+    results: undefined,
+    resultsName: "faceLandmarkResults",
+    numFaces: 1,
+    minDetectionConfidence: 0.5,
+    minPresenceConfidence: 0.5,
+    minTrackingConfidence: 0.5,
+    outputBlendshapes: true,
+    outputTransformationMatrixes: true,
+    draw: (state, canvas) => drawFaceLandmarks(state, canvas),
+};
 
 export const createFaceLandmarker = async (wasm_path, modelAssetPath) => {
     console.log(faceLandmarkState);

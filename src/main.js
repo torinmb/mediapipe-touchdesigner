@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createFaceLandmarker } from "./faceLandmarks.js";
-import { createFaceDetector } from "./faceDetector.js";
-import { createHandLandmarker } from "./handTracking.js";
-import { createGestureLandmarker } from "./handGestures.js";
-import { createPoseLandmarker } from "./poseTracking.js";
-import { createObjectDetector } from "./objectDetection.js";
-import { allowedPars } from "./defaultPars.js";
-import { faceLandmarkState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState, faceDetectorState } from "./state.js";
+import { faceLandmarkState, createFaceLandmarker } from "./faceLandmarks.js";
+import { faceDetectorState, createFaceDetector } from "./faceDetector.js";
+import { handState, createHandLandmarker } from "./handDetection.js";
+import { gestureState, createGestureLandmarker } from "./handGestures.js";
+import { poseState, createPoseLandmarker } from "./poseTracking.js";
+import { objectState, createObjectDetector } from "./objectDetection.js";
+import { webcamState, socketState, overlayState } from "./state.js";
 import { configMap } from "./modelParams.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
 const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
 const objectsDiv = document.getElementById("objects");
+const facesDiv = document.getElementById("faces");
 
 // Keep a reference of all the child elements we create
 // so we can remove them easilly on each render.
@@ -40,11 +40,11 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
   handState.landmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
   gestureState.landmarker = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
   faceLandmarkState.landmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
-  faceDetectorState.landmarker = await createFaceDetector(WASM_PATH, faceDetectorState.modelPath);
+  faceDetectorState.landmarker = await createFaceDetector(WASM_PATH, faceDetectorState.modelPath, facesDiv);
   console.log(poseState.modelPath)
   poseState.landmarker = await createPoseLandmarker(WASM_PATH, poseState.poseModelPath);
   objectState.landmarker = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`, objectsDiv);
-  setupWebSocket(allowedPars['Wsaddress'] + ":" + allowedPars['Wsport'], socketState);
+  setupWebSocket(socketState.adddress + ":" + socketState.port, socketState);
   enableCam(webcamState, video);
 })();
 
@@ -108,6 +108,11 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   objectsDiv.width = video.videoWidth;
   objectsDiv.height = video.videoHeight;
 
+  facesDiv.style.width = video.videoWidth;
+  facesDiv.style.height = video.videoHeight;
+  facesDiv.width = video.videoWidth;
+  facesDiv.height = video.videoHeight;
+
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
     webcamState.lastVideoTime = video.currentTime;
@@ -127,7 +132,6 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
       }
     }
   }
-
   if (overlayState.show) {
     for (let landmarker of landmarkerModelState) {
       if (landmarker.detect && landmarker.results) {
@@ -137,6 +141,9 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     // unique draw function for object detection
     if (objectState.detect && objectState.results) {
       objectState.draw();
+    }
+    if (faceDetectorState.detect && faceDetectorState.results) {
+      faceDetectorState.draw();
     }
   }
 

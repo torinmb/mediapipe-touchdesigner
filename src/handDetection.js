@@ -1,5 +1,16 @@
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
-import { handState } from "./state";
+
+export let handState = {
+    detect: false,
+    landmarker: undefined,
+    results: undefined,
+    resultsName: "handResults",
+    numHands: 2,
+    minDetectionConfidence: 0.5,
+    minPresenceConfidence: 0.5,
+    minTrackingConfidence: 0.5,
+    draw: (state, canvas) => drawHandLandmarks(state, canvas),
+  };
 
 export const createHandLandmarker = async (WASM_PATH, modelAssetPath) => {
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);

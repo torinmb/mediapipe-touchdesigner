@@ -1,10 +1,16 @@
-import { faceLandmarkState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState, faceDetectorState } from './state.js';
+import { faceLandmarkState } from "./faceLandmarks";
+import { handState } from "./handDetection";
+import { gestureState } from "./handGestures";
+import { poseState } from "./poseTracking";
+import { objectState } from "./objectDetection";
+import { faceDetectorState } from "./faceDetector";
+import { webcamState, socketState, overlayState } from './state.js';
 
 export const configMap = {
     'Wsaddress': value => socketState.adddress = value,
     'Wsport': value => socketState.port = value,
 
-    'DetectfaceLandmarks': value => detectSwitch(faceLandmarkState, parseInt(value) === 1),
+    'Detectfacelandmarks': value => detectSwitch(faceLandmarkState, parseInt(value) === 1),
     'Detectfaces': value => detectSwitch(faceDetectorState, parseInt(value) === 1),
     'Detectgestures': value => detectSwitch(gestureState, parseInt(value) === 1),
     'Detecthands': value => detectSwitch(handState, parseInt(value) === 1),
@@ -17,6 +23,10 @@ export const configMap = {
     'Hpresconf': value => handState.minPresenceConfidence = value,
     'Htrackconf': value => handState.minTrackingConfidence = value,
 
+    'Gnumhands': value => gestureState.numHands = value,
+    'Gdetectconf': value => gestureState.minDetectionConfidence = value,
+    'Gpresconf': value => gestureState.minPresenceConfidence = value,
+    'Gtrackconf': value => gestureState.minTrackingConfidence = value,
     'Gnumgestures': value => gestureState.maxNumGestures = value,
     'Gscore': value => gestureState.scoreThreshold = value,
 
@@ -33,6 +43,7 @@ export const configMap = {
     'Fdetectconf': value => faceLandmarkState.minDetectionConfidence = value,
     'Ftrackconf': value => faceLandmarkState.minTrackingConfidence = value,
 
+    'Fdtype': value => modelCheck(faceDetectorState.modelPath, faceDetectorState.modelTypes, value),
     'Fdminconf': value => faceDetectorState.minDetectionConfidence = value,
     'Fdminsuppression': value => faceDetectorState.minSuppressionThreshold = value,
 
@@ -57,17 +68,33 @@ function detectSwitch(state, value) {
     else {
         state.detect = false;
         state.results = null;
-        for (let child of objectState.children) {
-            objectState.objectsDiv.removeChild(child);
+        if (objectState.children != null) {
+            for (let child of objectState.children) {
+                objectState.objectsDiv.removeChild(child);
+            }
+            objectState.children.splice(0);
         }
-        objectState.children.splice(0);
+        if (faceDetectorState.children != null) {
+            for (let child of faceDetectorState.children) {
+                faceDetectorState.facesDiv.removeChild(child);
+            }
+            faceDetectorState.children.splice(0);
+        }
     }
 }
 
 function overlaySwitch(value) {
     overlayState.show = value;
-    for (let child of objectState.children) {
-        objectState.objectsDiv.removeChild(child);
+    if (objectState.children != null) {
+        for (let child of objectState.children) {
+            objectState.objectsDiv.removeChild(child);
+        }
+        objectState.children.splice(0);
     }
-    objectState.children.splice(0);
+    if (faceDetectorState.children != null) {
+        for (let child of faceDetectorState.children) {
+            faceDetectorState.facesDiv.removeChild(child);
+        }
+        faceDetectorState.children.splice(0);
+    }
 }
