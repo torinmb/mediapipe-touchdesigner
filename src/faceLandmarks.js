@@ -20,7 +20,7 @@ export let faceLandmarkState = {
     draw: (state, canvas) => drawFaceLandmarks(state, canvas),
 };
 
-export const createFaceLandmarker = async (wasm_path, modelAssetPath) => {
+export const createFaceLandmarker = async (wasm_path) => {
     console.log("Starting facial landmark detection");
     console.log(faceLandmarkState);
     const vision = await FilesetResolver.forVisionTasks(wasm_path);
