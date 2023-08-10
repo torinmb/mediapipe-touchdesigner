@@ -31,18 +31,18 @@ jobs:
       run: |
         zip -r release.zip "MediaPipe TouchDesigner.toe" "td_scripts" "toxes" "dist"
 
-      - name: Get tag details
-        id: tag-details
-        run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          TAG_MESSAGE=$(git tag -l --format='%(contents)' $TAG_NAME)
-          echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_OUTPUT"
-          echo "TAG_MESSAGE=$TAG_MESSAGE" >> "$GITHUB_OUTPUT"
+    - name: Get tag details
+      id: tag-details
+      run: |
+        TAG_NAME=${GITHUB_REF#refs/tags/}
+        TAG_MESSAGE=$(git tag -l --format='%(contents)' $TAG_NAME)
+        echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_OUTPUT"
+        echo "TAG_MESSAGE=$TAG_MESSAGE" >> "$GITHUB_OUTPUT"
 
-      - name: Display Tag Details
-        run: |
-          echo "Tag Name: ${{ steps.tag-details.outputs.TAG_NAME }}"
-          echo "Tag Message: ${{ steps.tag-details.outputs.TAG_MESSAGE }}"        
+    - name: Display Tag Details
+      run: |
+        echo "Tag Name: ${{ steps.tag-details.outputs.TAG_NAME }}"
+        echo "Tag Message: ${{ steps.tag-details.outputs.TAG_MESSAGE }}"        
 
 
     - name: Create Release and Upload Asset
