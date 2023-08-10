@@ -1,6 +1,26 @@
 import { FilesetResolver, PoseLandmarker, DrawingUtils } from "@mediapipe/tasks-vision";
 import { poseState } from "./state";
 
+let poseModelTypes = {
+    'lite': './mediapipe/pose_landmarker_lite.task',
+    'full': './mediapipe/pose_landmarker_full.task',
+    'heavy': './mediapipe/pose_landmarker_heavy.task',
+}
+
+export let poseState = {
+    modelTypes: poseModelTypes,
+    detect: true,
+    modelPath: poseModelTypes['full'],
+    landmarker: undefined,
+    results: undefined,
+    resultsName: "poseResults",
+    numPoses: 2,
+    minDetectionConfidence: 0.5,
+    minPresenceConfidence: 0.5,
+    minTrackingConfidence: 0.5,
+    draw: (state, canvas) => drawPoseLandmarks(state, canvas),
+};
+
 export const createPoseLandmarker = async (WASM_PATH, modelAssetPath) => {
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
     let poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
