@@ -1,5 +1,4 @@
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
-import { handState } from "./state";
 
 export let handState = {
     detect: false,

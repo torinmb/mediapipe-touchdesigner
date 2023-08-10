@@ -1,5 +1,4 @@
 import { FilesetResolver, GestureRecognizer } from "@mediapipe/tasks-vision";
-import { gestureState, handState } from "./state";
 
 export let handState = {
     detect: false,

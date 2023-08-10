@@ -1,5 +1,4 @@
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
-import { objectState } from "./state";
 
 let objectModelTypes = {
 	'fast': './mediapipe/pose_landmarker_lite.task',

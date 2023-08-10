@@ -1,5 +1,4 @@
-import { FilesetResolver, FaceDetector, Detection } from "@mediapipe/tasks-vision";
-import { faceDetectorState } from "./state";
+import { FilesetResolver, FaceDetector } from "@mediapipe/tasks-vision";
 
 let faceDetectorModelTypes = {
 	'shortrange': './mediapipe/blaze_face_short_range.tflite',

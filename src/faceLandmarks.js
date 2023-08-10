@@ -1,5 +1,4 @@
 import { FilesetResolver, FaceLandmarker } from "@mediapipe/tasks-vision";
-import { faceLandmarkState } from "./state";
 
 export let faceLandmarkState = {
     detect: true,

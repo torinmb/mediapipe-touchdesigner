@@ -18,7 +18,6 @@ import { handState, createHandLandmarker } from "./handTracking.js";
 import { gestureState, createGestureLandmarker } from "./handGestures.js";
 import { poseState, createPoseLandmarker } from "./poseTracking.js";
 import { objectState, createObjectDetector } from "./objectDetection.js";
-import { allowedPars } from "./defaultPars.js";
 import { webcamState, socketState, overlayState } from "./state.js";
 import { configMap } from "./modelParams.js";
 

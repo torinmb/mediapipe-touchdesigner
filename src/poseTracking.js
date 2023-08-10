@@ -1,5 +1,4 @@
 import { FilesetResolver, PoseLandmarker, DrawingUtils } from "@mediapipe/tasks-vision";
-import { poseState } from "./state";
 
 let poseModelTypes = {
     'lite': './mediapipe/pose_landmarker_lite.task',
