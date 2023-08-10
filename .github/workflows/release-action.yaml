@@ -2,8 +2,8 @@ name: Project Release
 run-name: ${{ github.actor }} is deploying a new release 🚀
 on:
   push:
-    tags:
-      - '*.*.*'
+    paths:
+      - 'package.json'
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -11,47 +11,58 @@ jobs:
     
     - name: Checkout code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 2  # Fetch the latest commit and the one before      
+
+    - name: Check if version changed and fetch commit message
+      id: version_check
+      run: |
+        CURRENT_VERSION=$(node -p "require('./package.json').version")
+        PREVIOUS_VERSION=$(git show HEAD^:./package.json | node -p "require('/dev/stdin').version")
+        COMMIT_MESSAGE=$(git log --format=%B -n 1 HEAD)
+
+        echo "PKG_VERSION=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+        echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> "$GITHUB_OUTPUT"
+
+        if [ "$CURRENT_VERSION" == "$PREVIOUS_VERSION" ]; then
+          echo "Version remained the same. Exiting..."
+          exit 0
+        else
+          echo "VERSION_CHANGED=true" >> "$GITHUB_OUTPUT"
+        fi
       
     - name: Setup Node.js with Yarn caching
+      if: steps.version_check.outputs.VERSION_CHANGED == 'true'
       uses: actions/setup-node@v3
       with:
         node-version: '16.13.x'
         cache: 'yarn'
-    
+        
     - name: Install Yarn
+      if: steps.version_check.outputs.VERSION_CHANGED == 'true'
       run: npm install -g yarn
 
     - name: Install dependencies
+      if: steps.version_check.outputs.VERSION_CHANGED == 'true'
       run: yarn install
 
     - name: Build
+      if: steps.version_check.outputs.VERSION_CHANGED == 'true'
       run: yarn build
 
     - name: Create Zip of specified folders
+      if: steps.version_check.outputs.VERSION_CHANGED == 'true'
       run: |
         zip -r release.zip "MediaPipe TouchDesigner.toe" "td_scripts" "toxes" "dist"
 
-    - name: Get tag details
-      id: tag-details
-      run: |
-        TAG_NAME=${GITHUB_REF#refs/tags/}
-        TAG_MESSAGE=$(git tag -l --format='%(contents)' $TAG_NAME)
-        echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_OUTPUT"
-        echo "TAG_MESSAGE=$TAG_MESSAGE" >> "$GITHUB_OUTPUT"
-
-    - name: Display Tag Details
-      run: |
-        echo "Tag Name: ${{ steps.tag-details.outputs.TAG_NAME }}"
-        echo "Tag Message: ${{ steps.tag-details.outputs.TAG_MESSAGE }}"        
-
-
     - name: Create Release and Upload Asset
+      if: steps.version_check.outputs.VERSION_CHANGED == 'true'
       run: |
         # Create Release
         RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --data '{
-          "tag_name": "v${{ steps.tag-details.outputs.TAG_NAME }}",
-          "name": "Release v${{ steps.tag-details.outputs.TAG_NAME }}",
-          "body": "${{ steps.tag-details.outputs.TAG_MESSAGE }}",
+          "tag_name": "v${{ steps.version_check.outputs.PKG_VERSION }}",
+          "name": "Release v${{ steps.version_check.outputs.PKG_VERSION }}",
+          "body": "${{ steps.version_check.outputs.COMMIT_MESSAGE }}",
           "draft": false,
           "prerelease": true
         }' "https://api.github.com/repos/$GITHUB_REPOSITORY/releases")
