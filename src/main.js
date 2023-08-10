@@ -43,7 +43,7 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
   console.log(poseState.modelPath)
   poseState.landmarker = await createPoseLandmarker(WASM_PATH, poseState.poseModelPath);
   objectState.landmarker = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`, objectsDiv);
-  setupWebSocket(allowedPars['Wsaddress'] + ":" + allowedPars['Wsport'], socketState);
+  setupWebSocket(socketState.adddress + ":" + socketState.port, socketState);
   enableCam(webcamState, video);
 })();
 
