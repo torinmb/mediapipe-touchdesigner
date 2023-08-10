@@ -14,7 +14,7 @@
 
 import { faceLandmarkState, createFaceLandmarker } from "./faceLandmarks.js";
 import { faceDetectorState, createFaceDetector } from "./faceDetector.js";
-import { handState, createHandLandmarker } from "./handTracking.js";
+import { handState, createHandLandmarker } from "./handDetection.js";
 import { gestureState, createGestureLandmarker } from "./handGestures.js";
 import { poseState, createPoseLandmarker } from "./poseTracking.js";
 import { objectState, createObjectDetector } from "./objectDetection.js";

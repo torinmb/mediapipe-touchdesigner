@@ -1,5 +1,5 @@
 import { faceLandmarkState } from "./faceLandmarks";
-import { handState } from "./handTracking";
+import { handState } from "./handDetection";
 import { gestureState } from "./handGestures";
 import { poseState } from "./poseTracking";
 import { objectState } from "./objectDetection";
