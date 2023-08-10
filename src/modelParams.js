@@ -63,17 +63,21 @@ function detectSwitch(state, value) {
     else {
         state.detect = false;
         state.results = null;
+        if (state.children != null) {
+            for (let child of state.children) {
+                state.objectsDiv.removeChild(child);
+            }
+            state.children.splice(0);
+        }
+    }
+}
+
+function overlaySwitch(state, value) {
+    overlayState.show = value;
+    if (state.children != null) {
         for (let child of state.children) {
             state.objectsDiv.removeChild(child);
         }
         state.children.splice(0);
     }
-}
-
-function overlaySwitch(objectState, value) {
-    overlayState.show = value;
-    for (let child of state.children) {
-        state.objectsDiv.removeChild(child);
-    }
-    state.children.splice(0);
 }
