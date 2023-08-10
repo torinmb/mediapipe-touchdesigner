@@ -8,7 +8,7 @@ let objectModelTypes = {
 
 export let objectState = {
 	modelTypes: objectModelTypes,
-	detect: false,
+	detect: true,
 	modelPath: objectModelTypes['full'],
 	detector: undefined,
 	results: undefined,

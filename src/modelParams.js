@@ -5,6 +5,8 @@ import { poseState } from "./poseTracking";
 import { objectState } from "./objectDetection";
 import { faceDetectorState } from "./faceDetector";
 import { imageState } from "./imageClassification";
+import { segmenterState } from "./imageSegmentation";
+
 import { webcamState, socketState, overlayState } from './state.js';
 
 export const configMap = {
@@ -18,6 +20,7 @@ export const configMap = {
     'Detectposes': value => detectSwitch(poseState, parseInt(value) === 1),
     'Detectobjects': value => detectSwitch(objectState, parseInt(value) === 1),
     'Detectimages': value => detectSwitch(imageState, parseInt(value) === 1),
+    'Detectsegments': value => detectSwitch(segmenterState, parseInt(value) === 1),
     'Showoverlays': value => overlaySwitch(parseInt(value) === 1),
 
     'Hnumhands': value => handState.numHands = value,
@@ -33,7 +36,7 @@ export const configMap = {
     'Gscore': value => gestureState.scoreThreshold = value,
 
     'Jointthreshold': '',
-    'Posemodeltype': value => modelCheck(poseState.modelPath, poseState.modelTypes, value),
+    'Posemodeltype': value => poseState.modelPath = modelCheck(poseState.modelPath, poseState.modelTypes, value),
     'Pdetectconf': value => poseState.minDetectionConfidence = value,
     'Ppresconf': value => poseState.minPresenceConfidence = value,
     'Ptrackconf': value => poseState.minTrackingConfidence = value,
@@ -45,22 +48,26 @@ export const configMap = {
     'Fdetectconf': value => faceLandmarkState.minDetectionConfidence = value,
     'Ftrackconf': value => faceLandmarkState.minTrackingConfidence = value,
 
-    'Fdtype': value => modelCheck(faceDetectorState.modelPath, faceDetectorState.modelTypes, value),
+    'Fdtype': value => faceDetectorState.modelPath = modelCheck(faceDetectorState.modelPath, faceDetectorState.modelTypes, value),
     'Fdminconf': value => faceDetectorState.minDetectionConfidence = value,
     'Fdminsuppression': value => faceDetectorState.minSuppressionThreshold = value,
 
     'Onumobjects': value => objectState.maxResults = value,
-    'OmodelType': value => modelCheck(objectState.modelPath, objectState.modelTypes, value),
+    'OmodelType': value => objectState.modelPath = modelCheck(objectState.modelPath, objectState.modelTypes, value),
     'Oscore': value => objectState.scoreThreshold = value,
 
     'Inumoresults': value => imageState.maxResults = value,
-    'ImodelType': value => modelCheck(imageState.modelPath, imageState.modelTypes, value),
+    'Imodeltype': value => imageState.modelPath = modelCheck(imageState.modelPath, imageState.modelTypes, value),
     'Iscore': value => imageState.scoreThreshold = value,
+
+    'Smodeltype': value => segmenterState.modelPath = modelCheck(segmenterState.modelPath, segmenterState.modelTypes, value),
 };
 
 function modelCheck(modelPath, modelTypes, value) {
+    console.log("Looking for  : "+ value);
     if (modelTypes.hasOwnProperty(value)) {
-        return value[value];
+        console.log("Setting : "+modelTypes[value]);
+        return modelTypes[value];
     } else {
         console.error(`Invalid modelType: ${modelType}`);
         return modelPath;
