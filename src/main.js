@@ -12,80 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createFaceLandmarker } from "./faceTracking.js";
+import { createFaceLandmarker } from "./faceLandmarks.js";
+import { createFaceDetector } from "./faceDetector.js";
 import { createHandLandmarker } from "./handTracking.js";
 import { createGestureLandmarker } from "./handGestures.js";
-import { createPoseLandmarker, poseModelTypes } from "./poseTracking.js";
+import { createPoseLandmarker } from "./poseTracking.js";
 import { createObjectDetector } from "./objectDetection.js";
 import { allowedPars } from "./defaultPars.js";
-import { faceState, handState, gestureState, poseState, objectState, webcamState, socketState } from "./state.js";
+import { faceLandmarkState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState, faceDetectorState } from "./state.js";
+import { configMap } from "./modelParams.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
 const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
 const objectsDiv = document.getElementById("objects");
 
-let showOverlays = true;
 // Keep a reference of all the child elements we create
 // so we can remove them easilly on each render.
 
-let allModelState = [faceState, handState, gestureState, poseState, objectState];
-let landmarkerModelState = [faceState, handState, gestureState, poseState];
+let allModelState = [faceLandmarkState, faceDetectorState, handState, gestureState, poseState, objectState];
+let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseState];
 
 
 (async function setup() {
-  handleQueryParams(socketState, webcamState);
+  handleQueryParams();
   webcamState.webcamDevices = await getWebcamDevices();
   handState.landmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
   gestureState.landmarker = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
-  faceState.landmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
+  faceLandmarkState.landmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
+  faceDetectorState.landmarker = await createFaceDetector(WASM_PATH, faceDetectorState.modelPath);
   console.log(poseState.modelPath)
   poseState.landmarker = await createPoseLandmarker(WASM_PATH, poseState.poseModelPath);
-  objectState.landmarker = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`);
+  objectState.landmarker = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`, objectsDiv);
   setupWebSocket(allowedPars['Wsaddress'] + ":" + allowedPars['Wsport'], socketState);
   enableCam(webcamState, video);
 })();
 
-function handleQueryParams(socketState, webcamState) {
+function handleQueryParams() {
   const urlParams = new URLSearchParams(window.location.search);
   urlParams.forEach((value, key) => {
-    //  console.log("Got this: "+ key + " : " + value);
-    if(key in allowedPars) {
-      allowedPars[key] = value;
+    if (key in configMap) {
+      configMap[key](value);
     }
   });
-  if (urlParams.has('webcamId')) {
-    let camID = urlParams.get('webcamId');
-    if (checkDeviceIds(camID, webcamState.webcamDevices)) {
-      webcamState.webcamId = camID;
-    }
-  }
-  if (urlParams.has('Posemodeltype')) {
-    let modelType = urlParams.get('Posemodeltype');
-    if (poseModelTypes.hasOwnProperty(modelType)) {
-      poseState.modelPath = poseModelTypes[modelType];
-    } else {
-      console.error(`Invalid poseModelType: ${modelType}`);
-    }
-  }
-  if (urlParams.has('Showoverlays')) {
-    showOverlays = parseInt(urlParams.get('Showoverlays')) === 1;
-  }
-  if (urlParams.has('Detecthands')) {
-    handState.detect = parseInt(urlParams.get('Detecthands')) === 1;
-  }
-  if (urlParams.has('Detectgestures')) {
-    gestureState.detect = parseInt(urlParams.get('Detectgestures')) === 1;
-  }
-  if (urlParams.has('Detectfaces')) {
-    faceState.detect = parseInt(urlParams.get('Detectfaces')) === 1;
-  }
-  if (urlParams.has('Detectposes')) {
-    poseState.detect = parseInt(urlParams.get('Detectposes')) === 1;
-  }
-  if (urlParams.has('Detectobjects')) {
-    objectState.detect = parseInt(urlParams.get('Detectobjects')) === 1;
-  }
 }
 
 function enableCam(webcamState, video) {
@@ -146,27 +115,28 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
       if (landmarker.detect && landmarker.landmarker) {
         // Gesture Model has a different function for detection
         let marker = landmarker.landmarker;
-        if(landmarker.resultsName === 'gestureResults') {
+        if (landmarker.resultsName === 'gestureResults') {
           landmarker.results = await marker.recognizeForVideo(video, startTimeMs);
         } else {
           landmarker.results = await marker.detectForVideo(video, startTimeMs);
         }
-        safeSocketSend(socketState.ws, JSON.stringify({ [landmarker['resultsName']] : landmarker.results,
-          'resolution': {'width': video.videoWidth, 'height': video.videoHeight}
+        safeSocketSend(socketState.ws, JSON.stringify({
+          [landmarker['resultsName']]: landmarker.results,
+          'resolution': { 'width': video.videoWidth, 'height': video.videoHeight }
         }));
       }
     }
   }
 
-  if (showOverlays) {
+  if (overlayState.show) {
     for (let landmarker of landmarkerModelState) {
       if (landmarker.detect && landmarker.results) {
         landmarker.draw(landmarker.results, webcamState.drawingUtils);
       }
     }
     // unique draw function for object detection
-    if(objectState.detect && objectState.results) {
-      objectState.draw(objectState.results, objectState.children, objectsDiv);
+    if (objectState.detect && objectState.results) {
+      objectState.draw();
     }
   }
 
@@ -198,7 +168,7 @@ function setupWebSocket(socketURL, socketState) {
     if (event.data === 'ping' || event.data === 'pong') return;
 
     const data = JSON.parse(event.data);
-    // console.log("Data received: ", data);
+    console.log("Data received: ", data);
     if (data.type == "selectWebcam") {
       console.log("Got webcamId via WS: " + data.deviceId);
       if (checkDeviceIds(data.deviceId, webcamState.webcamDevices)) {
@@ -206,42 +176,11 @@ function setupWebSocket(socketURL, socketState) {
       }
       enableCam(webcamState, video);
     }
-    if (data.Showoverlays) {
-      console.log("showOverlays: " + data.Showoverlays);
-      showOverlays = parseInt(data.Showoverlays) === 1;
-      for (let child of objectState.children) {
-        objectsDiv.removeChild(child);
+    else for (let [key, value] of Object.entries(data)) {
+      if (key in configMap) {
+        console.log("Got WS dats: " + key + " : " + value);
+        configMap[key](value);
       }
-      objectState.children.splice(0);
-    }
-    if (data.Detectfaces) {
-      console.log("detectFaces: " + data.Detectfaces);
-      faceState.results = null;
-      faceState.detect = parseInt(data.Detectfaces) === 1;
-    }
-    if (data.Detecthands) {
-      console.log("detectHands: " + data.Detecthands);
-      handState.results = null;
-      handState.detect = parseInt(data.Detecthands) === 1;
-    }
-    if (data.Detectgestures) {
-      console.log("detectGestures: " + data.Detectgestures);
-      gestureState.results = null;
-      gestureState.detect = parseInt(data.Detectgestures) === 1;
-    }
-    if (data.Detectposes) {
-      console.log("detectPoses: " + data.Detectposes);
-      poseState.results = null;
-      poseState.detect = parseInt(data.Detectposes) === 1;
-    }
-    if (data.Detectobjects) {
-      console.log("detectObjects: " + data.Detectobjects);
-      objectState.results = null;
-      objectState.detect = parseInt(data.Detectobjects) === 1;
-      for (let child of objectState.children) {
-        objectsDiv.removeChild(child);
-      }
-      objectState.children.splice(0);
     }
   });
 

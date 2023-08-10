@@ -1,6 +1,8 @@
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
+import { objectState } from "./state";
 
-export const createObjectDetector = async (WASM_PATH, modelAssetPath) => {
+export const createObjectDetector = async (WASM_PATH, modelAssetPath, objectsDiv) => {
+	objectState.objectsDiv = objectsDiv;
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
     let objectDetector = await ObjectDetector.createFromOptions(vision, {
         baseOptions: {
@@ -8,19 +10,21 @@ export const createObjectDetector = async (WASM_PATH, modelAssetPath) => {
             delegate: "GPU",
         },
         runningMode: "VIDEO",
-        scoreThreshold: 0.5,
+		maxResults: objectState.maxResults,
+        scoreThreshold: objectState.scoreThreshold,
     });
     return objectDetector;
 };
 
-export function drawObjects(result, children, objectsDiv) {
+export function drawObjects() {
+
 	// Remove any highlighting from previous frame.
-	for (let child of children) {
-        objectsDiv.removeChild(child);
+	for (let child of objectState.children) {
+        objectState.objectsDiv.removeChild(child);
 	}
-	children.splice(0);
+	objectState.children.splice(0);
 	// Iterate through predictions and draw them to the live view
-	for (let detection of result.detections) {
+	for (let detection of objectState.results.detections) {
 	  const p = document.createElement("p");
 	  p.innerText =
 		detection.categories[0].categoryName +
@@ -51,11 +55,11 @@ export function drawObjects(result, children, objectsDiv) {
 		detection.boundingBox.height +
 		"px;";
   
-        objectsDiv.appendChild(highlighter);
-        objectsDiv.appendChild(p);
+        objectState.objectsDiv.appendChild(highlighter);
+        objectState.objectsDiv.appendChild(p);
   
 	  // Store drawn objects in memory so they are queued to delete at next call.
-	  children.push(highlighter);
-	  children.push(p);
+	  objectState.children.push(highlighter);
+	  objectState.children.push(p);
 	}
   }

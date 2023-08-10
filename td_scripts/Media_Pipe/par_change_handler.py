@@ -40,7 +40,7 @@ modelLookup = {
   }
 }
 
-noReloadPars = ['Detectfaces', 'Detectgestures', 'Detecthands', 'Detectposes', 'Detectobjects', 'Showoverlays']
+noReloadPars = ['Webcam', 'Detectfaces', 'Detectgestures', 'Detecthands', 'Detectposes', 'Detectobjects', 'Showoverlays']
 
 def onTableChange(dat):
 	return
@@ -56,14 +56,18 @@ def onCellChange(dat, cells, prev):
 	cell = cells[0]
 	data = {}
 	url="http://localhost:" + dat['Mediapipeport',1] + "?"
-	reloadRequired = True
+	if(dat[cell.row,0] in noReloadPars):
+		print("not reloading")
+		reloadRequired = False
+	else:
+		reloadRequired = True
 
-	if (dat[cell.row,1] == "Webcam"):
+	if (dat[cell.row,0] == "Webcam"):
 		data = {
 			'type': 'selectWebcam',
 			'deviceId': str(cell)
 		}
-	elif dat[cell.row,1] == "Model":
+	elif dat[cell.row,0] == "Model":
 		data = createModelData(str(cell))
 		#data = modelLookup[str(cell)]
 		#data['type'] = 'selectModel'
@@ -73,9 +77,6 @@ def onCellChange(dat, cells, prev):
 		# 	'modelType': str(cell)
 		# }
 	else:
-		if(dat[cell.row,0] in noReloadPars):
-			print("not reloading")
-			reloadRequired = False
 		data = {
 			str(dat[cell.row,0]) : str(cell)
 		}

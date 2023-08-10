@@ -1,4 +1,5 @@
 import { FilesetResolver, GestureRecognizer } from "@mediapipe/tasks-vision";
+import { gestureState, handState } from "./state";
 
 export const createGestureLandmarker = async (WASM_PATH, modelAssetPath) => {
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
@@ -8,13 +9,13 @@ export const createGestureLandmarker = async (WASM_PATH, modelAssetPath) => {
             delegate: "GPU",
         },
         runningMode: "VIDEO",
-        numHands: 2,
-        minHandDetectionConfidence: 0.5,
-        minHandPresenceConfidence: 0.5,
-        minTrackingConfidence: 0.5,
+        numHands: handState.numHands,
+        minHandDetectionConfidence: handState.minDetectionConfidence,
+        minHandPresenceConfidence: handState.minPresenceConfidence,
+        minTrackingConfidence: handState.minTrackingConfidence,
         cannedGesturesClassifierOptions: {
-            maxResults: -1,
-            scoreThreshold: 0.5,
+            maxResults: gestureState.maxResults,
+            scoreThreshold: gestureState.scoreThreshold,
         },
     });
     return handGestures;
