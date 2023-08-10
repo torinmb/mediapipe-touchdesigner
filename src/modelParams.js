@@ -1,4 +1,10 @@
-import { faceLandmarkState, handState, gestureState, poseState, objectState, webcamState, socketState, overlayState, faceDetectorState } from './state.js';
+import { faceLandmarkState } from "./faceLandmarks";
+import { handState } from "./handTracking";
+import { gestureState } from "./handGestures";
+import { poseState } from "./poseTracking";
+import { objectState } from "./objectDetection";
+import { faceDetectorState } from "./faceDetector";
+import { webcamState, socketState, overlayState } from './state.js';
 
 export const configMap = {
     'Wsaddress': value => socketState.adddress = value,
