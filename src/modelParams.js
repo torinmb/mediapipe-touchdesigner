@@ -43,6 +43,7 @@ export const configMap = {
     'Fdetectconf': value => faceLandmarkState.minDetectionConfidence = value,
     'Ftrackconf': value => faceLandmarkState.minTrackingConfidence = value,
 
+    'Fdtype': value => modelCheck(faceDetectorState.modelPath, faceDetectorState.modelTypes, value),
     'Fdminconf': value => faceDetectorState.minDetectionConfidence = value,
     'Fdminsuppression': value => faceDetectorState.minSuppressionThreshold = value,
 
