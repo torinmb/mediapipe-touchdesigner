@@ -23,6 +23,10 @@ export const configMap = {
     'Hpresconf': value => handState.minPresenceConfidence = value,
     'Htrackconf': value => handState.minTrackingConfidence = value,
 
+    'Gnumhands': value => gestureState.numHands = value,
+    'Gdetectconf': value => gestureState.minDetectionConfidence = value,
+    'Gpresconf': value => gestureState.minPresenceConfidence = value,
+    'Gtrackconf': value => gestureState.minTrackingConfidence = value,
     'Gnumgestures': value => gestureState.maxNumGestures = value,
     'Gscore': value => gestureState.scoreThreshold = value,
 

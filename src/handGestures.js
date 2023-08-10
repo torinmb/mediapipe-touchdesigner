@@ -1,22 +1,14 @@
 import { FilesetResolver, GestureRecognizer } from "@mediapipe/tasks-vision";
 
-export let handState = {
-    detect: false,
-    landmarker: undefined,
-    results: undefined,
-    resultsName: "handResults",
-    numHands: 2,
-    minDetectionConfidence: 0.5,
-    minPresenceConfidence: 0.5,
-    minTrackingConfidence: 0.5,
-    draw: (state, canvas) => drawHandLandmarks(state, canvas),
-};
-
 export let gestureState = {
     detect: true,
     landmarker: undefined,
     results: undefined,
     resultsName: "gestureResults",
+    numHands: 2,
+    minDetectionConfidence: 0.5,
+    minPresenceConfidence: 0.5,
+    minTrackingConfidence: 0.5,
     maxResults: -1,
     scoreThreshold: 0.5,
     draw: (state, canvas) => drawHandGestures(state, canvas),
@@ -30,10 +22,10 @@ export const createGestureLandmarker = async (WASM_PATH, modelAssetPath) => {
             delegate: "GPU",
         },
         runningMode: "VIDEO",
-        numHands: handState.numHands,
-        minHandDetectionConfidence: handState.minDetectionConfidence,
-        minHandPresenceConfidence: handState.minPresenceConfidence,
-        minTrackingConfidence: handState.minTrackingConfidence,
+        numHands: gestureState.numHands,
+        minHandDetectionConfidence: gestureState.minDetectionConfidence,
+        minHandPresenceConfidence: gestureState.minPresenceConfidence,
+        minTrackingConfidence: gestureState.minTrackingConfidence,
         cannedGesturesClassifierOptions: {
             maxResults: gestureState.maxResults,
             scoreThreshold: gestureState.scoreThreshold,
