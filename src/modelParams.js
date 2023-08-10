@@ -68,11 +68,17 @@ function detectSwitch(state, value) {
     else {
         state.detect = false;
         state.results = null;
-        if (state.children != null) {
-            for (let child of state.children) {
-                state.objectsDiv.removeChild(child);
+        if (objectState.children != null) {
+            for (let child of objectState.children) {
+                objectState.objectsDiv.removeChild(child);
             }
-            state.children.splice(0);
+            objectState.children.splice(0);
+        }
+        if (faceDetectorState.children != null) {
+            for (let child of faceDetectorState.children) {
+                faceDetectorState.facesDiv.removeChild(child);
+            }
+            faceDetectorState.children.splice(0);
         }
     }
 }
@@ -87,7 +93,7 @@ function overlaySwitch(value) {
     }
     if (faceDetectorState.children != null) {
         for (let child of faceDetectorState.children) {
-            faceDetectorState.objectsDiv.removeChild(child);
+            faceDetectorState.facesDiv.removeChild(child);
         }
         faceDetectorState.children.splice(0);
     }
