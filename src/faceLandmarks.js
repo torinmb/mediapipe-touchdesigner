@@ -1,6 +1,12 @@
 import { FilesetResolver, FaceLandmarker } from "@mediapipe/tasks-vision";
 
+let faceLandmarkModelTypes = {
+	'full': './mediapipe/models/face_landmark_detection/face_landmarker.task',
+}
+
 export let faceLandmarkState = {
+    modelTypes: faceLandmarkModelTypes,
+	modelPath: faceLandmarkModelTypes['full'],
     detect: true,
     detector: undefined,
     results: undefined,
@@ -20,7 +26,7 @@ export const createFaceLandmarker = async (wasm_path, modelAssetPath) => {
     const vision = await FilesetResolver.forVisionTasks(wasm_path);
     let faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
         baseOptions: {
-            modelAssetPath: modelAssetPath,
+            modelAssetPath: faceLandmarkState.modelPath,
             delegate: "GPU",
         },
         runningMode: "VIDEO",
