@@ -10,7 +10,7 @@ export const configMap = {
     'Wsaddress': value => socketState.adddress = value,
     'Wsport': value => socketState.port = value,
 
-    'DetectfaceLandmarks': value => detectSwitch(faceLandmarkState, parseInt(value) === 1),
+    'Detectfacelandmarks': value => detectSwitch(faceLandmarkState, parseInt(value) === 1),
     'Detectfaces': value => detectSwitch(faceDetectorState, parseInt(value) === 1),
     'Detectgestures': value => detectSwitch(gestureState, parseInt(value) === 1),
     'Detecthands': value => detectSwitch(handState, parseInt(value) === 1),
@@ -77,12 +77,18 @@ function detectSwitch(state, value) {
     }
 }
 
-function overlaySwitch(state, value) {
+function overlaySwitch(value) {
     overlayState.show = value;
-    if (state.children != null) {
-        for (let child of state.children) {
-            state.objectsDiv.removeChild(child);
+    if (objectState.children != null) {
+        for (let child of objectState.children) {
+            objectState.objectsDiv.removeChild(child);
         }
-        state.children.splice(0);
+        objectState.children.splice(0);
+    }
+    if (faceDetectorState.children != null) {
+        for (let child of faceDetectorState.children) {
+            faceDetectorState.objectsDiv.removeChild(child);
+        }
+        faceDetectorState.children.splice(0);
     }
 }

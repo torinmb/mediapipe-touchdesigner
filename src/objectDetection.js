@@ -17,7 +17,7 @@ export let objectState = {
 	resultsName: "objectResults",
 	maxResults: -1,
 	scoreThreshold: 0.5,
-	draw: (result, children, objectsDiv) => drawObjects(result, children, objectsDiv),
+	draw: () => drawObjects(),
 };
 
 export const createObjectDetector = async (WASM_PATH, modelAssetPath, objectsDiv) => {
@@ -36,7 +36,6 @@ export const createObjectDetector = async (WASM_PATH, modelAssetPath, objectsDiv
 };
 
 export function drawObjects() {
-
 	// Remove any highlighting from previous frame.
 	for (let child of objectState.children) {
 		objectState.objectsDiv.removeChild(child);

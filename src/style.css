@@ -12,7 +12,7 @@ video {
   z-index: 1;
   position: absolute;
 }
-.objects p {
+.objects p, .faces p {
   display: block;
   white-space: nowrap;
   position: absolute;
@@ -24,4 +24,15 @@ video {
   font-size: 24px;
   margin: 5px;
   padding: 0px 10px 5px 5px 
+}
+
+.key-point {
+  position: absolute;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  background-color: #ffffff;
+  /* border: 1px solid #ffffff; */
+  border-radius: 50%;
+  display: block;
 }
