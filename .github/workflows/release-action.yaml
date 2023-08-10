@@ -1,5 +1,5 @@
-name: GitHub Actions Demo
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+name: Project Release
+run-name: ${{ github.actor }} is deploying a new release 🚀
 on:
   push:
     paths:
