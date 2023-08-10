@@ -29,7 +29,7 @@ jobs:
       
     - name: Create Zip of specified folders
       run: |
-        zip -r release.zip "/MediaPipe TouchDesigner.toe" "/td_scripts" "/toxes" "/dist"
+        zip -r release.zip "MediaPipe TouchDesigner.toe" "td_scripts" "toxes" "dist"
 
     - name: Extract version and commit message
       id: extract_details
