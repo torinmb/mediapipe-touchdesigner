@@ -38,7 +38,7 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
 (async function setup() {
   handleQueryParams();
   webcamState.webcamDevices = await getWebcamDevices();
-  handState.landmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/models/hand_landmark_detection/hand_landmarker.task`);
+  handState.landmarker = await createHandLandmarker(WASM_PATH);
   gestureState.landmarker = await createGestureLandmarker(WASM_PATH);
   faceLandmarkState.landmarker = await createFaceLandmarker(WASM_PATH);
   faceDetectorState.landmarker = await createFaceDetector(WASM_PATH, facesDiv);
