@@ -2,8 +2,8 @@ name: Project Release
 run-name: ${{ github.actor }} is deploying a new release 🚀
 on:
   push:
-    paths:
-      - 'package.json'
+    tags:
+      - '*.*.*'
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -31,23 +31,27 @@ jobs:
       run: |
         zip -r release.zip "MediaPipe TouchDesigner.toe" "td_scripts" "toxes" "dist"
 
-    - name: Extract version and commit message
-      id: extract_details
-      run: |
-        # Extract version from package.json
-        VERSION=$(jq -r .version package.json)
-        # Extract the latest commit message
-        COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-        echo "::set-output name=package_version::$VERSION"
-        echo "::set-output name=commit_message::$COMMIT_MESSAGE"
+      - name: Get tag details
+        id: tag-details
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          TAG_MESSAGE=$(git tag -l --format='%(contents)' $TAG_NAME)
+          echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "TAG_MESSAGE=$TAG_MESSAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Display Tag Details
+        run: |
+          echo "Tag Name: ${{ steps.tag-details.outputs.TAG_NAME }}"
+          echo "Tag Message: ${{ steps.tag-details.outputs.TAG_MESSAGE }}"        
+
 
     - name: Create Release and Upload Asset
       run: |
         # Create Release
         RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --data '{
-          "tag_name": "v${{ steps.extract_details.outputs.package_version }}",
-          "name": "Release v${{ steps.extract_details.outputs.package_version }}",
-          "body": "${{ steps.extract_details.outputs.commit_message }}",
+          "tag_name": "v${{ steps.tag-details.outputs.TAG_NAME }}",
+          "name": "Release v${{ steps.tag-details.outputs.TAG_NAME }}",
+          "body": "${{ steps.tag-details.outputs.TAG_MESSAGE }}",
           "draft": false,
           "prerelease": true
         }' "https://api.github.com/repos/$GITHUB_REPOSITORY/releases")
