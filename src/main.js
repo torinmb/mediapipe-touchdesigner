@@ -18,6 +18,8 @@ import { handState, createHandLandmarker } from "./handDetection.js";
 import { gestureState, createGestureLandmarker } from "./handGestures.js";
 import { poseState, createPoseLandmarker } from "./poseTracking.js";
 import { objectState, createObjectDetector } from "./objectDetection.js";
+import { imageState, createImageClassifier } from "./imageClassification.js";
+import { segmenterState, createImageSegmenter } from "./imageSegmentation.js";
 import { webcamState, socketState, overlayState } from "./state.js";
 import { configMap } from "./modelParams.js";
 
@@ -26,24 +28,26 @@ const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
 const objectsDiv = document.getElementById("objects");
 const facesDiv = document.getElementById("faces");
+const segmentationCanvas = document.getElementById("segmentation");
 
 // Keep a reference of all the child elements we create
 // so we can remove them easilly on each render.
 
-let allModelState = [faceLandmarkState, faceDetectorState, handState, gestureState, poseState, objectState];
+let allModelState = [faceLandmarkState, faceDetectorState, handState, gestureState, poseState, objectState, imageState, segmenterState];
 let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseState];
 
 
 (async function setup() {
   handleQueryParams();
   webcamState.webcamDevices = await getWebcamDevices();
-  handState.landmarker = await createHandLandmarker(WASM_PATH, `./mediapipe/hand_landmarker.task`);
-  gestureState.landmarker = await createGestureLandmarker(WASM_PATH, `./mediapipe/gesture_recognizer.task`);
-  faceLandmarkState.landmarker = await createFaceLandmarker(WASM_PATH, `./mediapipe/face_landmarker.task`);
-  faceDetectorState.landmarker = await createFaceDetector(WASM_PATH, faceDetectorState.modelPath, facesDiv);
-  console.log(poseState.modelPath)
-  poseState.landmarker = await createPoseLandmarker(WASM_PATH, poseState.poseModelPath);
-  objectState.landmarker = await createObjectDetector(WASM_PATH, `./mediapipe/efficientdet_lite0.tflite`, objectsDiv);
+  handState.landmarker = await createHandLandmarker(WASM_PATH);
+  gestureState.landmarker = await createGestureLandmarker(WASM_PATH);
+  faceLandmarkState.landmarker = await createFaceLandmarker(WASM_PATH);
+  faceDetectorState.landmarker = await createFaceDetector(WASM_PATH, facesDiv);
+  poseState.landmarker = await createPoseLandmarker(WASM_PATH);
+  objectState.landmarker = await createObjectDetector(WASM_PATH, objectsDiv);
+  imageState.landmarker = await createImageClassifier(WASM_PATH);
+  segmenterState.landmarker = await createImageSegmenter(WASM_PATH, video, segmentationCanvas);
   setupWebSocket(socketState.adddress + ":" + socketState.port, socketState);
   enableCam(webcamState, video);
 })();
@@ -79,7 +83,7 @@ function enableCam(webcamState, video) {
     })
   })
     .catch(function (err) {
-      document.body.style.backgroundColor = "red";
+      // document.body.style.backgroundColor = "red";
       console.log(err.name + ": " + err.message);
     });
 }
@@ -120,9 +124,16 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
       if (landmarker.detect && landmarker.landmarker) {
         // Gesture Model has a different function for detection
         let marker = landmarker.landmarker;
-        if (landmarker.resultsName === 'gestureResults') {
+        if (landmarker.resultsName === 'segmenterResults') {
+          landmarker.results = await marker.segmentForVideo(video, startTimeMs);
+        }
+        else if (landmarker.resultsName === 'gestureResults') {
           landmarker.results = await marker.recognizeForVideo(video, startTimeMs);
-        } else {
+        }
+        else if (landmarker.resultsName === 'imageResults') {
+          landmarker.results = await marker.classifyForVideo(video, startTimeMs);
+        }
+        else {
           landmarker.results = await marker.detectForVideo(video, startTimeMs);
         }
         safeSocketSend(socketState.ws, JSON.stringify({
@@ -133,17 +144,23 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     }
   }
   if (overlayState.show) {
-    for (let landmarker of landmarkerModelState) {
-      if (landmarker.detect && landmarker.results) {
-        landmarker.draw(landmarker.results, webcamState.drawingUtils);
+    if (segmenterState.detect && segmenterState.results) {
+      segmenterState.draw();
+      // segmenterState.results.close();
+    }
+    else {
+      for (let landmarker of landmarkerModelState) {
+        if (landmarker.detect && landmarker.results) {
+          landmarker.draw(landmarker.results, webcamState.drawingUtils);
+        }
       }
-    }
-    // unique draw function for object detection
-    if (objectState.detect && objectState.results) {
-      objectState.draw();
-    }
-    if (faceDetectorState.detect && faceDetectorState.results) {
-      faceDetectorState.draw();
+      // unique draw function for object detection
+      if (objectState.detect && objectState.results) {
+        objectState.draw();
+      }
+      if (faceDetectorState.detect && faceDetectorState.results) {
+        faceDetectorState.draw();
+      }
     }
   }
 
@@ -216,7 +233,7 @@ async function getWebcamDevices() {
     return webcams.map(({ deviceId, label }) => ({ deviceId, label }));
   } catch (error) {
     console.error('Error getting webcam devices:', error);
-    document.body.style.backgroundColor = "red";
+    // document.body.style.backgroundColor = "red";
     return [];
   }
 }

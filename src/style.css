@@ -1,5 +1,5 @@
 html, body {
-  background-color: #000;
+  background-color: rgba(0, 255, 0, 0); /* Transparent background */
   margin: 0;
   overflow: hidden; /* Hide scrollbars */
 }
@@ -35,4 +35,9 @@ video {
   /* border: 1px solid #ffffff; */
   border-radius: 50%;
   display: block;
+}
+
+segmentation {
+  width: 1280px;
+  height: 720px;
 }

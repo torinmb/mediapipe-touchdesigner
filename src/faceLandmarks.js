@@ -1,6 +1,12 @@
 import { FilesetResolver, FaceLandmarker } from "@mediapipe/tasks-vision";
 
+let faceLandmarkModelTypes = {
+	'full': './mediapipe/models/face_landmark_detection/face_landmarker.task',
+}
+
 export let faceLandmarkState = {
+    modelTypes: faceLandmarkModelTypes,
+	modelPath: faceLandmarkModelTypes['full'],
     detect: true,
     detector: undefined,
     results: undefined,
@@ -14,12 +20,13 @@ export let faceLandmarkState = {
     draw: (state, canvas) => drawFaceLandmarks(state, canvas),
 };
 
-export const createFaceLandmarker = async (wasm_path, modelAssetPath) => {
+export const createFaceLandmarker = async (wasm_path) => {
+    console.log("Starting facial landmark detection");
     console.log(faceLandmarkState);
     const vision = await FilesetResolver.forVisionTasks(wasm_path);
     let faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
         baseOptions: {
-            modelAssetPath: modelAssetPath,
+            modelAssetPath: faceLandmarkState.modelPath,
             delegate: "GPU",
         },
         runningMode: "VIDEO",

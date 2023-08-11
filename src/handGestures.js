@@ -1,6 +1,12 @@
 import { FilesetResolver, GestureRecognizer } from "@mediapipe/tasks-vision";
 
+let gestureModelTypes = {
+	'full': './mediapipe/models/gesture_recognition/gesture_recognizer.task',
+}
+
 export let gestureState = {
+    modelTypes: gestureModelTypes,
+	modelPath: gestureModelTypes['full'],
     detect: true,
     landmarker: undefined,
     results: undefined,
@@ -14,11 +20,13 @@ export let gestureState = {
     draw: (state, canvas) => drawHandGestures(state, canvas),
 };
 
-export const createGestureLandmarker = async (WASM_PATH, modelAssetPath) => {
+export const createGestureLandmarker = async (WASM_PATH) => {
+    console.log("Starting gesture detection");
+	console.log(gestureState);
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
     let handGestures = await GestureRecognizer.createFromOptions(vision, {
         baseOptions: {
-            modelAssetPath: modelAssetPath,
+            modelAssetPath: gestureState.modelPath,
             delegate: "GPU",
         },
         runningMode: "VIDEO",

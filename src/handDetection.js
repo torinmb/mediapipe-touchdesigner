@@ -1,6 +1,12 @@
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 
+let handModelTypes = {
+	'full': './mediapipe/models/hand_landmark_detection/hand_landmarker.task',
+}
+
 export let handState = {
+    modelTypes: handModelTypes,
+	modelPath: handModelTypes['full'],
     detect: false,
     landmarker: undefined,
     results: undefined,
@@ -13,10 +19,12 @@ export let handState = {
   };
 
 export const createHandLandmarker = async (WASM_PATH, modelAssetPath) => {
+    console.log("Starting hand landmark detection");
+	console.log(handState);
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
     let handLandmarker = await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
-            modelAssetPath: modelAssetPath,
+            modelAssetPath: handState.modelPath,
             delegate: "GPU",
         },
         runningMode: "VIDEO",
