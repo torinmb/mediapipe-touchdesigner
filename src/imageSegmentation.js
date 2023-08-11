@@ -19,10 +19,12 @@ export let segmenterState = {
     labels: [],
     resultsName: "segmenterResults",
     legendColors: [
-        [0, 0, 0, 0], // Vivid Yellow
-        [255, 255, 255, 255], // Strong Purple
-        [255, 104, 0, 255], // Vivid Orange
-        [166, 189, 215, 255], // Very Light Blue
+        [0, 0, 0, 0], // Background 
+        [255, 255, 255, 255], // Hair
+        [255, 197, 0, 255], // Body-skin // Vivid Yellow
+        [128, 62, 117, 255], // Face-skin // Strong Purple
+        [255, 104, 0, 255], // Clothes // Vivid Orange
+        [166, 189, 215, 255], // Accessories // Very Light Blue
         [193, 0, 32, 255], // Vivid Red
         [206, 162, 98, 255], // Grayish Yellow
         [129, 112, 102, 255], // Medium Gray
