@@ -1,0 +1,75 @@
+name: Project Release
+run-name: ${{ github.actor }} is deploying a new release 🚀
+on:
+  push:
+    paths:
+      - 'package.json'
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2  # Fetch the latest commit and the one before
+
+    - name: Check if version changed and fetch commit message
+      id: version_check
+      run: |
+        PREVIOUS_PACKAGE_JSON=$(git show HEAD^:./package.json)
+        CURRENT_VERSION=$(node -p "require('./package.json').version")
+        PREVIOUS_VERSION=$(echo "$PREVIOUS_PACKAGE_JSON" | node -p "JSON.parse(require('fs').readFileSync(0, 'utf-8')).version")
+        COMMIT_MESSAGE=$(git log --format=%B -n 1 HEAD | tr -d '\n' | sed 's/[^a-zA-Z0-9 ]//g')
+
+        echo "PKG_VERSION=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+        echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> "$GITHUB_OUTPUT"
+
+        if [ "$CURRENT_VERSION" == "$PREVIOUS_VERSION" ]; then
+          echo "Version remained the same. Exiting..."
+          exit 0
+        else
+          echo "VERSION_CHANGED=true" >> "$GITHUB_OUTPUT"
+        fi
+      
+    - name: Setup Node.js with Yarn caching
+      if: steps.version_check.outputs.VERSION_CHANGED == 'true'
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16.13.x'
+        cache: 'yarn'
+        
+    - name: Install Yarn
+      if: steps.version_check.outputs.VERSION_CHANGED == 'true'
+      run: npm install -g yarn
+
+    - name: Install dependencies
+      if: steps.version_check.outputs.VERSION_CHANGED == 'true'
+      run: yarn install
+
+    - name: Build
+      if: steps.version_check.outputs.VERSION_CHANGED == 'true'
+      run: yarn build
+
+    - name: Create Zip of specified folders
+      if: steps.version_check.outputs.VERSION_CHANGED == 'true'
+      run: |
+        zip -r release.zip "MediaPipe TouchDesigner.toe" "td_scripts" "toxes" "dist"
+
+    - name: Create Release and Upload Asset
+      if: steps.version_check.outputs.VERSION_CHANGED == 'true'
+      run: |
+        # Create Release
+        RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --data '{
+          "tag_name": "v${{ steps.version_check.outputs.PKG_VERSION }}",
+          "name": "Release v${{ steps.version_check.outputs.PKG_VERSION }}",
+          "body": "${{ steps.version_check.outputs.COMMIT_MESSAGE }}",
+          "draft": false,
+          "prerelease": true
+        }' "https://api.github.com/repos/$GITHUB_REPOSITORY/releases")
+
+        # Extract the upload_url value
+        UPLOAD_URL=$(echo "$RESPONSE" | jq -r .upload_url | sed -e "s/{?name,label}//")
+
+        # Upload Asset
+        curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/zip" --data-binary @release.zip "$UPLOAD_URL?name=release.zip"
