@@ -18,7 +18,7 @@ export let segmenterState = {
     videoElement: "",
     labels: [],
     resultsName: "segmenterResults",
-    legendColors = [
+    legendColors: [
         [0, 0, 0, 0], // Vivid Yellow
         [255, 255, 255, 255], // Strong Purple
         [255, 104, 0, 255], // Vivid Orange
