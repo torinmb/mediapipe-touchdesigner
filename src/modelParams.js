@@ -64,9 +64,9 @@ export const configMap = {
 };
 
 function modelCheck(state, value) {
-    console.log("Looking for  : "+ value);
+    console.log("Looking for  : " + value);
     if (state.modelTypes.hasOwnProperty(value)) {
-        console.log("Setting : "+state.modelTypes[value]);
+        console.log("Setting : " + state.modelTypes[value]);
         state.modelPath = state.modelTypes[value];
     } else {
         console.error(`Invalid modelType: ${state.modelType}`);
@@ -92,6 +92,12 @@ function detectSwitch(state, value) {
             }
             faceDetectorState.children.splice(0);
         }
+        let video = document.getElementById("webcam");
+        // webcamState.videoElement.style.opacity = 1;
+        video.style.opacity = 1;
+        const canvas = document.getElementById("segmentation");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 }
 
@@ -109,4 +115,9 @@ function overlaySwitch(value) {
         }
         faceDetectorState.children.splice(0);
     }
+    let video = document.getElementById("webcam");
+    video.style.opacity = 1;
+    const canvas = document.getElementById("segmentation");
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
