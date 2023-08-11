@@ -154,7 +154,7 @@ export function drawSegmentation(video) {
         else confidenceVal = Math.round(confidenceMasks[maskVal][i] * 255.0);
         // const confidenceVal = Math.round(confidenceMasks[maskVal][i] * 255.0);
         // confidenceVal = confidenceMasks[maskVal][i];
-        const legendColor = segmenterState.legendColors[maskVal];
+        const legendColor = segmenterState.legendColors[maskVal % legendColors.length];
         try {
             imageData[j] = legendColor[0];
         } catch {
