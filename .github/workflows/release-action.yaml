@@ -20,7 +20,7 @@ jobs:
         PREVIOUS_PACKAGE_JSON=$(git show HEAD^:./package.json)
         CURRENT_VERSION=$(node -p "require('./package.json').version")
         PREVIOUS_VERSION=$(echo "$PREVIOUS_PACKAGE_JSON" | node -p "JSON.parse(require('fs').readFileSync(0, 'utf-8')).version")
-        COMMIT_MESSAGE=$(git log --format=%B -n 1 HEAD)
+        COMMIT_MESSAGE=$(git log --format=%B -n 1 HEAD | tr -d '\n' | sed 's/[^a-zA-Z0-9 ]//g')
 
         echo "PKG_VERSION=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
         echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> "$GITHUB_OUTPUT"
