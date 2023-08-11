@@ -68,7 +68,7 @@ export const createImageSegmenter = async (WASM_PATH, videoElement, segmentation
 export function drawSegmentation(video) {
     let segmentCtx = segmenterState.segmentationCanvas.getContext("2d");
 
-    segmenterState.videoElement.style.opacity = 1;
+    segmenterState.videoElement.style.opacity = 0;
 
     segmentCtx.width = 1280;
     segmentCtx.height = 720;
