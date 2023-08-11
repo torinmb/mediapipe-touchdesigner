@@ -62,6 +62,7 @@ function handleQueryParams() {
 }
 
 function enableCam(webcamState, video) {
+  webcamState.videoElement = video;
   const constraints = {
     video: {
       deviceId: webcamState.webcamId,
@@ -144,24 +145,23 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     }
   }
   if (overlayState.show) {
+    for (let landmarker of landmarkerModelState) {
+      if (landmarker.detect && landmarker.results) {
+        landmarker.draw(landmarker.results, webcamState.drawingUtils);
+      }
+    }
+    // unique draw function for object detection
+    if (objectState.detect && objectState.results) {
+      objectState.draw();
+    }
+    if (faceDetectorState.detect && faceDetectorState.results) {
+      faceDetectorState.draw();
+    }
     if (segmenterState.detect && segmenterState.results) {
       segmenterState.draw();
       // segmenterState.results.close();
     }
-    else {
-      for (let landmarker of landmarkerModelState) {
-        if (landmarker.detect && landmarker.results) {
-          landmarker.draw(landmarker.results, webcamState.drawingUtils);
-        }
-      }
-      // unique draw function for object detection
-      if (objectState.detect && objectState.results) {
-        objectState.draw();
-      }
-      if (faceDetectorState.detect && faceDetectorState.results) {
-        faceDetectorState.draw();
-      }
-    }
+
   }
 
   if (webcamState.webcamRunning) {
