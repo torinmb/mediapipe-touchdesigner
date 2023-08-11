@@ -4,6 +4,7 @@ const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 
 export let webcamState = {
+    videoElement: "",
     webcamRunning: false,
     webcamDevices: [],
     webcamId: 'default',
