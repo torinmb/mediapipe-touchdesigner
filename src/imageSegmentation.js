@@ -20,12 +20,12 @@ export let segmenterState = {
     resultsName: "segmenterResults",
     legendColors: [
         [0, 0, 0, 0], // Background 
-        [255, 255, 255, 255], // Hair
+        [193, 0, 32, 255], // Hair // Vivid Red
         [255, 197, 0, 255], // Body-skin // Vivid Yellow
         [128, 62, 117, 255], // Face-skin // Strong Purple
         [255, 104, 0, 255], // Clothes // Vivid Orange
         [166, 189, 215, 255], // Accessories // Very Light Blue
-        [193, 0, 32, 255], // Vivid Red
+        [255, 255, 255, 255], // Selfie
         [206, 162, 98, 255], // Grayish Yellow
         [129, 112, 102, 255], // Medium Gray
         [0, 125, 52, 255], // Vivid Green
@@ -144,7 +144,7 @@ export function drawSegmentation(video) {
                 confidenceVal = 255;
             }
             else if(maskVal == 0) {
-                maskVal = 1;
+                maskVal = 6;
                 confidenceVal = Math.round(confidenceMasks[0][i] * 255.0);
             }
             // console.log("Single confidence mask");
@@ -154,7 +154,7 @@ export function drawSegmentation(video) {
         else confidenceVal = Math.round(confidenceMasks[maskVal][i] * 255.0);
         // const confidenceVal = Math.round(confidenceMasks[maskVal][i] * 255.0);
         // confidenceVal = confidenceMasks[maskVal][i];
-        const legendColor = segmenterState.legendColors[maskVal % legendColors.length];
+        const legendColor = segmenterState.legendColors[maskVal % segmenterState.legendColors.length];
         try {
             imageData[j] = legendColor[0];
         } catch {
