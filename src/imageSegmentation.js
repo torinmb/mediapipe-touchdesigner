@@ -1,8 +1,8 @@
 import { FilesetResolver, ImageSegmenter } from "@mediapipe/tasks-vision";
 
 const legendColors = [
-    [255, 197, 0, 255], // Vivid Yellow
-    [128, 62, 117, 255], // Strong Purple
+    [0, 0, 0, 0], // Vivid Yellow
+    [255, 255, 255, 255], // Strong Purple
     [255, 104, 0, 255], // Vivid Orange
     [166, 189, 215, 255], // Very Light Blue
     [193, 0, 32, 255], // Vivid Red
@@ -61,13 +61,14 @@ export const createImageSegmenter = async (WASM_PATH, videoElement, segmentation
         outputConfidenceMasks: true,
     });
     segmenterState.labels = imageSegmenter.getLabels();
+    console.log(segmenterState.labels);
     return imageSegmenter;
 };
 
-export function drawSegmentation() {
+export function drawSegmentation(video) {
     let segmentCtx = segmenterState.segmentationCanvas.getContext("2d");
 
-    // segmenterState.videoElement.style.opacity = 0.5;
+    segmenterState.videoElement.style.opacity = 1;
 
     segmentCtx.width = 1280;
     segmentCtx.height = 720;
@@ -80,13 +81,13 @@ export function drawSegmentation() {
     // let floatBitMap = result.categoryMask.getAsFloat32Array();
 
     let imageData = [];
-    let confidenceMasks = []
+    let confidenceMasks = [];
 
     // const { width, height } = result.categoryMask;
 
     /// let category = "";
     const mask = segmenterState.results.categoryMask.getAsFloat32Array();
-    // console.log("Mask length: " + mask.length);
+    // console.log("Category Mask length: " + mask.length);
     let i = 0;
     for (let c of segmenterState.results.confidenceMasks) {
         confidenceMasks[i] = c.getAsFloat32Array();
@@ -127,16 +128,40 @@ export function drawSegmentation() {
 
     let j = 0;
     for (let i = 0; i < mask.length; ++i) {
-        if(i == 460800) {
-            console.log("460800: "+ Math.round(mask[i]) * 255.0);
+        let maskVal = Math.round(mask[i] * 255.0);
+        // let maskVal = mask[i];
+        // if(i == 460800) {
+        //     console.log("460800: "+ maskVal);
+        // }
+        // console.log(new Set(mask));
+
+        // Do some silliness because the selfie segmenter works differently to the others
+        let confidenceVal = 0;
+        if (confidenceMasks.length == 1) {
+            if(maskVal == 255) {
+                maskVal = 0;
+                confidenceVal = 255;
+            }
+            else if(maskVal == 0) {
+                maskVal = 1;
+                confidenceVal = Math.round(confidenceMasks[0][i] * 255.0);
+            }
+            // console.log("Single confidence mask");
+            // confidenceVal = Math.round(confidenceMasks[0][i] * 255.0);
+            // confidenceVal = confidenceMasks[0][i];
         }
-        const maskVal = Math.round(mask[i] * 255.0);
-        // const confidenceVal = Math.round(confidenceMasks[maskVal-1][i] * 255.0);
-        const legendColor = legendColors[maskVal % legendColors.length];
-        imageData[j] = legendColor[0];
+        else confidenceVal = Math.round(confidenceMasks[maskVal][i] * 255.0);
+        // const confidenceVal = Math.round(confidenceMasks[maskVal][i] * 255.0);
+        // confidenceVal = confidenceMasks[maskVal][i];
+        const legendColor = legendColors[maskVal];
+        try {
+            imageData[j] = legendColor[0];
+        } catch {
+            console.log("invalid mask value: " + maskVal);
+        }
         imageData[j + 1] = legendColor[1];
         imageData[j + 2] = legendColor[2];
-        imageData[j + 3] = 1;
+        imageData[j + 3] = confidenceVal;
         j += 4;
     }
     /*
@@ -145,7 +170,7 @@ export function drawSegmentation() {
     )[0];
     p.classList.remove("removed");
     p.innerText = "Category: " + category;
-*/
+    */
     const uint8Array = new Uint8ClampedArray(imageData);
     const dataNew = new ImageData(
         uint8Array,
