@@ -146,7 +146,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   if (overlayState.show) {
     if (segmenterState.detect && segmenterState.results) {
       segmenterState.draw();
-      segmenterState.results.close();
+      // segmenterState.results.close();
     }
     else {
       for (let landmarker of landmarkerModelState) {

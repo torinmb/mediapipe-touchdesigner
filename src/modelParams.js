@@ -36,7 +36,7 @@ export const configMap = {
     'Gscore': value => gestureState.scoreThreshold = value,
 
     'Jointthreshold': '',
-    'Posemodeltype': value => poseState.modelPath = modelCheck(poseState.modelPath, poseState.modelTypes, value),
+    'Posemodeltype': value => modelCheck(poseState, value),
     'Pdetectconf': value => poseState.minDetectionConfidence = value,
     'Ppresconf': value => poseState.minPresenceConfidence = value,
     'Ptrackconf': value => poseState.minTrackingConfidence = value,
@@ -48,29 +48,28 @@ export const configMap = {
     'Fdetectconf': value => faceLandmarkState.minDetectionConfidence = value,
     'Ftrackconf': value => faceLandmarkState.minTrackingConfidence = value,
 
-    'Fdtype': value => faceDetectorState.modelPath = modelCheck(faceDetectorState.modelPath, faceDetectorState.modelTypes, value),
+    'Fdtype': value => modelCheck(faceDetectorState, value),
     'Fdminconf': value => faceDetectorState.minDetectionConfidence = value,
     'Fdminsuppression': value => faceDetectorState.minSuppressionThreshold = value,
 
     'Onumobjects': value => objectState.maxResults = value,
-    'OmodelType': value => objectState.modelPath = modelCheck(objectState.modelPath, objectState.modelTypes, value),
+    'OmodelType': value => modelCheck(objectState, value),
     'Oscore': value => objectState.scoreThreshold = value,
 
     'Inumoresults': value => imageState.maxResults = value,
-    'Imodeltype': value => imageState.modelPath = modelCheck(imageState.modelPath, imageState.modelTypes, value),
+    'Imodeltype': value => modelCheck(imageState, value),
     'Iscore': value => imageState.scoreThreshold = value,
 
-    'Smodeltype': value => segmenterState.modelPath = modelCheck(segmenterState.modelPath, segmenterState.modelTypes, value),
+    'Smodeltype': value => modelCheck(segmenterState, value),
 };
 
-function modelCheck(modelPath, modelTypes, value) {
+function modelCheck(state, value) {
     console.log("Looking for  : "+ value);
-    if (modelTypes.hasOwnProperty(value)) {
-        console.log("Setting : "+modelTypes[value]);
-        return modelTypes[value];
+    if (state.modelTypes.hasOwnProperty(value)) {
+        console.log("Setting : "+state.modelTypes[value]);
+        state.modelPath = state.modelTypes[value];
     } else {
-        console.error(`Invalid modelType: ${modelType}`);
-        return modelPath;
+        console.error(`Invalid modelType: ${state.modelType}`);
     }
 }
 

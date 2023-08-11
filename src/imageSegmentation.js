@@ -39,14 +39,14 @@ export let segmenterState = {
     detector: undefined,
     results: undefined,
     segmentationCanvas: "",
-    videoCanvas: "",
+    videoElement: "",
     labels: [],
     resultsName: "segmenterResults",
     draw: () => drawSegmentation(),
 };
 
-export const createImageSegmenter = async (WASM_PATH, videoCanvas, segmentationCanvas) => {
-    segmenterState.videoCanvas = videoCanvas;
+export const createImageSegmenter = async (WASM_PATH, videoElement, segmentationCanvas) => {
+    segmenterState.videoElement = videoElement;
     segmenterState.segmentationCanvas = segmentationCanvas;
     console.log("Starting image segmentation");
     console.log(segmenterState);
@@ -67,7 +67,7 @@ export const createImageSegmenter = async (WASM_PATH, videoCanvas, segmentationC
 export function drawSegmentation() {
     let segmentCtx = segmenterState.segmentationCanvas.getContext("2d");
 
-    // segmenterState.videoCanvas.style.opacity = 0;
+    // segmenterState.videoElement.style.opacity = 0.5;
 
     segmentCtx.width = 1280;
     segmentCtx.height = 720;
