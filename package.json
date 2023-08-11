@@ -9,7 +9,6 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "inquirer": "^9.2.10",
     "typescript": "^5.0.2",
     "vite": "^4.4.5"
   },
