@@ -80,7 +80,9 @@ function enableCam(webcamState, video) {
     video.addEventListener("loadeddata", () => predictWebcam(allModelState, objectState, webcamState, video));
     webcamState.webcamRunning = true;
     stream.getTracks().forEach(function (track) {
-      console.log("Webcam settings: ", track.getSettings());
+      let trackSettings = track.getSettings();
+      webcamState.frameRate = trackSettings.frameRate;
+      console.log("Webcam settings: ", trackSettings);
     })
   })
     .catch(function (err) {
@@ -170,7 +172,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   // Note that this is not the same as the video time
   let endDetect = Date.now();
   let timeToDetect = Math.round(endDetect - startDetect);
-  safeSocketSend(socketState.ws, JSON.stringify({ detectTime: timeToDetect }));
+  safeSocketSend(socketState.ws, JSON.stringify({'timers': { 'detectTime': timeToDetect, 'sourceFrameRate': webcamState.frameRate }}));
 }
 
 function setupWebSocket(socketURL, socketState) {
