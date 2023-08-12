@@ -144,6 +144,10 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
       }
     }
   }
+  if (segmenterState.detect && segmenterState.results) {
+    segmenterState.draw();
+    // segmenterState.results.close();
+  }
   if (overlayState.show) {
     for (let landmarker of landmarkerModelState) {
       if (landmarker.detect && landmarker.results) {
@@ -157,11 +161,6 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     if (faceDetectorState.detect && faceDetectorState.results) {
       faceDetectorState.draw();
     }
-    if (segmenterState.detect && segmenterState.results) {
-      segmenterState.draw();
-      // segmenterState.results.close();
-    }
-
   }
 
   if (webcamState.webcamRunning) {
