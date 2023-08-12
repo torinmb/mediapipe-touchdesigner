@@ -98,7 +98,6 @@ function safeSocketSend(ws, data) {
 }
 
 async function predictWebcam(allModelState, objectState, webcamState, video) {
-  let startDetect = Date.now();
 
   if (video.videoWidth === 0 || video.videoHeight === 0) {
     console.log('videoWidth or videoHeight is 0')
@@ -122,6 +121,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
 
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
+    let startDetect = Date.now();
     webcamState.lastVideoTime = video.currentTime;
     for (let landmarker of allModelState) {
       if (landmarker.detect && landmarker.landmarker) {
@@ -145,34 +145,36 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
         }));
       }
     }
-  }
-  if (segmenterState.detect && segmenterState.results) {
-    segmenterState.draw();
-    // segmenterState.results.close();
-  }
-  if (overlayState.show) {
-    for (let landmarker of landmarkerModelState) {
-      if (landmarker.detect && landmarker.results) {
-        landmarker.draw(landmarker.results, webcamState.drawingUtils);
+
+    if (segmenterState.detect && segmenterState.results) {
+      segmenterState.draw();
+      // segmenterState.results.close();
+    }
+    if (overlayState.show) {
+      for (let landmarker of landmarkerModelState) {
+        if (landmarker.detect && landmarker.results) {
+          landmarker.draw(landmarker.results, webcamState.drawingUtils);
+        }
+      }
+      // unique draw function for object detection
+      if (objectState.detect && objectState.results) {
+        objectState.draw();
+      }
+      if (faceDetectorState.detect && faceDetectorState.results) {
+        faceDetectorState.draw();
       }
     }
-    // unique draw function for object detection
-    if (objectState.detect && objectState.results) {
-      objectState.draw();
-    }
-    if (faceDetectorState.detect && faceDetectorState.results) {
-      faceDetectorState.draw();
-    }
+    // Figure out how long this took
+    // Note that this is not the same as the video time
+    let endDetect = Date.now();
+    let timeToDetect = Math.round(endDetect - startDetect);
+    safeSocketSend(socketState.ws, JSON.stringify({ 'timers': { 'detectTime': timeToDetect, 'sourceFrameRate': webcamState.frameRate } }));
   }
 
   if (webcamState.webcamRunning) {
     window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
   }
-  // Figure out how long this took
-  // Note that this is not the same as the video time
-  let endDetect = Date.now();
-  let timeToDetect = Math.round(endDetect - startDetect);
-  safeSocketSend(socketState.ws, JSON.stringify({'timers': { 'detectTime': timeToDetect, 'sourceFrameRate': webcamState.frameRate }}));
+
 }
 
 function setupWebSocket(socketURL, socketState) {
