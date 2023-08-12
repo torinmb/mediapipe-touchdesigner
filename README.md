@@ -4,7 +4,7 @@ A GPU Accelerated, self-contained, cross-platform [MediaPipe Vision](https://dev
 # Overview
 This plugin runs most* of the MediaPipe Vision tasks from within TouchDesigner without the need to install any external libraries or files. Simply download the package, unzip the folder and open the toe file to get started.
 
-* We're still working on the segmentation tasks!
+\* Currently not interactive segmentation, but maybe one day..
 
 ## Components
 The plugin consists of a number of components:
@@ -37,6 +37,10 @@ Use this to process the object detection results
 Use this to process the pose landmark detection results
 
 [Pose landmark detection guide](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker)
+
+### Image segmentation tox
+Use this to key out segmentation results
+[Image segmentation guide](https://developers.google.com/mediapipe/solutions/vision/image_segmenter)
 
 # Sending TOPs from TouchDesigner
 ## SpoutCam on Windows
