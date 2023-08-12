@@ -67,10 +67,10 @@ function enableCam(webcamState, video) {
     video: {
       deviceId: webcamState.webcamId,
       height: {
-        exact: 720
+        exact: webcamState.height,
       },
       frameRate: {
-        ideal: 60,
+        ideal: webcamState.targetFrameRate,
         min: 25
       }
     }
