@@ -56,7 +56,9 @@ def onCellChange(dat, cells, prev):
 	cell = cells[0]
 	data = {}
 	url="http://localhost:" + dat['Mediapipeport',1] + "?"
-	if(dat[cell.row,0] in noReloadPars):
+	if(str(dat[cell.row,0]).startswith("Scolor")):
+		reloadRequired = False
+	elif(dat[cell.row,0] in noReloadPars):
 		print("not reloading")
 		reloadRequired = False
 	else:

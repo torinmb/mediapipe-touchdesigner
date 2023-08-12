@@ -1,29 +1,5 @@
 import { FilesetResolver, ImageSegmenter } from "@mediapipe/tasks-vision";
 
-const legendColors = [
-    [0, 0, 0, 0], // Vivid Yellow
-    [255, 255, 255, 255], // Strong Purple
-    [255, 104, 0, 255], // Vivid Orange
-    [166, 189, 215, 255], // Very Light Blue
-    [193, 0, 32, 255], // Vivid Red
-    [206, 162, 98, 255], // Grayish Yellow
-    [129, 112, 102, 255], // Medium Gray
-    [0, 125, 52, 255], // Vivid Green
-    [246, 118, 142, 255], // Strong Purplish Pink
-    [0, 83, 138, 255], // Strong Blue
-    [255, 112, 92, 255], // Strong Yellowish Pink
-    [83, 55, 112, 255], // Strong Violet
-    [255, 142, 0, 255], // Vivid Orange Yellow
-    [179, 40, 81, 255], // Strong Purplish Red
-    [244, 200, 0, 255], // Vivid Greenish Yellow
-    [127, 24, 13, 255], // Strong Reddish Brown
-    [147, 170, 0, 255], // Vivid Yellowish Green
-    [89, 51, 21, 255], // Deep Yellowish Brown
-    [241, 58, 19, 255], // Vivid Reddish Orange
-    [35, 44, 22, 255], // Dark Olive Green
-    [0, 161, 194, 255] // Vivid Blue
-];
-
 let segmentationModelTypes = {
     'selfieSquare': './mediapipe/models/image_segmentation/selfie_segmenter.tflite',
     'selfieLandscape': './mediapipe/models/image_segmentation/selfie_segmenter_landscape.tflite',
@@ -42,6 +18,31 @@ export let segmenterState = {
     videoElement: "",
     labels: [],
     resultsName: "segmenterResults",
+    legendColors: [
+        [0, 0, 0, 0], // Background 
+        [193, 0, 32, 255], // Hair // Vivid Red
+        [255, 197, 0, 255], // Body-skin // Vivid Yellow
+        [128, 62, 117, 255], // Face-skin // Strong Purple
+        [255, 104, 0, 255], // Clothes // Vivid Orange
+        [166, 189, 215, 255], // Accessories // Very Light Blue
+        [255, 255, 255, 255], // Selfie
+        [206, 162, 98, 255], // Grayish Yellow
+        [129, 112, 102, 255], // Medium Gray
+        [0, 125, 52, 255], // Vivid Green
+        [246, 118, 142, 255], // Strong Purplish Pink
+        [0, 83, 138, 255], // Strong Blue
+        [255, 112, 92, 255], // Strong Yellowish Pink
+        [83, 55, 112, 255], // Strong Violet
+        [255, 142, 0, 255], // Vivid Orange Yellow
+        [179, 40, 81, 255], // Strong Purplish Red
+        [244, 200, 0, 255], // Vivid Greenish Yellow
+        [127, 24, 13, 255], // Strong Reddish Brown
+        [147, 170, 0, 255], // Vivid Yellowish Green
+        [89, 51, 21, 255], // Deep Yellowish Brown
+        [241, 58, 19, 255], // Vivid Reddish Orange
+        [35, 44, 22, 255], // Dark Olive Green
+        [0, 161, 194, 255] // Vivid Blue
+    ],
     draw: () => drawSegmentation(),
 };
 
@@ -143,7 +144,7 @@ export function drawSegmentation(video) {
                 confidenceVal = 255;
             }
             else if(maskVal == 0) {
-                maskVal = 1;
+                maskVal = 6;
                 confidenceVal = Math.round(confidenceMasks[0][i] * 255.0);
             }
             // console.log("Single confidence mask");
@@ -153,7 +154,7 @@ export function drawSegmentation(video) {
         else confidenceVal = Math.round(confidenceMasks[maskVal][i] * 255.0);
         // const confidenceVal = Math.round(confidenceMasks[maskVal][i] * 255.0);
         // confidenceVal = confidenceMasks[maskVal][i];
-        const legendColor = legendColors[maskVal];
+        const legendColor = segmenterState.legendColors[maskVal % segmenterState.legendColors.length];
         try {
             imageData[j] = legendColor[0];
         } catch {
