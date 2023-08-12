@@ -13,6 +13,9 @@ export const configMap = {
     'Wsaddress': value => socketState.adddress = value,
     'Wsport': value => socketState.port = value,
 
+    'Wheight': value => webcamState.height = value,
+    'Wtargetframerate': value => webcamState.targetFrameRate = value,
+
     'Detectfacelandmarks': value => detectSwitch(faceLandmarkState, parseInt(value) === 1),
     'Detectfaces': value => detectSwitch(faceDetectorState, parseInt(value) === 1),
     'Detectgestures': value => detectSwitch(gestureState, parseInt(value) === 1),
