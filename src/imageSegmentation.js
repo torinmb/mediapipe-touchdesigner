@@ -19,18 +19,23 @@ export let segmenterState = {
     labels: [],
     resultsName: "segmenterResults",
     legendColors: [
-        [0, 0, 0, 0], // Background 
+        [0, 0, 0, 0], // Background
         [193, 0, 32, 255], // Hair // Vivid Red
-        [255, 197, 0, 255], // Body-skin // Vivid Yellow
-        [128, 62, 117, 255], // Face-skin // Strong Purple
-        [255, 104, 0, 255], // Clothes // Vivid Orange
-        [166, 189, 215, 255], // Accessories // Very Light Blue
-        [255, 255, 255, 255], // Selfie
+        [255, 0, 255, 255], // Body-skin
+        [255, 197, 0, 255],  // Face Skin // Vivid Yellow
+        [0, 255, 0, 255],   // Clothes
+        [0, 225, 225, 255], // Accessories
+        [255, 255, 255, 255], // Selfie // White  
+        [0, 0, 255, 255],
+        [0, 0, 0, 255],        
+        [0, 125, 52, 255], // Vivid Green
+        [0, 83, 138, 255], // Strong Blue
+        [128, 62, 117, 255], // Strong Purple
+        [255, 104, 0, 255], // Vivid Orange
+        [166, 189, 215, 255], // Very Light Blue
         [206, 162, 98, 255], // Grayish Yellow
         [129, 112, 102, 255], // Medium Gray
-        [0, 125, 52, 255], // Vivid Green
         [246, 118, 142, 255], // Strong Purplish Pink
-        [0, 83, 138, 255], // Strong Blue
         [255, 112, 92, 255], // Strong Yellowish Pink
         [83, 55, 112, 255], // Strong Violet
         [255, 142, 0, 255], // Vivid Orange Yellow
@@ -41,7 +46,6 @@ export let segmenterState = {
         [89, 51, 21, 255], // Deep Yellowish Brown
         [241, 58, 19, 255], // Vivid Reddish Orange
         [35, 44, 22, 255], // Dark Olive Green
-        [0, 161, 194, 255] // Vivid Blue
     ],
     draw: () => drawSegmentation(),
 };
