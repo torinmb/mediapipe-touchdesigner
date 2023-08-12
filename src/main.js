@@ -99,6 +99,9 @@ function safeSocketSend(ws, data) {
 
 async function predictWebcam(allModelState, objectState, webcamState, video) {
 
+  let timeToDetect = 0;
+  let timeToDraw = 0;
+
   if (video.videoWidth === 0 || video.videoHeight === 0) {
     console.log('videoWidth or videoHeight is 0')
     return;
@@ -144,32 +147,36 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
           'resolution': { 'width': video.videoWidth, 'height': video.videoHeight }
         }));
       }
+      let endDetect = Date.now();
+      timeToDetect = Math.round(endDetect - startDetect);
     }
-
-    if (segmenterState.detect && segmenterState.results) {
-      segmenterState.draw();
-      // segmenterState.results.close();
-    }
-    if (overlayState.show) {
-      for (let landmarker of landmarkerModelState) {
-        if (landmarker.detect && landmarker.results) {
-          landmarker.draw(landmarker.results, webcamState.drawingUtils);
-        }
-      }
-      // unique draw function for object detection
-      if (objectState.detect && objectState.results) {
-        objectState.draw();
-      }
-      if (faceDetectorState.detect && faceDetectorState.results) {
-        faceDetectorState.draw();
-      }
-    }
-    // Figure out how long this took
-    // Note that this is not the same as the video time
-    let endDetect = Date.now();
-    let timeToDetect = Math.round(endDetect - startDetect);
-    safeSocketSend(socketState.ws, JSON.stringify({ 'timers': { 'detectTime': timeToDetect, 'sourceFrameRate': webcamState.frameRate } }));
   }
+
+  let startDraw = Date.now();
+  if (segmenterState.detect && segmenterState.results) {
+    segmenterState.draw();
+    // segmenterState.results.close();
+  }
+  if (overlayState.show) {
+    for (let landmarker of landmarkerModelState) {
+      if (landmarker.detect && landmarker.results) {
+        landmarker.draw(landmarker.results, webcamState.drawingUtils);
+      }
+    }
+    // unique draw function for object detection
+    if (objectState.detect && objectState.results) {
+      objectState.draw();
+    }
+    if (faceDetectorState.detect && faceDetectorState.results) {
+      faceDetectorState.draw();
+    }
+  }
+  let endDraw = Date.now();
+  timeToDraw = Math.round(endDraw - startDraw);
+  // Figure out how long this took
+  // Note that this is not the same as the video time
+
+  safeSocketSend(socketState.ws, JSON.stringify({ 'timers': { 'detectTime': timeToDetect, 'drawTime': timeToDraw, 'sourceFrameRate': webcamState.frameRate } }));
 
   if (webcamState.webcamRunning) {
     window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));

@@ -80,6 +80,8 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 		op('timers').clear()
 		t = op('timers').appendChan('detectTime')
 		t[0] = json.loads(data)['timers']['detectTime']
+		t = op('timers').appendChan('drawTime')
+		t[0] = json.loads(data)['timers']['drawTime']
 		t = op('timers').appendChan('sourceFrameRate')
 		t[0] = json.loads(data)['timers']['sourceFrameRate']
 	# If this is any other type of message, forward it to the other clients
