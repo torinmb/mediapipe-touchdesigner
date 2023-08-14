@@ -42,6 +42,8 @@ async def startServer():
 
 started = False
 
+dataOps = ['face_landmark_results', 'face_detector_results', 'hand_results', 'pose_results', 'object_results', 'image_results']
+
 def startup():
 	global started
 	if not started:
@@ -49,7 +51,10 @@ def startup():
 		coroutines = [startServer()]
 		op.TDAsyncIO.Run(coroutines)
 		op('setup_menu_names').run()
-		run('parent().par.Reset.pulse()', delayFrames=5)
+		run('parent().par.Reset.pulse()', delayFrames=200)
+
+		for curr in dataOps:
+			op(curr).text = {}
 		
 	started = True
 	return
