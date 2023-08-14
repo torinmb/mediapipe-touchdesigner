@@ -60,7 +60,7 @@ def onServerStart(webServerDAT):
 	print("Loading MIME types")
 	mimetypes.add_type('application/octet-stream', 'task')
 	mimetypes.add_type('application/octet-stream', 'tflite')
-	importRoot = os.path.join(os.getcwd(), 'dist')
+	importRoot = os.path.join(os.getcwd(), '_mpdist')
 
 	if(os.path.exists(importRoot)):
 		print("Importing files from: " + importRoot)

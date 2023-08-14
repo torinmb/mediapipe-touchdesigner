@@ -12,6 +12,7 @@ Backup/
 
 node_modules
 dist
+_mpdist
 dist-ssr
 *.local
 .yarn*
