@@ -13,6 +13,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 2  # Fetch the latest commit and the one before
+        lfs: true
 
     - name: Check if version changed and fetch commit message
       id: version_check
