@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import shutil
 
 clear()
 
@@ -27,3 +28,8 @@ if(os.path.exists(importRoot)):
 			vfsFilename = "#".join(file_path.parts)
 			print("Found: "+ vfsFilename)
 			vfsOp.vfs.addFile(filename, overrideName="#"+vfsFilename)
+	try:
+		shutil.rmtree(importRoot)
+		print(importRoot + " removed successfully")
+	except OSError as o:
+		print(f"Error, {o.strerror}: {importRoot}")
