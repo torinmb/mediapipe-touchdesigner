@@ -15,6 +15,7 @@ def onCook(scriptOp):
 	drawTime = scriptOp.inputs[0]['drawTime']
 	sourceFrameRate = scriptOp.inputs[0]['sourceFrameRate']
 	realtimeRatio = ( ( detectTime + drawTime ) / 1000 ) / ( 1 / sourceFrameRate )
+	totalInToOutDelay = -3 - (((detectTime + drawTime) / 1000) * project.cookRate)
 
 	if(realtimeRatio < 1):
 		isRealtime = 1
@@ -25,11 +26,13 @@ def onCook(scriptOp):
 	scriptOp.appendChan('drawTime')
 	scriptOp.appendChan('sourceFrameRate')
 	scriptOp.appendChan('realTimeRatio')
+	scriptOp.appendChan('totalInToOutDelay')
 	scriptOp.appendChan('isRealtime')
 	
 	scriptOp['detectTime'][0] = detectTime
 	scriptOp['drawTime'][0] = drawTime
 	scriptOp['sourceFrameRate'][0] = sourceFrameRate
 	scriptOp['realTimeRatio'][0] = realtimeRatio
+	scriptOp['totalInToOutDelay'][0] = totalInToOutDelay
 	scriptOp['isRealtime'][0] = isRealtime
 	return
