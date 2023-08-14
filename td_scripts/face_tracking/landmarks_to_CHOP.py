@@ -17,7 +17,8 @@ def onCook(scriptOp):
 	digits = scriptOp.digits -1
 	# print("digits: " +str(digits))
 	# print(str(len(rawdata['faceResults']['faceLandmarks'])))
-
+	if not len(rawdata):
+		return
 	# Check to see if we have a face
 	if(len(rawdata['faceLandmarkResults']) > 0 and len(rawdata['faceLandmarkResults']['faceLandmarks']) > digits and rawdata['faceLandmarkResults']['faceLandmarks'][digits]):
 

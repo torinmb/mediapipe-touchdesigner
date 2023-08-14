@@ -20,6 +20,8 @@ def onPulse(par):
 def onCook(scriptOp):
 	scriptOp.clear()
 	rawdata = json.loads(op('in1').text)
+	if not len(rawdata):
+		return
 	digits = scriptOp.digits -1
 	resScale = op('resolution')['height']/op('resolution')['width']
 	# Check to see if we have a face
