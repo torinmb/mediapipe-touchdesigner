@@ -75,11 +75,15 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 	elif(data.find('imageResults', 2, 100) != -1):
 		op('image_results').text = data
 		return
-	elif(data.find('detectTime', 2, 100) != -1):
+	elif(data.find('timers', 2, 100) != -1):
 		# print(json.dumps(data['detectTime']))
-		op('detectTime').clear()
-		t = op('detectTime').appendChan('detectTime')
-		t[0] = json.loads(data)['detectTime']
+		op('timers').clear()
+		t = op('timers').appendChan('detectTime')
+		t[0] = json.loads(data)['timers']['detectTime']
+		t = op('timers').appendChan('drawTime')
+		t[0] = json.loads(data)['timers']['drawTime']
+		t = op('timers').appendChan('sourceFrameRate')
+		t[0] = json.loads(data)['timers']['sourceFrameRate']
 	# If this is any other type of message, forward it to the other clients
 	else:
 		# print('received WS from client: ' +client)
