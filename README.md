@@ -1,14 +1,16 @@
 # MediaPipe TouchDesigner Plugin
 A GPU Accelerated, self-contained, [MediaPipe](https://developers.google.com/mediapipe) Plugin for TouchDesigner that runs on Mac and PC with no installation. This project currently supports all major MediaPipe models except interactive segmentation.
 
-<img width="1164" alt="Screenshot 2023-08-14 at 12 27 26 PM" src="https://github.com/torinmb/mediapipe-touchdesigner/assets/6014011/e826e7bc-5151-4963-9134-174edcbdcf51">
+<img width="1053" alt="Screenshot 2023-08-14 at 2 16 44 PM" src="https://github.com/torinmb/mediapipe-touchdesigner/assets/6014011/8f7a9eb9-fa7a-4d9b-b541-bb9c6c4e0e88">
+
 
 # Setup
 Download the latest release.zip from the [Release Section](https://github.com/torinmb/mediapipe-touchdesigner/tags). Open up the MediaPipe TouchDesigner.toe file. If you move the project to another folder make sure that the associated folders are in the same directory as your MediaPipe TouchDesigner.toe. If there are any network problems you can it the Reset button on the MediaPipe component.
 
 On the MediaPipe component once it's loaded you can select your webcam from the drop-down. You can turn on and off the different MediaPipe models as well as preview overlays. There're also sub-menus available for each model to customize them further.
 
-<img width="893" alt="image" src="https://github.com/torinmb/mediapipe-touchdesigner/assets/6014011/2a607ae8-3238-4caa-a894-1f427a23666f">
+
+![image-1](https://github.com/torinmb/mediapipe-touchdesigner/assets/6014011/ffb65b9b-e916-45ee-87fc-af7480cc2ac6)
 
 
 ## Components
