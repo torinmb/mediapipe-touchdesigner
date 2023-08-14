@@ -20,11 +20,11 @@ def onHTTPRequest(webServerDAT, request, response):
 	requestArray = requestArray.replace("/", "#")
 	if(requestArray == "#"):
 		requestArray = "#index.html"
-	print(requestArray)
+	print(request['uri'])
 	# print(op('/project1/vfs_web_server/virtualFile').vfs)
 	fileContent = op('virtualFile').vfs[requestArray].byteArray
 	mimeType = mimetypes.guess_type(op('virtualFile').vfs[requestArray].name, strict=True)
-	print("Think this file is "+str(mimeType))
+	# print("Think this file is "+str(mimeType))
 	response['Content-Type'] = mimeType[0] # Might need content-type header
 	response['statusCode'] = 200 # OK
 	response['statusReason'] = 'OK'
