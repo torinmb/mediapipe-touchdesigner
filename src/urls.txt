@@ -1,1 +1,0 @@
-http://localhost:5173/?Detectposes=0&Detectfaces=0&Detecthands=0&Detectgestures=0&Detectobjects=1&Showoverlays=1
