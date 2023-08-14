@@ -1,13 +1,15 @@
 # mediapipe-touchdesigner
-A GPU Accelerated, self-contained, cross-platform [MediaPipe Vision](https://developers.google.com/mediapipe/solutions/guide) Plugin for TouchDesigner that runs on Mac and PC with no instillation.
+A GPU Accelerated, self-contained, [MediaPipe Vision](https://developers.google.com/mediapipe/solutions/guide) Plugin for TouchDesigner that runs on Mac and PC with no installation. This project currently supports all major MediaPipe models except interactive segmentation.
+
+<img width="1164" alt="Screenshot 2023-08-14 at 12 27 26 PM" src="https://github.com/torinmb/mediapipe-touchdesigner/assets/6014011/e826e7bc-5151-4963-9134-174edcbdcf51">
 
 # Setup
-Download the latest .zip from the [Release Section](https://github.com/torinmb/mediapipe-touchdesigner/tags). Open up the MediaPipe TouchDesigner.toe file. If you move the project to another folder make sure that the associated folders are in the same directory as your MediaPipe TouchDesigner.toe. If there are any network problems you can it the Reset button on the MediaPipe component.
+Download the latest release.zip from the [Release Section](https://github.com/torinmb/mediapipe-touchdesigner/tags). Open up the MediaPipe TouchDesigner.toe file. If you move the project to another folder make sure that the associated folders are in the same directory as your MediaPipe TouchDesigner.toe. If there are any network problems you can it the Reset button on the Media_Pipe component.
 
-# Overview
-This plugin runs most* of the MediaPipe Vision tasks from within TouchDesigner without the need to install any external libraries or files. Simply download the package, unzip the folder and open the toe file to get started.
+On the Media_Pipe component once it's loaded you can select your webcam from the drop-down. You can turn on and off the different MediaPipe models as well as preview overlays. There're also sub-menus available for each model to customize them further.
 
-\* Currently not interactive segmentation, but maybe one day..
+<img width="893" alt="image" src="https://github.com/torinmb/mediapipe-touchdesigner/assets/6014011/2a607ae8-3238-4caa-a894-1f427a23666f">
+
 
 ## Components
 The plugin consists of a number of components:
