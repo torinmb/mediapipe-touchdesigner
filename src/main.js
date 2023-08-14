@@ -67,10 +67,10 @@ function enableCam(webcamState, video) {
     video: {
       deviceId: webcamState.webcamId,
       height: {
-        exact: 720
+        exact: webcamState.height,
       },
       frameRate: {
-        ideal: 60,
+        ideal: webcamState.targetFrameRate,
         min: 25
       }
     }
@@ -80,7 +80,9 @@ function enableCam(webcamState, video) {
     video.addEventListener("loadeddata", () => predictWebcam(allModelState, objectState, webcamState, video));
     webcamState.webcamRunning = true;
     stream.getTracks().forEach(function (track) {
-      console.log("Webcam settings: ", track.getSettings());
+      let trackSettings = track.getSettings();
+      webcamState.frameRate = trackSettings.frameRate;
+      console.log("Webcam settings: ", trackSettings);
     })
   })
     .catch(function (err) {
@@ -96,7 +98,9 @@ function safeSocketSend(ws, data) {
 }
 
 async function predictWebcam(allModelState, objectState, webcamState, video) {
-  let startDetect = Date.now();
+
+  let timeToDetect = 0;
+  let timeToDraw = 0;
 
   if (video.videoWidth === 0 || video.videoHeight === 0) {
     console.log('videoWidth or videoHeight is 0')
@@ -120,6 +124,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
 
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
+    let startDetect = Date.now();
     webcamState.lastVideoTime = video.currentTime;
     for (let landmarker of allModelState) {
       if (landmarker.detect && landmarker.landmarker) {
@@ -142,7 +147,15 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
           'resolution': { 'width': video.videoWidth, 'height': video.videoHeight }
         }));
       }
+      let endDetect = Date.now();
+      timeToDetect = Math.round(endDetect - startDetect);
     }
+  }
+
+  let startDraw = Date.now();
+  if (segmenterState.detect && segmenterState.results) {
+    segmenterState.draw();
+    // segmenterState.results.close();
   }
   if (overlayState.show) {
     for (let landmarker of landmarkerModelState) {
@@ -157,21 +170,18 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     if (faceDetectorState.detect && faceDetectorState.results) {
       faceDetectorState.draw();
     }
-    if (segmenterState.detect && segmenterState.results) {
-      segmenterState.draw();
-      // segmenterState.results.close();
-    }
-
   }
+  let endDraw = Date.now();
+  timeToDraw = Math.round(endDraw - startDraw);
+  // Figure out how long this took
+  // Note that this is not the same as the video time
+
+  safeSocketSend(socketState.ws, JSON.stringify({ 'timers': { 'detectTime': timeToDetect, 'drawTime': timeToDraw, 'sourceFrameRate': webcamState.frameRate } }));
 
   if (webcamState.webcamRunning) {
     window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
   }
-  // Figure out how long this took
-  // Note that this is not the same as the video time
-  let endDetect = Date.now();
-  let timeToDetect = Math.round(endDetect - startDetect);
-  safeSocketSend(socketState.ws, JSON.stringify({ detectTime: timeToDetect }));
+
 }
 
 function setupWebSocket(socketURL, socketState) {

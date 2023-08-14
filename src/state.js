@@ -9,6 +9,9 @@ export let webcamState = {
     webcamDevices: [],
     webcamId: 'default',
     lastVideoTime: -1,
+    targetFrameRate: 30,
+    height: 720,
+    frameRate: 30,
     drawingUtils: new DrawingUtils(canvasCtx),
 };
   
