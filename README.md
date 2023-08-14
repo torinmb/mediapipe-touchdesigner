@@ -1,5 +1,5 @@
 # mediapipe-touchdesigner
-A GPU Accelerated, self-contained, [MediaPipe Vision](https://developers.google.com/mediapipe/solutions/guide) Plugin for TouchDesigner that runs on Mac and PC with no installation. This project currently supports all major MediaPipe models except interactive segmentation.
+A GPU Accelerated, self-contained, [MediaPipe](https://developers.google.com/mediapipe) Plugin for TouchDesigner that runs on Mac and PC with no installation. This project currently supports all major MediaPipe models except interactive segmentation.
 
 <img width="1164" alt="Screenshot 2023-08-14 at 12 27 26 PM" src="https://github.com/torinmb/mediapipe-touchdesigner/assets/6014011/e826e7bc-5151-4963-9134-174edcbdcf51">
 
