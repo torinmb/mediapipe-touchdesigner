@@ -4,7 +4,7 @@ A GPU Accelerated, self-contained, [MediaPipe](https://developers.google.com/med
 <img width="1164" alt="Screenshot 2023-08-14 at 12 27 26 PM" src="https://github.com/torinmb/mediapipe-touchdesigner/assets/6014011/e826e7bc-5151-4963-9134-174edcbdcf51">
 
 # Setup
-Download the latest release.zip from the [Release Section](https://github.com/torinmb/mediapipe-touchdesigner/tags). Open up the MediaPipe TouchDesigner.toe file. If you move the project to another folder make sure that the associated folders are in the same directory as your MediaPipe TouchDesigner.toe. If there are any network problems you can it the Reset button on the Media_Pipe component.
+Download the latest release.zip from the [Release Section](https://github.com/torinmb/mediapipe-touchdesigner/tags). Open up the MediaPipe TouchDesigner.toe file. If you move the project to another folder make sure that the associated folders are in the same directory as your MediaPipe TouchDesigner.toe. If there are any network problems you can it the Reset button on the MediaPipe component.
 
 On the MediaPipe component once it's loaded you can select your webcam from the drop-down. You can turn on and off the different MediaPipe models as well as preview overlays. There're also sub-menus available for each model to customize them further.
 
