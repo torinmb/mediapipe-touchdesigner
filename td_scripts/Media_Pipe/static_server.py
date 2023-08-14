@@ -49,6 +49,8 @@ def startup():
 		coroutines = [startServer()]
 		op.TDAsyncIO.Run(coroutines)
 		op('setup_menu_names').run()
+		run('parent().par.Reset.pulse()', delayFrames=5)
+		
 	started = True
 	return
 
