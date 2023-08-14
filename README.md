@@ -1,5 +1,5 @@
 # mediapipe-touchdesigner
-A GPU Accelerated, self-contained, cross-platform [MediaPipe Vision](https://developers.google.com/mediapipe/solutions/guide) Plugin for TouchDesigner.
+A GPU Accelerated, self-contained, cross-platform [MediaPipe Vision](https://developers.google.com/mediapipe/solutions/guide) Plugin for TouchDesigner that runs on Mac and PC with no instillation.
 
 # Overview
 This plugin runs most* of the MediaPipe Vision tasks from within TouchDesigner without the need to install any external libraries or files. Simply download the package, unzip the folder and open the toe file to get started.
