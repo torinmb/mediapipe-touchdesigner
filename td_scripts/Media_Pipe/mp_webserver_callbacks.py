@@ -1,7 +1,6 @@
 import mimetypes
 import os
 from pathlib import Path
-import shutil
 
 # me - this DAT.
 # webServerDAT - the connected Web Server DAT
@@ -74,39 +73,6 @@ def onServerStart(webServerDAT):
 	# print("Loading MIME types")
 	mimetypes.add_type('application/octet-stream', 'task')
 	mimetypes.add_type('application/octet-stream', 'tflite')
-	importRoot = os.path.join(os.getcwd(), '_mpdist')
-	print("Checking for new files at: " + importRoot)
-
-	if(os.path.exists(importRoot)):
-		print("Importing files from: " + importRoot)
-		vfsOp = op('virtualFile')
-		vfiles = []
-
-		print("Found " + str(len(vfsOp.vfs)) + " virtual files")
-
-		# Get all the virtual files
-		for f in vfsOp.vfs:
-			print(f.name)
-			vfiles.append(f.name)
-
-		# Delete all the virtual files
-		# # (don't do this as you iterate above, it doesn't work in TD 2022.33910 )
-		for v in vfiles:
-			vfsOp.vfs[v].destroy()
-
-		for filename in Path(importRoot).rglob('*'):
-			if (filename.is_file()):
-				file_path = filename.relative_to(importRoot)
-				vfsFilename = "#".join(file_path.parts)
-				print("Importing: "+ vfsFilename)
-				vfsOp.vfs.addFile(filename, overrideName="#"+vfsFilename)
-		# if(parent().saveExternalTox(recurse=False)):
-			# print("Saved tox")
-		try:
-			shutil.rmtree(importRoot)
-			print(importRoot + " removed successfully")
-		except OSError as o:
-			print(f"Error, {o.strerror}: {importRoot}")
 	print("MP server started")
 	return
 
