@@ -2,6 +2,7 @@ import subprocess
 import os
 from pathlib import Path
 import shutil
+import zipfile
 
 # me - this DAT
 # 
@@ -25,6 +26,12 @@ def purgeVFS(op):
 		op.vfs[v].destroy()
 	return
 
+def create_zip_from_paths(directory, output_zip_name="release.zip"):
+	with zipfile.ZipFile(output_zip_name, "w", zipfile.ZIP_DEFLATED) as zip_file:
+		for entry in directory.rglob("*"):
+			zip_file.write(entry, entry.relative_to(directory))
+	return
+
 def onStart():
 	return
 
@@ -32,24 +39,41 @@ def onCreate():
 	clear()
 
 	releaseFolder = 'release'
+	toxFolder = 'toxes'
 	distFolder = '_mpdist'
 	mpOp = op('/project1/MediaPipe')
 	vfsOp = op('/project1/MediaPipe/virtualFile')
+	currentFileDAT = op('dats_with_files')
+	previousFileDATs = op('previous_dats_with_files')
 
-	print("Removing and recreating existing release dir")
-	try:
-		shutil.rmtree(releaseFolder)
-		print(str(releaseFolder) + " removed successfully")
-	except OSError as o:
-		print(f"Error, {o.strerror}: {releaseFolder}")
+	if(Path(releaseFolder).exists()):
+		print("Removing existing release dir")
+		try:
+			shutil.rmtree(releaseFolder)
+			print(str(releaseFolder) + " removed successfully")
+		except OSError as o:
+			print(f"Error, {o.strerror}: {releaseFolder}")
+	print("Copying existing tox files in")
+	shutil.copytree(toxFolder, releaseFolder)
 
-	Path(releaseFolder).mkdir()
+	print("Unlinking Text DATs")
+
+	previousFileDATs.copy(currentFileDAT)
+	previousFileDATs.appendCol()
+	previousFileDATs[0,-1] = "filePath"
+
+	for r in range (currentFileDAT.numRows):
+		if (r != 0):
+			print("Removing file path for "+currentFileDAT[r,'path'])
+			previousFileDATs[r,'filePath'] = op(currentFileDAT[r,'path']).par.file.eval()
+			op(currentFileDAT[r,'path']).par.file = ""
+
 	print("Initing yarn build")
 	
 	# Specify the path to the desired directory
 	directory_path = Path.cwd()
 
-	# Run the command in the specified directory
+	# Run the command in the specified directory (check_call waits for it to complete before proceeding)
 	subprocess.check_call(["yarn", "build"],shell=True, cwd=directory_path)
 	
 	importRoot = directory_path.joinpath(distFolder)
@@ -86,6 +110,19 @@ def onCreate():
 
 		# Put our tox path back into the MediaPipe COMP
 		mpOp.par.externaltox = originalToxPath
+
+	# Restore the file paths to Text DATs
+	for r in range (previousFileDATs.numRows):
+		if (r != 0):
+			print("Restoring file path for "+previousFileDATs[r,'path'])
+			op(previousFileDATs[r,'path']).par.file = previousFileDATs[r,'filePath']
+
+	# Save our toe file and copy it to the release folder
+	project.save()	
+	shutil.copy(Path(project.name), releaseFolder)
+
+	# Zip everything up
+	create_zip_from_paths(Path(releaseFolder), "release.zip")
 	return
 
 def onExit():
