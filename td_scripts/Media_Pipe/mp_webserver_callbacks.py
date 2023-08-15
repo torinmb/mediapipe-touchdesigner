@@ -23,7 +23,7 @@ def onHTTPRequest(webServerDAT, request, response):
 	requestArray = requestArray.replace("/", "#")
 	if(requestArray == "#"):
 		requestArray = "#index.html"
-	print(request['uri'])
+	print("Serving: " + request['uri'])
 	# print(op('/project1/vfs_web_server/virtualFile').vfs)
 	fileContent = op('virtualFile').vfs[requestArray].byteArray
 	mimeType = mimetypes.guess_type(op('virtualFile').vfs[requestArray].name, strict=True)
@@ -90,6 +90,7 @@ def onServerStart(webServerDAT):
 			print(importRoot + " removed successfully")
 		except OSError as o:
 			print(f"Error, {o.strerror}: {importRoot}")
+		print("MP server started")
 	return
 
 def onServerStop(webServerDAT):
