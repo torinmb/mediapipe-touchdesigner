@@ -19,20 +19,21 @@ def onPulse(par):
 
 def onCook(scriptOp):
 	scriptOp.clear()
-	rawdata = json.loads(op('in1').text)
-	digits = scriptOp.digits -1
+	if(op('in1').text != ""):
+		rawdata = json.loads(op('in1').text)
+		digits = scriptOp.digits -1
 
-	# Check to see if we have a face
-	if('gestureResults' in rawdata and len(rawdata['gestureResults']['landmarks']) > digits and rawdata['gestureResults']['landmarks'][digits]):
-		scriptOp.copy(scriptOp.inputs[0])
-		# Load the relevant JSON array
-		landmarks = rawdata['gestureResults']['landmarks'][digits]
+		# Check to see if we have a face
+		if('gestureResults' in rawdata and len(rawdata['gestureResults']['landmarks']) > digits and rawdata['gestureResults']['landmarks'][digits]):
+			scriptOp.copy(scriptOp.inputs[0])
+			# Load the relevant JSON array
+			landmarks = rawdata['gestureResults']['landmarks'][digits]
 
-		# For every point we have, edit the position of the existing face points
-		i=0
-		for eachPoint in scriptOp.points:
-			eachPoint.P = (landmarks[i]['x'], 1- landmarks[i]['y'], landmarks[i]['z'])
-			i += 1
-	else:
-		# print("no hands")
-		return
+			# For every point we have, edit the position of the existing face points
+			i=0
+			for eachPoint in scriptOp.points:
+				eachPoint.P = (landmarks[i]['x'], 1- landmarks[i]['y'], landmarks[i]['z'])
+				i += 1
+		else:
+			# print("no hands")
+			return
