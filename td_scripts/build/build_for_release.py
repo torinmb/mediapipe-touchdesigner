@@ -63,7 +63,14 @@ def onCreate():
 	previousFileDATs[0,-1] = "filePath"
 
 	for r in range (currentFileDAT.numRows):
-		if (r != 0):
+		if (r == 0):
+			print("Removing file path for "+me.path)
+			previousFileDATs.appendRow()
+			previousFileDATs[-1,'name'] = me.name
+			previousFileDATs[-1,'path'] = me.path
+			previousFileDATs[-1,'filePath'] = me.par.file.eval()
+			me.par.file = ""
+		else:
 			print("Removing file path for "+currentFileDAT[r,'path'])
 			previousFileDATs[r,'filePath'] = op(currentFileDAT[r,'path']).par.file.eval()
 			op(currentFileDAT[r,'path']).par.file = ""
