@@ -72,7 +72,7 @@ Feed your desired TOP into it
 ### In MediaPipe, select `SpoutCam` as your webcam source
 ![SpoutCam banana detection](https://github.com/torinmb/mediapipe-touchdesigner/assets/36455793/59428492-aa99-4772-9baf-b5eac0075f93)
 
-The media should appear with around a 1 frame delay!
+The media should appear with no frames of delay!
 
 ### Syphon on Mac
 There is no SpoutCam equivalent on Mac, but you can use Syphon to send video to OBS, and then use the OBS Virtual Webcam output to the MediaPipe task. It's not the most elegant solution, but it works.
