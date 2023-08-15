@@ -19,21 +19,35 @@ import shutil
 
 # return the response dictionary
 def onHTTPRequest(webServerDAT, request, response):
+	fileName = ""
+	fileContent = ""
 	requestArray = request['uri']
-	requestArray = requestArray.replace("/", "#")
-	if(requestArray == "#"):
-		requestArray = "#index.html"
-	print("Serving: " + request['uri'])
-	# print(op('/project1/vfs_web_server/virtualFile').vfs)
-	fileContent = op('virtualFile').vfs[requestArray].byteArray
-	mimeType = mimetypes.guess_type(op('virtualFile').vfs[requestArray].name, strict=True)
+	if(requestArray == "/"):
+		requestArray = "index.html"
+		# print(op('/project1/vfs_web_server/virtualFile').vfs)
+	importRoot = os.path.join(os.getcwd(), '_mpdist/')
+	# print("Path: " + importRoot + requestArray)
+	filePath = Path(importRoot + requestArray)
+	if(filePath.exists()):
+		print("Serving from file: " + request['uri'])
+		# f = filePath.open("r")
+		fileName = filePath.name
+		fileContent = filePath.read_bytes()
+	else:
+		print("Serving from VFS: " + request['uri'])
+		if(requestArray == "index.html"):
+			requestArray = "#index.html"
+		requestArray = requestArray.replace("/", "#")
+		# print(op('/project1/vfs_web_server/virtualFile').vfs)
+		fileContent = op('virtualFile').vfs[requestArray].byteArray
+		fileName = op('virtualFile').vfs[requestArray].name
+	mimeType = mimetypes.guess_type(fileName, strict=True)
 	# print("Think this file is "+str(mimeType))
 	response['Content-Type'] = mimeType[0] # Might need content-type header
 	response['statusCode'] = 200 # OK
 	response['statusReason'] = 'OK'
 	response['data'] = fileContent
 	return response
-
 
 def onWebSocketOpen(webServerDAT, client, uri):
 	return
@@ -57,7 +71,7 @@ def onWebSocketReceivePong(webServerDAT, client, data):
 	return
 
 def onServerStart(webServerDAT):
-	print("Loading MIME types")
+	# print("Loading MIME types")
 	mimetypes.add_type('application/octet-stream', 'task')
 	mimetypes.add_type('application/octet-stream', 'tflite')
 	importRoot = os.path.join(os.getcwd(), '_mpdist')
@@ -86,14 +100,14 @@ def onServerStart(webServerDAT):
 				vfsFilename = "#".join(file_path.parts)
 				print("Importing: "+ vfsFilename)
 				vfsOp.vfs.addFile(filename, overrideName="#"+vfsFilename)
-		if(parent().saveExternalTox(recurse=False)):
-			print("Saved tox")
+		# if(parent().saveExternalTox(recurse=False)):
+			# print("Saved tox")
 		try:
 			shutil.rmtree(importRoot)
 			print(importRoot + " removed successfully")
 		except OSError as o:
 			print(f"Error, {o.strerror}: {importRoot}")
-		print("MP server started")
+	print("MP server started")
 	return
 
 def onServerStop(webServerDAT):
