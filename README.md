@@ -78,6 +78,32 @@ The media should appear with no frames of delay!
 There is no SpoutCam equivalent on Mac, but you can use Syphon to send video to OBS, and then use the OBS Virtual Webcam output to the MediaPipe task. It's not the most elegant solution, but it works.
 
 # Performance tips
+## Realtime CHOP
+There are lots of interesting bits of data in the CHOP output of the MediaPipe tox:
+![image](https://github.com/torinmb/mediapipe-touchdesigner/assets/36455793/8396fe23-7e72-41ba-8237-3fb067c37b9c)
+
+### `detectTime`
+How long the MP detector took to run in ms.
+
+### `drawTime`
+How long the overlays and segmentation colors took to draw in ms.
+
+### `sourceFrameRate`
+The frame rate of the webcam video source MediaPipe is using.
+
+### `realTimeRatio`
+What ratio of a frame it took to process the video. So 0.1 means 0.1 of a frame was needed for MediaPipe to process. This uses the project's cookRate as a reference
+
+### `totalInToOutDelay`
+The number of project frames delay MediaPipe introduces. In TouchDesigner 2022.33910 this is at least 3 frames for the web browser component. If you are using Spout or Syphon to send video to a virtual webcam, you can use this as a parameter in a cache TOP to sync your input video source back up with the MediaPipe output TOP.
+
+### `isRealTime`
+Tells you if the whole process is able to keep up with the input frame rate.
+
+## Turn off what you're not using
+The MediaPipe detection tasks are very CPU and GPU intensive, so turn off any that you aren't using
+
+## Hyperthreading
 If you are on a PC, you can greatly improve all CPU-based render times within TouchDesigner, including the MediaPipe tasks by disabling HyperThreading (Intel CPUs) or Simultaneous Multi-Threading (SMT - AMD CPUs). _On my laptop it was a 60-80% improvement._
 
 Enabling/disabling HyperThreading is done in your system BIOS, so look up the instructions on how to do that for your computer. You can re-enable HyperThreading at any point if you want to go back and it is not a risky change to make to yous system.
