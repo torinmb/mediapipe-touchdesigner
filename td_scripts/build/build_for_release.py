@@ -107,11 +107,6 @@ def onCreate():
 		if(mpOp.saveExternalTox(recurse=False)):
 			print("***** Saved tox *****")
 			purgeVFS(vfsOp)
-			try:
-				shutil.rmtree(importRoot)
-				print(str(importRoot) + " removed successfully")
-			except OSError as o:
-				print(f"Error, {o.strerror}: {importRoot}")
 		else:
 			print("Failed to save tox, aborting")
 
