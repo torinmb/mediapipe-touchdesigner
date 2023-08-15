@@ -84,8 +84,10 @@ def onServerStart(webServerDAT):
 			if (filename.is_file()):
 				file_path = filename.relative_to(importRoot)
 				vfsFilename = "#".join(file_path.parts)
-				print("Found: "+ vfsFilename)
+				print("Importing: "+ vfsFilename)
 				vfsOp.vfs.addFile(filename, overrideName="#"+vfsFilename)
+		if(parent().saveExternalTox(recurse=False)):
+			print("Saved tox")
 		try:
 			shutil.rmtree(importRoot)
 			print(importRoot + " removed successfully")
