@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import shutil
 import zipfile
+import platform
 
 # me - this DAT
 # 
@@ -80,8 +81,14 @@ def onCreate():
 	# Specify the path to the desired directory
 	directory_path = Path.cwd()
 
+	my_env = os.environ.copy()
+
+	if platform.system() == 'Darwin':  # Check if it's a Mac
+		# Prepend the directory to the PATH variable
+		my_env["PATH"] = "/usr/local/bin:" + my_env["PATH"]  # Replace '/usr/local/bin' with your directory
+
 	# Run the command in the specified directory (check_call waits for it to complete before proceeding)
-	subprocess.check_call(["yarn", "build"],shell=True, cwd=directory_path)
+	subprocess.check_call("yarn build",shell=True, env=my_env, cwd=directory_path)
 	
 	importRoot = directory_path.joinpath(distFolder)
 	purgeVFS(vfsOp)
