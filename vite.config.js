@@ -2,6 +2,7 @@ import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 export default {
     build: {
+        outDir: '_mpdist',
         minify: false,
         rollupOptions: {
             treeshake: false,
