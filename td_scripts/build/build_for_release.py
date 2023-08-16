@@ -40,6 +40,7 @@ def onCreate():
 	clear()
 
 	releaseFolder = 'release'
+	toxReleaseFolder = releaseFolder+'/toxes'
 	toxFolder = 'toxes'
 	distFolder = '_mpdist'
 	mpOp = op('/project1/MediaPipe')
@@ -55,7 +56,7 @@ def onCreate():
 		except OSError as o:
 			print(f"Error, {o.strerror}: {releaseFolder}")
 	print("Copying existing tox files in")
-	shutil.copytree(toxFolder, releaseFolder)
+	shutil.copytree(toxFolder, toxReleaseFolder)
 
 	print("Unlinking Text DATs")
 
@@ -110,7 +111,7 @@ def onCreate():
 		# Keep the filename, but move the location to our release folder
 		e = Path(originalToxPath)
 		existingName = e.name
-		mpOp.par.externaltox = (str(directory_path.joinpath(releaseFolder, existingName)))
+		mpOp.par.externaltox = (str(directory_path.joinpath(toxReleaseFolder, existingName)))
 		if(mpOp.saveExternalTox(recurse=False)):
 			print("***** Saved tox *****")
 			purgeVFS(vfsOp)
