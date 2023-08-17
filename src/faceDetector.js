@@ -15,7 +15,7 @@ export let faceDetectorState = {
 	resultsName: "faceDetectorResults",
 	minDetectionConfidence: 0.5,
 	minSuppressionThreshold: 0.3,
-	draw: () => displayFaceDetections(),
+	draw: (video) => displayFaceDetections(video),
 };
 
 export const createFaceDetector = async (wasm_path, facesDiv) => {
@@ -35,7 +35,9 @@ export const createFaceDetector = async (wasm_path, facesDiv) => {
 	return faceDetector;
 };
 
-export function displayFaceDetections() {
+export function displayFaceDetections(video) {
+	let offsetRatioX = faceDetectorState.facesDiv.width / video.videoWidth;
+	let offsetRatioY = faceDetectorState.facesDiv.height / video.videoHeight;
 
 	// Remove any highlighting from previous frame.
 	for (let child of faceDetectorState.children) {
@@ -52,26 +54,26 @@ export function displayFaceDetections() {
 			"% confidence";
 		p.style =
 			"left: " +
-			(detection.boundingBox.originX) +
+			(detection.boundingBox.originX * offsetRatioX) +
 			"px;" +
 			"top: " +
-			detection.boundingBox.originY +
+			(detection.boundingBox.originY * offsetRatioY)+
 			"px;";
 
 		const highlighter = document.createElement("div");
 		highlighter.setAttribute("class", "highlighter");
 		highlighter.style =
 			"left: " +
-			(detection.boundingBox.originX) +
+			(detection.boundingBox.originX * offsetRatioX) +
 			"px;" +
 			"top: " +
-			detection.boundingBox.originY +
+			(detection.boundingBox.originY * offsetRatioY) +
 			"px;" +
 			"width: " +
-			detection.boundingBox.width +
+			(detection.boundingBox.width * offsetRatioX) +
 			"px;" +
 			"height: " +
-			detection.boundingBox.height +
+			(detection.boundingBox.height * offsetRatioY) +
 			"px;";
 
 		faceDetectorState.facesDiv.appendChild(highlighter);

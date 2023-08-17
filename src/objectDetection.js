@@ -17,7 +17,7 @@ export let objectState = {
 	resultsName: "objectResults",
 	maxResults: -1,
 	scoreThreshold: 0.5,
-	draw: () => drawObjects(),
+	draw: (video) => drawObjects(video),
 };
 
 export const createObjectDetector = async (WASM_PATH, objectsDiv) => {
@@ -37,7 +37,10 @@ export const createObjectDetector = async (WASM_PATH, objectsDiv) => {
 	return objectDetector;
 };
 
-export function drawObjects() {
+export function drawObjects(video) {
+	let offsetRatioX = objectState.objectsDiv.width / video.videoWidth;
+	let offsetRatioY = objectState.objectsDiv.height / video.videoHeight;
+
 	// Remove any highlighting from previous frame.
 	for (let child of objectState.children) {
 		objectState.objectsDiv.removeChild(child);
@@ -53,26 +56,26 @@ export function drawObjects() {
 			"% confidence";
 		p.style =
 			"left: " +
-			(detection.boundingBox.originX) +
+			(detection.boundingBox.originX * offsetRatioX) +
 			"px;" +
 			"top: " +
-			detection.boundingBox.originY +
+			(detection.boundingBox.originY * offsetRatioY) +
 			"px;";
 
 		const highlighter = document.createElement("div");
 		highlighter.setAttribute("class", "highlighter");
 		highlighter.style =
 			"left: " +
-			(detection.boundingBox.originX) +
+			(detection.boundingBox.originX * offsetRatioX) +
 			"px;" +
 			"top: " +
-			detection.boundingBox.originY +
+			(detection.boundingBox.originY * offsetRatioY) +
 			"px;" +
 			"width: " +
-			detection.boundingBox.width +
+			(detection.boundingBox.width * offsetRatioX) +
 			"px;" +
 			"height: " +
-			detection.boundingBox.height +
+			(detection.boundingBox.height * offsetRatioY) +
 			"px;";
 
 		objectState.objectsDiv.appendChild(highlighter);
