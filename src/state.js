@@ -10,6 +10,7 @@ export let webcamState = {
     webcamId: 'default',
     lastVideoTime: -1,
     targetFrameRate: 30,
+    width: 1280,
     height: 720,
     frameRate: 30,
     drawingUtils: new DrawingUtils(canvasCtx),
@@ -23,4 +24,9 @@ export let socketState = {
 
 export let overlayState = {
   show: true,
+}
+
+export let outputState = {
+  width: 1280,
+  height: 720,
 }
