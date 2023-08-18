@@ -75,6 +75,11 @@ export const createImageSegmenter = async (
         outputCategoryMask: true,
         outputConfidenceMasks: true,
     });
+    //remap the colors to from 0-255 to 0-1
+    segmenterState.legendColors = segmenterState.legendColors.map(color => 
+        color.map(channel => channel / 255)
+    );
+
     segmenterState.toImageBitmap = createCopyTextureToCanvas(segmenterState.segmentationCanvas);
     segmenterState.labels = imageSegmenter.getLabels();
     console.log(segmenterState.labels);
@@ -94,14 +99,19 @@ const createShaderProgram = (gl) => {
     `;
 
     const fs = `
-      precision highp float;
-      varying vec2 texCoords;
-      uniform sampler2D textureSampler;
-      void main() {
-        float a = texture2D(textureSampler, texCoords).r;
-        if(a == 0.0) discard;
-        gl_FragColor = vec4(0.0,0.0,0.0,a);
-      }
+        precision highp float;
+        varying vec2 texCoords;
+        uniform sampler2D masks[6]; // Array of mask samplers
+        uniform vec4 colors[6];     // Array of mask colors
+    
+        void main() {
+            vec4 finalColor = vec4(0.0);
+            for(int i = 0; i < 6; i++) {
+                float maskValue = texture2D(masks[i], texCoords).r;
+                finalColor += maskValue * colors[i];
+            }
+            gl_FragColor = finalColor;
+        }
     `;
     const vertexShader = gl.createShader(gl.VERTEX_SHADER);
     if (!vertexShader) {
@@ -135,7 +145,12 @@ const createShaderProgram = (gl) => {
             position: gl.getAttribLocation(program, "position"),
         },
         uniformLocations: {
-            textureSampler: gl.getUniformLocation(program, "textureSampler"),
+            masks: Array.from({ length: 6 }).map((_, i) =>
+            gl.getUniformLocation(program, `masks[${i}]`)
+            ),
+            colors: Array.from({ length: 6 }).map((_, i) =>
+                gl.getUniformLocation(program, `colors[${i}]`)
+            )
         },
     };
 };
@@ -164,51 +179,45 @@ export function createCopyTextureToCanvas(canvas) {
     const {
         shaderProgram,
         attribLocations: { position: positionLocation },
-        uniformLocations: { textureSampler: textureLocation },
+        uniformLocations: { masks, colors },
     } = createShaderProgram(gl);
     const vertexBuffer = createVertexBuffer(gl);
 
-    return (mask) => {
+    return (allMasks) => {
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.clearColor(1.0, 1.0, 1.0, 1.0);
         gl.useProgram(shaderProgram);
         gl.clear(gl.COLOR_BUFFER_BIT);
-        const texture = mask.getAsWebGLTexture();
+        
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
         gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(positionLocation);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.uniform1i(textureLocation, 0);
+
+        
+        
+        for (let i = 0; i < allMasks.length; i++) {
+            // if(allMasks[i] && allMasks[i].getAsWebGLTexture){
+                const maskTexture = allMasks[i].getAsWebGLTexture();
+                gl.activeTexture(gl.TEXTURE0 + i);
+                gl.bindTexture(gl.TEXTURE_2D, maskTexture);
+                gl.uniform1i(masks[i], i);
+                gl.uniform4fv(colors[i], segmenterState.legendColors[i]);
+            // }
+        }
+        const maxTextureUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+        if (allMasks.length > maxTextureUnits) {
+            console.error("Too many textures!");
+        }
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         return createImageBitmap(canvas);
     };
 }
 
 export async function drawSegmentation() {
-    // let segmentCtx = segmenterState.segmentationCanvas.getContext("2d");
-
     segmenterState.videoElement.style.opacity = 0;
 
-    // segmentCtx.width = segmenterState.videoElement.videoWidth;
-    // segmentCtx.height = segmenterState.videoElement.videoHeight;
-
-    // segmenterState.segmentationCanvas.width =
-    //     segmenterState.videoElement.videoWidth;
-    // segmenterState.segmentationCanvas.height =
-    //     segmenterState.videoElement.videoHeight;
-
-    // console.log("Segmenter width, height "+segmentCtx.width +", "+ segmentCtx.height);
-
-    // segmenterState.segmentsCanvas.width = video.videoWidth;
-    // segmenterState.segmentsCanvas.height = video.videoHeight;
-
-    // let texture = result.categoryMask.getAsWebGLTexture();
-    // let eightBitMap = result.categoryMask.getAsUint8Array();
-    // let floatBitMap = result.categoryMask.getAsFloat32Array();
-
     // const segmentationMaskBitmap = await segmenterState.toImageBitmap(segmenterState.results.categoryMask);
-    await segmenterState.toImageBitmap(segmenterState.results.confidenceMasks[0]);
+    await segmenterState.toImageBitmap(segmenterState.results.confidenceMasks);
     segmenterState.results.close();
 }
 
