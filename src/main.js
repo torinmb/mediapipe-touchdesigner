@@ -20,7 +20,7 @@ import { poseState, createPoseLandmarker } from "./poseTracking.js";
 import { objectState, createObjectDetector } from "./objectDetection.js";
 import { imageState, createImageClassifier } from "./imageClassification.js";
 import { segmenterState, createImageSegmenter } from "./imageSegmentation.js";
-import { webcamState, socketState, overlayState } from "./state.js";
+import { webcamState, socketState, overlayState, outputState } from "./state.js";
 import { configMap } from "./modelParams.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
@@ -56,7 +56,7 @@ function handleQueryParams() {
   const urlParams = new URLSearchParams(window.location.search);
   urlParams.forEach((value, key) => {
     if (key in configMap) {
-      configMap[key](value);
+      configMap[key](decodeURIComponent(value));
     }
   });
 }
@@ -71,8 +71,7 @@ function enableCam(webcamState, video) {
       },
       frameRate: {
         ideal: webcamState.targetFrameRate,
-        min: 25
-      }
+        }
     }
   };
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
@@ -89,6 +88,7 @@ function enableCam(webcamState, video) {
       // document.body.style.backgroundColor = "red";
       console.log(err.name + ": " + err.message);
     });
+    video.height = 720;
 }
 
 function safeSocketSend(ws, data) {
@@ -107,20 +107,20 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     return;
   }
 
-  canvasElement.style.width = video.videoWidth;
-  canvasElement.style.height = video.videoHeight;
-  canvasElement.width = video.videoWidth;
-  canvasElement.height = video.videoHeight;
+  canvasElement.style.width = outputState.width;
+  canvasElement.style.height = outputState.height;
+  canvasElement.width = outputState.width;
+  canvasElement.height = outputState.height;
 
-  objectsDiv.style.width = video.videoWidth;
-  objectsDiv.style.height = video.videoHeight;
-  objectsDiv.width = video.videoWidth;
-  objectsDiv.height = video.videoHeight;
+  objectsDiv.style.width = outputState.width;
+  objectsDiv.style.height = outputState.height;
+  objectsDiv.width = outputState.width;
+  objectsDiv.height = outputState.height;
 
-  facesDiv.style.width = video.videoWidth;
-  facesDiv.style.height = video.videoHeight;
-  facesDiv.width = video.videoWidth;
-  facesDiv.height = video.videoHeight;
+  facesDiv.style.width = outputState.width;
+  facesDiv.style.height = outputState.height;
+  facesDiv.width = outputState.width;
+  facesDiv.height = outputState.height;
 
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
@@ -165,10 +165,10 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     }
     // unique draw function for object detection
     if (objectState.detect && objectState.results) {
-      objectState.draw();
+      objectState.draw(video);
     }
     if (faceDetectorState.detect && faceDetectorState.results) {
-      faceDetectorState.draw();
+      faceDetectorState.draw(video);
     }
   }
   let endDraw = Date.now();

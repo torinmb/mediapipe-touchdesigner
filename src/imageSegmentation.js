@@ -142,13 +142,18 @@ export function drawSegmentationWebGL() {
     // draw the texture to the cavas using the gl context without effecting the existing context.
 }
 
-export function drawSegmentation(video) {
+export function drawSegmentation() {
     let segmentCtx = segmenterState.segmentationCanvas.getContext("2d");
 
     segmenterState.videoElement.style.opacity = 0;
 
-    segmentCtx.width = 1280;
-    segmentCtx.height = 720;
+    segmentCtx.width = segmenterState.videoElement.videoWidth;
+    segmentCtx.height = segmenterState.videoElement.videoHeight;
+
+    segmenterState.segmentationCanvas.width = segmenterState.videoElement.videoWidth;
+    segmenterState.segmentationCanvas.height = segmenterState.videoElement.videoHeight;
+
+    // console.log("Segmenter width, height "+segmentCtx.width +", "+ segmentCtx.height);
 
     // segmenterState.segmentsCanvas.width = video.videoWidth;
     // segmenterState.segmentsCanvas.height = video.videoHeight;

@@ -7,14 +7,18 @@ import { faceDetectorState } from "./faceDetector";
 import { imageState } from "./imageClassification";
 import { segmenterState } from "./imageSegmentation";
 
-import { webcamState, socketState, overlayState } from './state.js';
+import { webcamState, socketState, overlayState, outputState } from './state.js';
 
 export const configMap = {
     'Wsaddress': value => socketState.adddress = value,
     'Wsport': value => socketState.port = value,
 
     'Wheight': value => webcamState.height = value,
+    'Wwidth': value => webcamState.width = value,
     'Wtargetframerate': value => webcamState.targetFrameRate = value,
+
+    'Oheight': value => outputState.height = value,
+    'Owidth': value => outputState.width = value,
 
     'Detectfacelandmarks': value => detectSwitch(faceLandmarkState, parseInt(value) === 1),
     'Detectfaces': value => detectSwitch(faceDetectorState, parseInt(value) === 1),
