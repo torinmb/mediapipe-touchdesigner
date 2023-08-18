@@ -60,6 +60,7 @@ export const createImageSegmenter = async (
     videoElement,
     segmentationCanvas
 ) => {
+    if(!segmenterState.detect) return
     segmenterState.videoElement = videoElement;
     segmenterState.segmentationCanvas = segmentationCanvas;
     console.log("Starting image segmentation");
@@ -170,9 +171,9 @@ const createVertexBuffer = (gl) => {
 
 export function createCopyTextureToCanvas(canvas) {
     const gl = canvas.getContext("webgl2");
-    gl.disable(gl.BLEND);
-    gl.width = segmenterState.videoElement.videoWidth;
-    gl.height = segmenterState.videoElement.videoHeight;
+    // gl.disable(gl.BLEND);
+    // gl.width = segmenterState.videoElement.videoWidth;
+    // gl.height = segmenterState.videoElement.videoHeight;
     if (!gl) {
         return undefined;
     }
@@ -192,8 +193,6 @@ export function createCopyTextureToCanvas(canvas) {
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
         gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(positionLocation);
-
-        
         
         for (let i = 0; i < allMasks.length; i++) {
             // if(allMasks[i] && allMasks[i].getAsWebGLTexture){
@@ -209,7 +208,7 @@ export function createCopyTextureToCanvas(canvas) {
             console.error("Too many textures!");
         }
         gl.drawArrays(gl.TRIANGLES, 0, 6);
-        return createImageBitmap(canvas);
+        //return createImageBitmap(canvas);
     };
 }
 
