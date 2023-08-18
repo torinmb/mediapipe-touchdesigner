@@ -14,7 +14,7 @@ let segmentationModelTypes = {
 
 export let segmenterState = {
     modelTypes: segmentationModelTypes,
-    detect: true,
+    detect: false,
     modelPath: segmentationModelTypes["selfieMulticlass"],
     detector: undefined,
     results: undefined,
