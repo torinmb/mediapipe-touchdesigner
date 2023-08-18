@@ -60,7 +60,7 @@ export const createImageSegmenter = async (
     videoElement,
     segmentationCanvas
 ) => {
-    if(!segmenterState.detect) return
+    // if(!segmenterState.detect) return
     segmenterState.videoElement = videoElement;
     segmenterState.segmentationCanvas = segmentationCanvas;
     console.log("Starting image segmentation");

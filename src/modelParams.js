@@ -123,9 +123,9 @@ function detectSwitch(state, value) {
         let video = document.getElementById("webcam");
         // webcamState.videoElement.style.opacity = 1;
         video.style.opacity = 1;
-        const canvas = document.getElementById("segmentation");
-        const ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // const canvas = document.getElementById("segmentation");
+        // const ctx = canvas.getContext("webgl2");
+        // ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 }
 
@@ -146,6 +146,6 @@ function overlaySwitch(value) {
     let video = document.getElementById("webcam");
     video.style.opacity = 1;
     const canvas = document.getElementById("segmentation");
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // const ctx = canvas.getContext("2d");
+    // ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
