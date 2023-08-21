@@ -126,6 +126,10 @@ function detectSwitch(state, value) {
         // const canvas = document.getElementById("segmentation");
         // const ctx = canvas.getContext("webgl2");
         // ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const ctx = document.getElementById("segmentation");
+        const gl = ctx.getContext("webgl2");
+        gl.clearColor(0,0,0,0);
+        gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
     }
 }
 
