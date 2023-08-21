@@ -42,21 +42,21 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
 
   webcamState.webcamDevices = await getWebcamDevices();
 
-  if(handState.detect)
+  // if(handState.detect)
     handState.landmarker = await createHandLandmarker(WASM_PATH);
-  if(gestureState.detect)
+  // if(gestureState.detect)
     gestureState.landmarker = await createGestureLandmarker(WASM_PATH);
-  if(faceLandmarkState.detect)
+  // if(faceLandmarkState.detect)
     faceLandmarkState.landmarker = await createFaceLandmarker(WASM_PATH);
-  if(faceDetectorState.detect)
+  // if(faceDetectorState.detect)
     faceDetectorState.landmarker = await createFaceDetector(WASM_PATH, facesDiv);
-  if(poseState.detect)
+  // if(poseState.detect)
     poseState.landmarker = await createPoseLandmarker(WASM_PATH);
-  if(objectState.detect)
+  // if(objectState.detect)
     objectState.landmarker = await createObjectDetector(WASM_PATH, objectsDiv);
-  if(imageState.detect)
+  // if(imageState.detect)
     imageState.landmarker = await createImageClassifier(WASM_PATH);
-  if(segmenterState.detect)
+  // if(segmenterState.detect)
     segmenterState.landmarker = await createImageSegmenter(WASM_PATH, video, segmentationCanvas);
   setupWebSocket(socketState.adddress + ":" + socketState.port, socketState);
   enableCam(webcamState, video);
