@@ -198,7 +198,7 @@ export function createCopyTextureToCanvas(results) {
         const maskTexture = results.confidenceMasks[i].getAsWebGLTexture();
         gl.activeTexture(gl.TEXTURE0 + i);
         gl.bindTexture(gl.TEXTURE_2D, maskTexture);
-        gl.uniform1i(maskTexture[i], i);
+        gl.uniform1i(masks[i], i);
         gl.uniform4fv(colors[i], segmenterState.legendColors[i]);
         // }
     }
