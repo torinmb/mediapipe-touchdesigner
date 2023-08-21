@@ -141,6 +141,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
         // Gesture Model has a different function for detection
         let marker = landmarker.landmarker;
         if (landmarker.resultsName === 'segmenterResults') {
+          video.style.opacity = 0;
           await marker.segmentForVideo(video, startTimeMs, segmenterState.toImageBitmap);
         }
         else if (landmarker.resultsName === 'gestureResults') {

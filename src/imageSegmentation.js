@@ -193,14 +193,24 @@ export function createCopyTextureToCanvas(results) {
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(positionLocation);
 
-    for (let i = 0; i < results.confidenceMasks.length; i++) {
-        // if(allMasks[i] && allMasks[i].getAsWebGLTexture){
-        const maskTexture = results.confidenceMasks[i].getAsWebGLTexture();
-        gl.activeTexture(gl.TEXTURE0 + i);
+    // Landscape or square selfie models return only a single mask with either 0 (background) or 1 (person)
+    if (results.confidenceMasks.length == 1) {
+        const maskTexture = results.confidenceMasks[0].getAsWebGLTexture();
+        gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, maskTexture);
-        gl.uniform1i(masks[i], i);
-        gl.uniform4fv(colors[i], segmenterState.legendColors[i]);
-        // }
+        gl.uniform1i(masks[0], 0);
+        gl.uniform4fv(colors[0], [1,1,1,1]);
+    }
+    else {
+        for (let i = 0; i < results.confidenceMasks.length; i++) {
+            // if(allMasks[i] && allMasks[i].getAsWebGLTexture){
+            const maskTexture = results.confidenceMasks[i].getAsWebGLTexture();
+            gl.activeTexture(gl.TEXTURE0 + i);
+            gl.bindTexture(gl.TEXTURE_2D, maskTexture);
+            gl.uniform1i(masks[i], i);
+            gl.uniform4fv(colors[i], segmenterState.legendColors[i]);
+            // }
+        }
     }
     const maxTextureUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
     if (results.confidenceMasks.length > maxTextureUnits) {
@@ -208,5 +218,4 @@ export function createCopyTextureToCanvas(results) {
     }
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     // results.close();
-
 }
