@@ -77,11 +77,11 @@ export const createImageSegmenter = async (
         outputConfidenceMasks: true,
     });
     //remap the colors to from 0-255 to 0-1
-    segmenterState.legendColors = segmenterState.legendColors.map(color => 
+    segmenterState.legendColors = segmenterState.legendColors.map(color =>
         color.map(channel => channel / 255)
     );
 
-    segmenterState.toImageBitmap = createCopyTextureToCanvas(segmenterState.segmentationCanvas);
+    segmenterState.toImageBitmap = createCopyTextureToCanvas;
     segmenterState.labels = imageSegmenter.getLabels();
     console.log(segmenterState.labels);
     return imageSegmenter;
@@ -147,7 +147,7 @@ const createShaderProgram = (gl) => {
         },
         uniformLocations: {
             masks: Array.from({ length: 6 }).map((_, i) =>
-            gl.getUniformLocation(program, `masks[${i}]`)
+                gl.getUniformLocation(program, `masks[${i}]`)
             ),
             colors: Array.from({ length: 6 }).map((_, i) =>
                 gl.getUniformLocation(program, `colors[${i}]`)
@@ -169,8 +169,8 @@ const createVertexBuffer = (gl) => {
     return vertexBuffer;
 };
 
-export function createCopyTextureToCanvas(canvas) {
-    const gl = canvas.getContext("webgl2");
+export function createCopyTextureToCanvas(results) {
+    const gl = segmenterState.segmentationCanvas.getContext("webgl2");
     // gl.disable(gl.BLEND);
     // gl.width = segmenterState.videoElement.videoWidth;
     // gl.height = segmenterState.videoElement.videoHeight;
@@ -184,39 +184,29 @@ export function createCopyTextureToCanvas(canvas) {
     } = createShaderProgram(gl);
     const vertexBuffer = createVertexBuffer(gl);
 
-    return (allMasks) => {
-        gl.viewport(0, 0, canvas.width, canvas.height);
-        gl.clearColor(1.0, 1.0, 1.0, 1.0);
-        gl.useProgram(shaderProgram);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(positionLocation);
-        
-        for (let i = 0; i < allMasks.length; i++) {
-            // if(allMasks[i] && allMasks[i].getAsWebGLTexture){
-                const maskTexture = allMasks[i].getAsWebGLTexture();
-                gl.activeTexture(gl.TEXTURE0 + i);
-                gl.bindTexture(gl.TEXTURE_2D, maskTexture);
-                gl.uniform1i(masks[i], i);
-                gl.uniform4fv(colors[i], segmenterState.legendColors[i]);
-            // }
-        }
-        const maxTextureUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
-        if (allMasks.length > maxTextureUnits) {
-            console.error("Too many textures!");
-        }
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-        //return createImageBitmap(canvas);
-    };
+    gl.viewport(0, 0, segmenterState.segmentationCanvas.width, segmenterState.segmentationCanvas.height);
+    gl.clearColor(1.0, 1.0, 1.0, 1.0);
+    gl.useProgram(shaderProgram);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(positionLocation);
+
+    for (let i = 0; i < results.confidenceMasks.length; i++) {
+        // if(allMasks[i] && allMasks[i].getAsWebGLTexture){
+        const maskTexture = results.confidenceMasks[i].getAsWebGLTexture();
+        gl.activeTexture(gl.TEXTURE0 + i);
+        gl.bindTexture(gl.TEXTURE_2D, maskTexture);
+        gl.uniform1i(maskTexture[i], i);
+        gl.uniform4fv(colors[i], segmenterState.legendColors[i]);
+        // }
+    }
+    const maxTextureUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+    if (results.confidenceMasks.length > maxTextureUnits) {
+        console.error("Too many textures!");
+    }
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    // results.close();
+
 }
-
-export async function drawSegmentation() {
-    segmenterState.videoElement.style.opacity = 0;
-
-    // const segmentationMaskBitmap = await segmenterState.toImageBitmap(segmenterState.results.categoryMask);
-    await segmenterState.toImageBitmap(segmenterState.results.confidenceMasks);
-    segmenterState.results.close();
-}
-

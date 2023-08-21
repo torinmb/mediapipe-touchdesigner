@@ -141,7 +141,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
         // Gesture Model has a different function for detection
         let marker = landmarker.landmarker;
         if (landmarker.resultsName === 'segmenterResults') {
-          landmarker.results = await marker.segmentForVideo(video, startTimeMs);
+          await marker.segmentForVideo(video, startTimeMs, segmenterState.toImageBitmap);
         }
         else if (landmarker.resultsName === 'gestureResults') {
           landmarker.results = await marker.recognizeForVideo(video, startTimeMs);
@@ -164,7 +164,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
 
   let startDraw = Date.now();
   if (segmenterState.detect && segmenterState.results) {
-    segmenterState.draw();
+    // segmenterState.draw();
     // segmenterState.results.close();
   }
   if (overlayState.show) {
