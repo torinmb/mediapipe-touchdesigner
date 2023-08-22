@@ -132,6 +132,11 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   facesDiv.width = outputState.width;
   facesDiv.height = outputState.height;
 
+  segmentationCanvas.style.width = outputState.width;
+  segmentationCanvas.style.height = outputState.height;
+  segmentationCanvas.width = outputState.width;
+  segmentationCanvas.height = outputState.height;
+
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
     let startDetect = Date.now();
