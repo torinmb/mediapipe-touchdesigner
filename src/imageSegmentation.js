@@ -193,6 +193,21 @@ export function createCopyTextureToCanvas(results) {
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(positionLocation);
 
+    const canvasAspect = segmenterState.segmentationCanvas.width / segmenterState.segmentationCanvas.height;
+    const imageAspect = segmenterState.videoElement.videoWidth / segmenterState.videoElement.videoHeight;
+
+    let scaleY = 1;
+    let scaleX = imageAspect / canvasAspect;
+
+    // gl.setUniforms(shaderProgram, {
+    //     u_matrix: [
+    //       scaleX, 0, 0, 0,
+    //       0, -scaleY, 0, 0,
+    //       0, 0, 1, 0,
+    //       0, 0, 0, 1,
+    //     ],
+    //   });
+
     // Landscape or square selfie models return only a single mask with either 0 (background) or 1 (person)
     if (results.confidenceMasks.length == 1) {
         const maskTexture = results.confidenceMasks[0].getAsWebGLTexture();
