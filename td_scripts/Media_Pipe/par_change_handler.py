@@ -40,12 +40,7 @@ def onCellChange(dat, cells, prev):
 	else:
 		reloadRequired = True
 
-	if (dat[cell.row,0] == "Webcam"):
-		data = {
-			'type': 'selectWebcam',
-			'deviceId': str(cell)
-		}
-	elif dat[cell.row,0] == "Model":
+	if dat[cell.row,0] == "Model":
 		data = createModelData(str(cell))
 	else:
 		data = {
