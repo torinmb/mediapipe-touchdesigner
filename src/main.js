@@ -59,6 +59,9 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
     segmenterState.landmarker = await createImageSegmenter(WASM_PATH, video, segmentationCanvas);
   setupWebSocket(socketState.adddress + ":" + socketState.port, socketState);
   webcamState.startWebcam();
+  if (webcamState.webcamRunning) {
+    window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
+  }
 })();
 
 function handleQueryParams() {
