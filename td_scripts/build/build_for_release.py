@@ -45,13 +45,12 @@ def onCreate():
 
 	releaseFolder = 'release'
 	toxReleaseFolder = releaseFolder+'/toxes'
-	toxFolder = 'toxes'
 	distFolder = '_mpdist'
-	mpOp = op('/project1/MediaPipe')
 	vfsOp = op('/project1/MediaPipe/virtualFile')
 	currentFileDAT = op('dats_with_files')
 	previousFileDAT = op('previous_dats_with_files')
 	currentToxesDAT = op('external_toxes')
+	gotErrors = 0
 
 	if(Path(releaseFolder).exists()):
 		print("Removing existing release dir")
@@ -60,6 +59,7 @@ def onCreate():
 			print(str(releaseFolder) + " removed successfully")
 		except OSError as o:
 			print(f"Error, {o.strerror}: {releaseFolder}")
+			gotErrors = gotErrors + 1
 	print("Creating new release folder")
 	
 	os.mkdir(os.path.join(os.getcwd(), releaseFolder))
@@ -94,6 +94,7 @@ def onCreate():
 		subprocess.check_call("yarn build",shell=True, env=my_env, cwd=directory_path)
 	except:
 		print("***** Yarn build failed, moving on... *****")
+		gotErrors = gotErrors + 1
 
 	importRoot = directory_path.joinpath(distFolder)
 	purgeVFS(vfsOp)
@@ -117,7 +118,8 @@ def onCreate():
 			e = Path(originalToxPath)
 			existingName = e.name
 			# If we're the build script, don't export, and remove our external tox path
-			if(currentOp.name == me.name):
+			if(currentOp.name == parent().name):
+				# print("skipping build tox")
 				currentOp.par.externaltox = ""
 			else:
 				currentOp.par.externaltox = (str(directory_path.joinpath(toxReleaseFolder, existingName)))
@@ -125,6 +127,7 @@ def onCreate():
 					print("Saved " + str(currentOp))
 				else:
 					print("***** Failed to save tox for "+ str(currentOp) + " *****")
+					gotErrors = gotErrors + 1
 				currentOp.par.externaltox = originalToxPath
 			# print("Restoring tox path for " + str(currentOp))
 
@@ -147,7 +150,7 @@ def onCreate():
 			op(previousFileDAT[r,'path']).par.file = previousFileDAT[r,'filePath']
 
 	op.TDResources.PopDialog.OpenDefault(
-							text="Finished release build, please check the logs, then click OK to reload.",
+							text="Finished release build with "+ gotErrors + "Error. Please check the logs, then click OK to reload.",
 							title="Build complete",
 							buttons=['OK'],
 							callback=dialogChoice,
