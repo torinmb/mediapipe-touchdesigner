@@ -44,6 +44,7 @@ def onCreate():
 	clear()
 
 	releaseFolder = 'release'
+	fullReleasePath = Path(os.getcwd() + "/" + releaseFolder)
 	toxReleaseFolder = releaseFolder+'/toxes'
 	distFolder = '_mpdist'
 	vfsOp = op('/project1/MediaPipe/virtualFile')
@@ -72,7 +73,7 @@ def onCreate():
 	previousFileDAT[0,-1] = "filePath"
 
 	for r in range (currentFileDAT.numRows):
-		if (r != 0):
+		if (r != 0 and currentFileDAT[r,'name'] != "shortcuts"):
 			print("Removing file path for "+currentFileDAT[r,'path'])
 			previousFileDAT[r,'filePath'] = op(currentFileDAT[r,'path']).par.file.eval()
 			op(currentFileDAT[r,'path']).par.file = ""
@@ -141,7 +142,7 @@ def onCreate():
 	project.save(releaseFolder + "/MediaPipe TouchDesigner.toe")
 	
 	# Zip everything up
-	create_zip_from_paths(Path(releaseFolder), "release.zip")
+	create_zip_from_paths(fullReleasePath, "../release.zip")
 
 	# Restore the file paths to Text DATs
 	for r in range (previousFileDAT.numRows):
