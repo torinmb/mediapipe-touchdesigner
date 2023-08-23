@@ -150,14 +150,13 @@ def onCreate():
 			op(previousFileDAT[r,'path']).par.file = previousFileDAT[r,'filePath']
 
 	op.TDResources.PopDialog.OpenDefault(
-							text="Finished release build with "+ gotErrors + "Error. Please check the logs, then click OK to reload.",
+							text="Finished release build with "+ str(gotErrors) + " errors. Please check the logs, then click OK to reload.",
 							title="Build complete",
 							buttons=['OK'],
 							callback=dialogChoice,
 							details=currentFolder + "/" + currentFilename,
 							textEntry=False,
 							escButton=1,
-							escOnClickAway=True,
 							enterButton=1)
 
 	# # Save the original MediaPipe tox path
