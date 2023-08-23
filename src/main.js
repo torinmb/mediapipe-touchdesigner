@@ -25,6 +25,7 @@ import { configMap } from "./modelParams.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
 const video = document.getElementById("webcam");
+webcamState.videoElement = video;
 const canvasElement = document.getElementById("output_canvas");
 const objectsDiv = document.getElementById("objects");
 const facesDiv = document.getElementById("faces");
@@ -39,9 +40,7 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
 
 (async function setup() {
   handleQueryParams();
-
   webcamState.webcamDevices = await getWebcamDevices();
-
   // if(handState.detect)
     handState.landmarker = await createHandLandmarker(WASM_PATH);
   // if(gestureState.detect)
@@ -59,7 +58,7 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
   // if(segmenterState.detect)
     segmenterState.landmarker = await createImageSegmenter(WASM_PATH, video, segmentationCanvas);
   setupWebSocket(socketState.adddress + ":" + socketState.port, socketState);
-  enableCam(webcamState, video);
+  webcamState.startWebcam();
 })();
 
 function handleQueryParams() {
@@ -69,36 +68,6 @@ function handleQueryParams() {
       configMap[key](decodeURIComponent(value));
     }
   });
-}
-
-function enableCam(webcamState, video) {
-  webcamState.videoElement = video;
-  const constraints = {
-    video: {
-      deviceId: webcamState.webcamId,
-      height: {
-        exact: webcamState.height,
-      },
-      frameRate: {
-        ideal: webcamState.targetFrameRate,
-        }
-    }
-  };
-  navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-    video.srcObject = stream;
-    video.addEventListener("loadeddata", () => predictWebcam(allModelState, objectState, webcamState, video));
-    webcamState.webcamRunning = true;
-    stream.getTracks().forEach(function (track) {
-      let trackSettings = track.getSettings();
-      webcamState.frameRate = trackSettings.frameRate;
-      console.log("Webcam settings: ", trackSettings);
-    })
-  })
-    .catch(function (err) {
-      // document.body.style.backgroundColor = "red";
-      console.log(err.name + ": " + err.message);
-    });
-    video.height = 720;
 }
 
 function safeSocketSend(ws, data) {
@@ -208,7 +177,7 @@ function setupWebSocket(socketURL, socketState) {
     socketState.ws.send('pong');
 
     getWebcamDevices().then(devices => {
-      console.log('Availalbe webcam devices: ', devices)
+      // console.log('Availalbe webcam devices: ', devices)
       socketState.ws.send(JSON.stringify({ type: 'webcamDevices', devices }));
     });
   });
@@ -218,15 +187,7 @@ function setupWebSocket(socketURL, socketState) {
     if (event.data === 'ping' || event.data === 'pong') return;
 
     const data = JSON.parse(event.data);
-    console.log("Data received: ", data);
-    if (data.type == "selectWebcam") {
-      console.log("Got webcamId via WS: " + data.deviceId);
-      if (checkDeviceIds(data.deviceId, webcamState.webcamDevices)) {
-        webcamState.webcamId = data.deviceId;
-      }
-      enableCam(webcamState, video);
-    }
-    else for (let [key, value] of Object.entries(data)) {
+    for (let [key, value] of Object.entries(data)) {
       if (key in configMap) {
         console.log("Got WS dats: " + key + " : " + value);
         configMap[key](value);
@@ -243,20 +204,16 @@ function setupWebSocket(socketURL, socketState) {
   });
 }
 
-function checkDeviceIds(key, deviceIds) {
-  for (let i = 0; i < deviceIds.length; i++) {
-    if (deviceIds[i].deviceId === key) {
-      return true;
-    }
-  }
-  return false;
-}
-
 async function getWebcamDevices() {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
     const webcams = devices.filter(device => device.kind === 'videoinput');
-    return webcams.map(({ deviceId, label }) => ({ deviceId, label }));
+    // console.log("Got webcams: ", webcams);
+    
+    // webcams.forEach((value) => {
+    //   console.log(value.label + " capabilities:", value.getCapabilities());
+    // });
+    return webcams.map(({ label }) => ({ label }));
   } catch (error) {
     console.error('Error getting webcam devices:', error);
     // document.body.style.backgroundColor = "red";

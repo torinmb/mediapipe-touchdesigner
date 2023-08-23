@@ -13,6 +13,7 @@ export const configMap = {
     'Wsaddress': value => socketState.adddress = value,
     'Wsport': value => socketState.port = value,
 
+    'Webcam': value => webcamState.changeWebcam(value),
     'Wheight': value => webcamState.height = value,
     'Wwidth': value => webcamState.width = value,
     'Wtargetframerate': value => webcamState.targetFrameRate = value,
