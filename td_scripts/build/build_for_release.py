@@ -33,6 +33,10 @@ def create_zip_from_paths(directory, output_zip_name="release.zip"):
 			zip_file.write(entry, entry.relative_to(directory))
 	return
 
+def dialogChoice(popupInfo):
+	# print("current File: " + popupInfo["details"])
+	project.load(popupInfo["details"])	
+
 def onStart():
 	return
 
@@ -40,13 +44,14 @@ def onCreate():
 	clear()
 
 	releaseFolder = 'release'
+	fullReleasePath = Path(os.getcwd() + "/" + releaseFolder)
 	toxReleaseFolder = releaseFolder+'/toxes'
-	toxFolder = 'toxes'
 	distFolder = '_mpdist'
-	mpOp = op('/project1/MediaPipe')
 	vfsOp = op('/project1/MediaPipe/virtualFile')
 	currentFileDAT = op('dats_with_files')
-	previousFileDATs = op('previous_dats_with_files')
+	previousFileDAT = op('previous_dats_with_files')
+	currentToxesDAT = op('external_toxes')
+	gotErrors = 0
 
 	if(Path(releaseFolder).exists()):
 		print("Removing existing release dir")
@@ -55,26 +60,22 @@ def onCreate():
 			print(str(releaseFolder) + " removed successfully")
 		except OSError as o:
 			print(f"Error, {o.strerror}: {releaseFolder}")
-	print("Copying existing tox files in")
-	shutil.copytree(toxFolder, toxReleaseFolder)
+			gotErrors = gotErrors + 1
+	print("Creating new release folder")
+	
+	os.mkdir(os.path.join(os.getcwd(), releaseFolder))
+	os.mkdir(os.path.join(os.getcwd(), toxReleaseFolder))
 
 	print("Unlinking Text DATs")
 
-	previousFileDATs.copy(currentFileDAT)
-	previousFileDATs.appendCol()
-	previousFileDATs[0,-1] = "filePath"
+	previousFileDAT.copy(currentFileDAT)
+	previousFileDAT.appendCol()
+	previousFileDAT[0,-1] = "filePath"
 
 	for r in range (currentFileDAT.numRows):
-		if (r == 0):
-			print("Removing file path for "+me.path)
-			previousFileDATs.appendRow()
-			previousFileDATs[-1,'name'] = me.name
-			previousFileDATs[-1,'path'] = me.path
-			previousFileDATs[-1,'filePath'] = me.par.file.eval()
-			me.par.file = ""
-		else:
+		if (r != 0 and currentFileDAT[r,'name'] != "shortcuts"):
 			print("Removing file path for "+currentFileDAT[r,'path'])
-			previousFileDATs[r,'filePath'] = op(currentFileDAT[r,'path']).par.file.eval()
+			previousFileDAT[r,'filePath'] = op(currentFileDAT[r,'path']).par.file.eval()
 			op(currentFileDAT[r,'path']).par.file = ""
 
 	print("Initing yarn build")
@@ -89,13 +90,18 @@ def onCreate():
 		my_env["PATH"] = "/usr/local/bin:" + my_env["PATH"]  # Replace '/usr/local/bin' with your directory
 
 	# Run the command in the specified directory (check_call waits for it to complete before proceeding)
-	subprocess.check_call("yarn build",shell=True, env=my_env, cwd=directory_path)
-	
+	try:
+		subprocess.check_call("yarn install",shell=True, env=my_env, cwd=directory_path)
+		subprocess.check_call("yarn build",shell=True, env=my_env, cwd=directory_path)
+	except:
+		print("***** Yarn build failed, moving on... *****")
+		gotErrors = gotErrors + 1
+
 	importRoot = directory_path.joinpath(distFolder)
 	purgeVFS(vfsOp)
 	print("Checking for new files at: " + str(importRoot))
 
-	if(os.path.exists(importRoot)):
+	if(Path(importRoot).exists):
 		print("Importing files from: " + str(importRoot))
 		for filename in Path(importRoot).rglob('*'):
 			if (filename.is_file()):
@@ -103,36 +109,73 @@ def onCreate():
 				vfsFilename = "#".join(file_path.parts)
 				print("Importing: "+ vfsFilename)
 				vfsOp.vfs.addFile(filename, overrideName="#"+vfsFilename)
-		
-		# Save the original MediaPipe tox path
-		originalToxPath = mpOp.par.externaltox.eval()
-		print("Current external tox path: "+originalToxPath)
-		
-		# Keep the filename, but move the location to our release folder
-		e = Path(originalToxPath)
-		existingName = e.name
-		mpOp.par.externaltox = (str(directory_path.joinpath(toxReleaseFolder, existingName)))
-		if(mpOp.saveExternalTox(recurse=False)):
-			print("***** Saved tox *****")
-			purgeVFS(vfsOp)
-		else:
-			print("Failed to save tox, aborting")
 
-		# Put our tox path back into the MediaPipe COMP
-		mpOp.par.externaltox = originalToxPath
+	print("Updating tox paths")
 
-	# Restore the file paths to Text DATs
-	for r in range (previousFileDATs.numRows):
+	for r in range (currentToxesDAT.numRows):
 		if (r != 0):
-			print("Restoring file path for "+previousFileDATs[r,'path'])
-			op(previousFileDATs[r,'path']).par.file = previousFileDATs[r,'filePath']
+			currentOp = op(currentToxesDAT[r,'path'])
+			originalToxPath = currentOp.par.externaltox.eval()
+			e = Path(originalToxPath)
+			existingName = e.name
+			# If we're the build script, don't export, and remove our external tox path
+			if(currentOp.name == parent().name):
+				# print("skipping build tox")
+				currentOp.par.externaltox = ""
+			else:
+				currentOp.par.externaltox = (str(directory_path.joinpath(toxReleaseFolder, existingName)))
+				if(currentOp.saveExternalTox(recurse=False)):
+					print("Saved " + str(currentOp))
+				else:
+					print("***** Failed to save tox for "+ str(currentOp) + " *****")
+					gotErrors = gotErrors + 1
+				currentOp.par.externaltox = originalToxPath
+			# print("Restoring tox path for " + str(currentOp))
+
+	print("Purging VFS")
+	purgeVFS(vfsOp)
 
 	# Save our toe file and copy it to the release folder
-	project.save()	
-	shutil.copy(Path(project.name), releaseFolder)
+	currentFolder = project.folder
+	currentFilename = project.name
 
+	project.save(releaseFolder + "/MediaPipe TouchDesigner.toe")
+	
 	# Zip everything up
-	create_zip_from_paths(Path(releaseFolder), "release.zip")
+	create_zip_from_paths(fullReleasePath, "../release.zip")
+
+	# Restore the file paths to Text DATs
+	for r in range (previousFileDAT.numRows):
+		if (r != 0):
+			print("Restoring file path for "+previousFileDAT[r,'path'])
+			op(previousFileDAT[r,'path']).par.file = previousFileDAT[r,'filePath']
+
+	op.TDResources.PopDialog.OpenDefault(
+							text="Finished release build with "+ str(gotErrors) + " errors. Please check the logs, then click OK to reload.",
+							title="Build complete",
+							buttons=['OK'],
+							callback=dialogChoice,
+							details=currentFolder + "/" + currentFilename,
+							textEntry=False,
+							escButton=1,
+							enterButton=1)
+
+	# # Save the original MediaPipe tox path
+	# # originalToxPath = mpOp.par.externaltox.eval()
+	# # print("Current external tox path: "+originalToxPath)
+	
+	# # Keep the filename, but move the location to our release folder
+	# e = Path(originalToxPath)
+	# existingName = e.name
+	# mpOp.par.externaltox = (str(directory_path.joinpath(toxReleaseFolder, existingName)))
+	# if(mpOp.saveExternalTox(recurse=False)):
+	# 	print("***** Saved tox *****")
+	# 	purgeVFS(vfsOp)
+	# else:
+	# 	print("Failed to save tox")
+
+	# # Put our tox path back into the MediaPipe COMP
+	# mpOp.par.externaltox = originalToxPath
 	return
 
 def onExit():
