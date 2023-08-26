@@ -13,34 +13,10 @@
 import json
 import urllib.parse
 
-modelLookup = {
-  "lightning": {
-    "modelType": "MoveNet",
-    "modelVersion": "lightning"
-  },
-  "thunder": {
-    "modelType": "MoveNet",
-    "modelVersion": "thunder"
-  },
-  "multipose": {
-    "modelType": "MoveNet",
-    "modelVersion": "multipose"
-  },
-  "lite": {
-    "modelType": "BlazePose",
-    "modelVersion": "lite"
-  },
-  "full": {
-    "modelType": "BlazePose",
-    "modelVersion": "full"
-  },
-  "heavy": {
-    "modelType": "BlazePose",
-    "modelVersion": "heavy"
-  }
-}
+# noReloadPars = ['Webcam', 'Showoverlays']
+noReloadPars = ['Webcam', 'Showoverlays', 'Detectfacelandmarks', 'Detectfaces', 'Detectgestures', 'Detecthands', 'Detectposes', 'Detectobjects', 'Detectimages', 'Detectsegments']
+parent().par.Reset.pulse()
 
-noReloadPars = ['Webcam', 'Detectfaces', 'Detectfacelandmarks', 'Detectgestures', 'Detecthands', 'Detectposes', 'Detectobjects', 'Detectimages', 'Detectsegments', 'Showoverlays']
 
 def onTableChange(dat):
 	return
@@ -64,20 +40,8 @@ def onCellChange(dat, cells, prev):
 	else:
 		reloadRequired = True
 
-	if (dat[cell.row,0] == "Webcam"):
-		data = {
-			'type': 'selectWebcam',
-			'deviceId': str(cell)
-		}
-	elif dat[cell.row,0] == "Model":
+	if dat[cell.row,0] == "Model":
 		data = createModelData(str(cell))
-		#data = modelLookup[str(cell)]
-		#data['type'] = 'selectModel'
-    
-		# data = {
-		# 	'type': 'selectModel',
-		# 	'modelType': str(cell)
-		# }
 	else:
 		data = {
 			str(dat[cell.row,0]) : str(cell)

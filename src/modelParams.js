@@ -13,6 +13,7 @@ export const configMap = {
     'Wsaddress': value => socketState.adddress = value,
     'Wsport': value => socketState.port = value,
 
+    'Webcam': value => webcamState.changeWebcam(value),
     'Wheight': value => webcamState.height = value,
     'Wwidth': value => webcamState.width = value,
     'Wtargetframerate': value => webcamState.targetFrameRate = value,
@@ -68,6 +69,8 @@ export const configMap = {
     'Iscore': value => imageState.scoreThreshold = value,
 
     'Smodeltype': value => modelCheck(segmenterState, value),
+    'Smodeltype': value => modelCheck(segmenterState, value),
+    'Sshowmulticlassbackgroundonly': value => segmenterState.showMultiClassBackgroundOnly = parseInt(value) === 1,
     // 'Scolor0r': value => segmenterState.legendColors[0][0] = Math.round(value * 255.0),
     // 'Scolor0g': value => segmenterState.legendColors[0][1] = Math.round(value * 255.0),
     // 'Scolor0b': value => segmenterState.legendColors[0][2] = Math.round(value * 255.0),
@@ -123,9 +126,13 @@ function detectSwitch(state, value) {
         let video = document.getElementById("webcam");
         // webcamState.videoElement.style.opacity = 1;
         video.style.opacity = 1;
-        const canvas = document.getElementById("segmentation");
-        const ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // const canvas = document.getElementById("segmentation");
+        // const ctx = canvas.getContext("webgl2");
+        // ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const ctx = document.getElementById("segmentation");
+        const gl = ctx.getContext("webgl2");
+        gl.clearColor(0,0,0,0);
+        gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
     }
 }
 
@@ -146,6 +153,6 @@ function overlaySwitch(value) {
     let video = document.getElementById("webcam");
     video.style.opacity = 1;
     const canvas = document.getElementById("segmentation");
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // const ctx = canvas.getContext("2d");
+    // ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
