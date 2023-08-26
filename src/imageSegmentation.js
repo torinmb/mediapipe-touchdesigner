@@ -52,6 +52,7 @@ export let segmenterState = {
         [35, 44, 22, 255], // Dark Olive Green
     ],
     toImageBitmap: undefined,
+    showMultiClassBackgroundOnly: false,
     draw: () => drawSegmentation(),
 };
 
@@ -104,12 +105,18 @@ const createShaderProgram = (gl) => {
         varying vec2 texCoords;
         uniform sampler2D masks[6]; // Array of mask samplers
         uniform vec4 colors[6];     // Array of mask colors
+        uniform bool showBackgroundOnly;
     
         void main() {
             vec4 finalColor = vec4(0.0);
-            for(int i = 0; i < 6; i++) {
-                float maskValue = texture2D(masks[i], texCoords).r;
-                finalColor += maskValue * colors[i];
+            if(showBackgroundOnly) {
+                float maskValue = pow(1.-clamp(texture2D(masks[0], texCoords).r, 0.0, 1.0), 2.55);
+                finalColor = vec4(maskValue, maskValue, maskValue, maskValue);
+            } else {
+                for(int i = 0; i < 6; i++) {
+                    float maskValue = texture2D(masks[i], texCoords).r;
+                    finalColor += maskValue * colors[i];
+                }
             }
             gl_FragColor = finalColor;
         }
@@ -151,7 +158,8 @@ const createShaderProgram = (gl) => {
             ),
             colors: Array.from({ length: 6 }).map((_, i) =>
                 gl.getUniformLocation(program, `colors[${i}]`)
-            )
+            ),
+            showBackgroundOnly: gl.getUniformLocation(program, 'showBackgroundOnly')
         },
     };
 };
@@ -180,7 +188,7 @@ export function createCopyTextureToCanvas(results) {
     const {
         shaderProgram,
         attribLocations: { position: positionLocation },
-        uniformLocations: { masks, colors },
+        uniformLocations: { masks, colors, showBackgroundOnly },
     } = createShaderProgram(gl);
     const vertexBuffer = createVertexBuffer(gl);
 
@@ -217,6 +225,7 @@ export function createCopyTextureToCanvas(results) {
         gl.uniform4fv(colors[0], [1,1,1,1]);
     }
     else {
+        gl.uniform1i(showBackgroundOnly, segmenterState.showMultiClassBackgroundOnly); // You can toggle this to 0 or 1 to control the multiplication
         for (let i = 0; i < results.confidenceMasks.length; i++) {
             // if(allMasks[i] && allMasks[i].getAsWebGLTexture){
             const maskTexture = results.confidenceMasks[i].getAsWebGLTexture();

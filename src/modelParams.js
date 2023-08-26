@@ -69,6 +69,8 @@ export const configMap = {
     'Iscore': value => imageState.scoreThreshold = value,
 
     'Smodeltype': value => modelCheck(segmenterState, value),
+    'Smodeltype': value => modelCheck(segmenterState, value),
+    'Sshowmulticlassbackgroundonly': value => segmenterState.showMultiClassBackgroundOnly = parseInt(value) === 1,
     // 'Scolor0r': value => segmenterState.legendColors[0][0] = Math.round(value * 255.0),
     // 'Scolor0g': value => segmenterState.legendColors[0][1] = Math.round(value * 255.0),
     // 'Scolor0b': value => segmenterState.legendColors[0][2] = Math.round(value * 255.0),
