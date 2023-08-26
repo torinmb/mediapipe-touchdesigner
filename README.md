@@ -109,25 +109,51 @@ If you are on a PC, you can greatly improve all CPU-based render times within To
 Enabling/disabling HyperThreading is done in your system BIOS, so look up the instructions on how to do that for your computer. You can re-enable HyperThreading at any point if you want to go back and it is not a risky change to make to yous system.
 
 # Building from source
-This package uses yarn with vite inside node
+This package uses yarn with vite inside node, this gives you a few options. Firstly, you need to download and install node.js
 
 ## Installation
 ``` yarn install ```
 
-## Development
+This installs vite and all the other dependencies required. Should only be needed the first time.
+
+## Debugging of the web page
 ``` yarn dev ```
+
+This launches a tiny web server on port 5173 that fires a reload to the browser every time you save a file change. Super useful for debugging the web page.
+
+Suggested use for this:
+1. Run `yarn dev` via the command line, or the console window of VSCode
+2. Load the TouchDesigner project and toggle all the settings you'll want to test with.
+2. Enter the `MediaPipe` COMP
+3. Disable the `webbrowser` component by clicking the X
+4. Copy the `current_url` DAT string
+5. Paste the url into a new Chrome tab
+8. Edit the url and replace the port number with 5173, so for example replace `localhost:3001` with `localhost:5173`
+
+Chrome will now load the page from yarn dev, while still communicating with TouchDesigner via websockets. Note that parameter changes you make in TouchDesigner will not be reflected in the web page unless you repeat the steps to copy the url.
 
 ## Build
 ``` yarn build ```
 
+This builds all the web page files and puts them into the `_mpdist` folder. If this folder exists, the web pages used within the `MediaPipe` COMP will be served from here.
+
 
 ## Version Update / Release
-```yarn version --patch --message "Bump to version %s"```
+There is a `build_release` COMP in the top level at the top of the toe file that handles an automated build process.
 
---patch will bump the version by 0.0.1
-
---minor will bump the version by 0.1.0
-
---major will bump the version by 1.0.0
-
-There's a Github Action that will bundle the entire project and create a release on Github. Your commit message will become the description of the release.
+To create a release zip file:
+1. Open the `MediaPipe TouchDesigner.toe` file
+2. Navigate to the layout you want to be loaded when someone opens the project for the first time.
+3. Press `Ctrl Alt B` to trigger a build. The project will lock up for a while during the build process.
+4. The build script will:
+- Remove and recreate a `release` folder.
+- Perform a `yarn install`
+- Perform a `yarn build`
+- Load all files from `_mpdist` into the `MediaPipe` COMP Virtual File System
+- Remove all external script references on DATs
+- Export all tox files to `release/toxes`
+- Save the toe file to `release`
+- Zip the contents of the `release` folder to `release.zip`
+- Give you a popup showing the number of errors.
+- Clicking ok (or anywhere!) causes the toe file to reload from the main folder so you're back where you started.
+- If there were any errors in the build, you can turn on the TouchDesigner text console and run the build again to see what the errors are.
