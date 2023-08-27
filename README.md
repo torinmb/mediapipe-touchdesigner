@@ -5,7 +5,7 @@ A GPU Accelerated, self-contained, [MediaPipe](https://developers.google.com/med
 
 
 # Setup
-Download the latest **release.zip** from the [Release Section](https://github.com/torinmb/mediapipe-touchdesigner/releases). Open up the MediaPipe TouchDesigner.toe file. If you move the project to another folder make sure that the associated folders are in the same directory as your MediaPipe TouchDesigner.toe. If there are any network problems you can it the Reset button on the MediaPipe component.
+Download the latest **release.zip** from the [Release Section](https://github.com/torinmb/mediapipe-touchdesigner/releases). Open up the MediaPipe TouchDesigner.toe file. All of the components are stored inside the /toxes folder. The main component is MediaPipe.tox. All of the other components are examples of how to load and display the associated model data in TouchDesigner.
 
 On the MediaPipe component once it's loaded you can select your webcam from the drop-down. You can turn on and off the different MediaPipe models as well as preview overlays. There're also sub-menus available for each model to customize them further.
 
@@ -48,6 +48,8 @@ Use this to process the pose landmark detection results
 ### Image segmentation tox
 Use this to key out segmentation results
 [Image segmentation guide](https://developers.google.com/mediapipe/solutions/vision/image_segmenter)
+
+Note: If you're hoping to get the most accurate web-cam cutout use the MultiCam model in the MediaPipe.tox. There's also a toggle to display only the background cutout which you can enable while on the multiclass model.
 
 # Sending TOPs from TouchDesigner
 ## SpoutCam on Windows
@@ -106,10 +108,13 @@ The MediaPipe detection tasks are very CPU and GPU intensive, so turn off any th
 ## Hyperthreading
 If you are on a PC, you can greatly improve all CPU-based render times within TouchDesigner, including the MediaPipe tasks by disabling HyperThreading (Intel CPUs) or Simultaneous Multi-Threading (SMT - AMD CPUs). _On my laptop it was a 60-80% improvement._
 
-Enabling/disabling HyperThreading is done in your system BIOS, so look up the instructions on how to do that for your computer. You can re-enable HyperThreading at any point if you want to go back and it is not a risky change to make to yous system.
+Enabling/disabling HyperThreading is done in your system BIOS, so look up the instructions on how to do that for your computer. You can re-enable HyperThreading at any point if you want to go back and it is not a risky change to make to your system.
+
+# How do the plugins work?
+This project loads the different MediaPipe models through a web browser. All of the ML models are downloaded locally and stored inside TouchDesigner's virtual file system including the website so the component can run without an internet connection. The models run using web assembly and the data coming back from the models are piped into TouchDesigner through a local WebSocket server running inside TD. This allows the components to run as standalone .tox files with GPU acceleration on any device with no setup.
 
 # Building from source
-This package uses yarn with vite inside node, this gives you a few options. Firstly, you need to download and install node.js
+This package uses yarn with vite inside node, which gives you a few options. Firstly, you need to download and install node.js
 
 ## Installation
 ``` yarn install ```
