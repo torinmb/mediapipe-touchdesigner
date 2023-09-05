@@ -12,6 +12,8 @@ On the MediaPipe component once it's loaded you can select your webcam from the 
 
 ![image-1](https://github.com/torinmb/mediapipe-touchdesigner/assets/6014011/ffb65b9b-e916-45ee-87fc-af7480cc2ac6)
 
+# A note on resolution
+Currently the model is limited to 720p input resolution, but we're working on higher resolutions
 
 ## Components
 The plugin consists of a number of components:
