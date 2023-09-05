@@ -51,6 +51,10 @@ Use this to key out segmentation results
 
 Note: If you're hoping to get the most accurate web-cam cutout use the MultiCam model in the MediaPipe.tox. There's also a toggle to display only the background cutout which you can enable while on the multiclass model.
 
+### Image classification tox
+Use this to identify what the image might contain
+[Image classification guide](https://developers.google.com/mediapipe/solutions/vision/image_classifier)
+
 # Sending TOPs from TouchDesigner
 ## SpoutCam on Windows
 If you are on Windows, you can use Spout to send any TOP from TouchDesigner to MediaPipe by using a Syphon Spout Out TOP and SpoutCam.
