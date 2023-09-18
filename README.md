@@ -119,6 +119,21 @@ Enabling/disabling HyperThreading is done in your system BIOS, so look up the in
 # How do the plugins work?
 This project loads the different MediaPipe models through a web browser. All of the ML models are downloaded locally and stored inside TouchDesigner's virtual file system including the website so the component can run without an internet connection. The models run using web assembly and the data coming back from the models are piped into TouchDesigner through a local WebSocket server running inside TD. This allows the components to run as standalone .tox files with GPU acceleration on any device with no setup.
 
+## Architecture
+As MediaPipe currently only supports GPU acceleration via the Javascript implementation, and this is the only version that does not require installing local libraries, we have implemented this version, by using the following three main components:
+1. Web (and websocket) server
+2. Web browser
+3. JSON decoders
+
+### Web server
+The web server component has an embedded set of web pages that are served to the web browser just like any website would do. It also acts as a websocket server that allows two-way-communication between the web browser and TouchDesigner.
+
+### Web browser
+The embedded Chromium support in TouchDesigner allows us to run a full web browser within TouchDesigner. This web browser opens the web pages served by the web server, which allow it to run all of the MediaPipe detection components and render the final video stream. The web browser also sends coordinate data and other detection data back to TouchDesigner via a websocket connection.
+
+### JSON decoders
+We send the data from the MediaPipe instance back to TouchDesigner in JSON format. We then use the additional detection tox files to process this JSON data into useful things that can be used elsewhere in TouchDesigner.
+
 # Building from source
 This package uses yarn with vite inside node, which gives you a few options. Firstly, you need to download and install node.js
 
@@ -128,6 +143,15 @@ This package uses yarn with vite inside node, which gives you a few options. Fir
 This installs vite and all the other dependencies required. Should only be needed the first time.
 
 ## Debugging of the web page
+There are 2 options for debugging the web page
+1. Debug the page as-is within TouchDesigner
+2. Live debug a development page
+
+### Debug the existing web page
+Once the MediaPipe project has loaded withing TouchDesigner, you can open a regular Chrome browser on your desktop and go to http://localhost:9222 which will open the developer tools console for the Chromium instance embedded within the MediaPipe component. 
+Note that this will have a performance impact as the page is being rendered twice (once in TouchDesigner, once in Chrome), but it gives you access to the console log to see what's going on and maybe debug some issues.
+
+### Live debug a development page
 ``` yarn dev ```
 
 This launches a tiny web server on port 5173 that fires a reload to the browser every time you save a file change. Super useful for debugging the web page.
@@ -142,6 +166,8 @@ Suggested use for this:
 8. Edit the url and replace the port number with 5173, so for example replace `localhost:3001` with `localhost:5173`
 
 Chrome will now load the page from yarn dev, while still communicating with TouchDesigner via websockets. Note that parameter changes you make in TouchDesigner will not be reflected in the web page unless you repeat the steps to copy the url.
+
+If you press F12 to open the Chrome Developer Tools you can start digging into the console to see error messages.
 
 ## Build
 ``` yarn build ```
