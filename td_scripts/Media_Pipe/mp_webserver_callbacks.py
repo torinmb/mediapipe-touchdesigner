@@ -40,7 +40,11 @@ def onHTTPRequest(webServerDAT, request, response):
 		# print(op('/project1/vfs_web_server/virtualFile').vfs)
 		fileContent = op('virtualFile').vfs[requestArray].byteArray
 		fileName = op('virtualFile').vfs[requestArray].name
-	mimeType = mimetypes.guess_type(fileName, strict=True)
+	
+	mimeType = mimetypes.guess_type(fileName, strict=False)
+	if fileName.endswith('.js'):
+		mimeType = ['application/javascript']
+		
 	# print("Think this file is "+str(mimeType))
 	response['Content-Type'] = mimeType[0] # Might need content-type header
 	response['statusCode'] = 200 # OK
