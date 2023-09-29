@@ -13,7 +13,7 @@
     "vite": "^4.4.5"
   },
   "dependencies": {
-    "@mediapipe/tasks-vision": "^0.10.3",
+    "@mediapipe/tasks-vision": "0.10.3",
     "vite-plugin-static-copy": "^0.17.0"
   }
 }

@@ -112,10 +112,10 @@
   resolved "https://registry.yarnpkg.com/@esbuild/win32-x64/-/win32-x64-0.18.20.tgz#786c5f41f043b07afb1af37683d7c33668858f6d"
   integrity sha512-kTdfRcSiDfQca/y9QIkng02avJ+NCaQvrMejlsB3RRv5sE9rRoeBPISaZpKxHELzRxZyLvNts1P27W3wV+8geQ==
 
-"@mediapipe/tasks-vision@^0.10.3":
-  version "0.10.6"
-  resolved "https://registry.yarnpkg.com/@mediapipe/tasks-vision/-/tasks-vision-0.10.6.tgz#f2000eddb8bec0367fbc5f044ff2ecb87e5f38d9"
-  integrity sha512-DzWMTI0FIeIPsVqnFKRKFQ3yng9qrtT3YuYkGNVeoob12br4+MVoLFlfkKP36mIAYM9/Vj2SarXCvTA14rdQsQ==
+"@mediapipe/tasks-vision@0.10.3":
+  version "0.10.3"
+  resolved "https://registry.yarnpkg.com/@mediapipe/tasks-vision/-/tasks-vision-0.10.3.tgz#d1465126923df8f03b4a31a231867d284e120961"
+  integrity sha512-q6yPXKGlANzLUc77X1zN+AKLFTiviCYtRXv5SV27GnbUVw0lsy94ybBmsxIMa+pATWIi0GmmtENJt3k0BAQheA==
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
