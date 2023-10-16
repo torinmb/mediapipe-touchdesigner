@@ -23,7 +23,7 @@ import { segmenterState, createImageSegmenter } from "./imageSegmentation.js";
 import { webcamState, socketState, overlayState, outputState } from "./state.js";
 import { configMap } from "./modelParams.js";
 
-const WASM_PATH = "./mediapipe/tasks-vision/0.10.3/wasm";
+const WASM_PATH = "./mediapipe/tasks-vision/0.10.7/wasm";
 const video = document.getElementById("webcam");
 webcamState.videoElement = video;
 const canvasElement = document.getElementById("output_canvas");
