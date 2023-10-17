@@ -17,7 +17,10 @@ export const configMap = {
     'Wheight': value => webcamState.height = value,
     'Wwidth': value => webcamState.width = value,
     'Wtargetframerate': value => webcamState.targetFrameRate = value,
-
+    'Wflip': value => {
+        webcamState.flipped = parseInt(value) === 1;
+        webcamState.changeWebcam(webcamState.webcamLabel);
+    },
     'Oheight': value => outputState.height = value,
     'Owidth': value => outputState.width = value,
 

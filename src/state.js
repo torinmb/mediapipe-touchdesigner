@@ -14,6 +14,7 @@ export let webcamState = {
   width: 1280,
   height: 720,
   frameRate: 30,
+  flipped: 0,
   drawingUtils: new DrawingUtils(canvasCtx),
   startWebcam: () => changeWebcam(webcamState.webcamLabel),
   changeWebcam: (webcam) => changeWebcam(webcam),
@@ -83,5 +84,11 @@ async function changeWebcam(webcam) {
       console.log(err.name + ": " + err.message);
     }
     webcamState.videoElement.height = webcamState.height;
+  }
+  if(webcamState.flipped) {
+    webcamState.videoElement.style.transform = 'scaleX(-1)';
+  }
+  else {
+    webcamState.videoElement.style.transform = 'scaleX(1)';
   }
 }

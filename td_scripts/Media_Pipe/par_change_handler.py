@@ -14,7 +14,7 @@ import json
 import urllib.parse
 
 # noReloadPars = ['Webcam', 'Showoverlays']
-noReloadPars = ['Webcam', 'Showoverlays', 'Detectfacelandmarks', 'Detectfaces', 'Detectgestures', 'Detecthands', 'Detectposes', 'Detectobjects', 'Detectimages', 'Detectsegments']
+noReloadPars = ['Webcam', 'Wflip', 'Showoverlays', 'Detectfacelandmarks', 'Detectfaces', 'Detectgestures', 'Detecthands', 'Detectposes', 'Detectobjects', 'Detectimages', 'Detectsegments']
 parent().par.Reset.pulse()
 
 
