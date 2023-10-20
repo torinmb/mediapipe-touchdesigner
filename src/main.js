@@ -40,6 +40,7 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
 
 (async function setup() {
   handleQueryParams();
+  setupWebSocket(socketState.adddress + ":" + socketState.port, socketState);
   webcamState.webcamDevices = await getWebcamDevices();
   // if(handState.detect)
     handState.landmarker = await createHandLandmarker(WASM_PATH);
@@ -57,7 +58,6 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
     imageState.landmarker = await createImageClassifier(WASM_PATH);
   // if(segmenterState.detect)
     segmenterState.landmarker = await createImageSegmenter(WASM_PATH, video, segmentationCanvas);
-  setupWebSocket(socketState.adddress + ":" + socketState.port, socketState);
   webcamState.startWebcam();
   if (webcamState.webcamRunning) {
     window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
