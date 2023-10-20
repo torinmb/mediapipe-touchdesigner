@@ -43,8 +43,9 @@ async function changeWebcam(webcam) {
     webcamDevices.forEach((webcamDevice) => {
       if (webcamDevice.label == webcam) {
         webcamState.webcamId = webcamDevice.deviceId;
+        console.log("Using webcam: " + webcamDevice.label);
+        console.log("Reported capabilities:", webcamDevice.getCapabilities());
       }
-      //  console.log(webcam.label + " capabilities:", webcam.getCapabilities());
     });
 
     const constraints = {
@@ -78,10 +79,10 @@ async function changeWebcam(webcam) {
       stream.getTracks().forEach(function (track) {
         let trackSettings = track.getSettings();
         webcamState.frameRate = trackSettings.frameRate;
-        console.log("Webcam settings: ", trackSettings);
+        console.log("Webcam started with following settings: ", trackSettings);
       });
     } catch (err) {
-      console.log(err.name + ": " + err.message);
+      console.log("Error starting webcam: " + err.name + ": " + err.message);
     }
     webcamState.videoElement.height = webcamState.height;
   }
