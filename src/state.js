@@ -83,6 +83,7 @@ async function changeWebcam(webcam) {
       });
     } catch (err) {
       console.log("Error starting webcam: " + err.name + ": " + err.message);
+      socketState.ws.send(JSON.stringify({ error: 'webcamStartFail' }));
     }
     webcamState.videoElement.height = webcamState.height;
   }
