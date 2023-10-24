@@ -28,10 +28,10 @@ export const createHandLandmarker = async (WASM_PATH, modelAssetPath) => {
             delegate: "GPU",
         },
         runningMode: "VIDEO",
-        numHands: handState.numHands,
-        minHandDetectionConfidence: handState.minDetectionConfidence,
-        minHandPresenceConfidence: handState.minPresenceConfidence,
-        minTrackingConfidence: handState.minTrackingConfidence,
+        numHands: parseInt(handState.numHands),
+        minHandDetectionConfidence: parseFloat(handState.minDetectionConfidence),
+        minHandPresenceConfidence: parseFloat(handState.minPresenceConfidence),
+        minTrackingConfidence: parseFloat(handState.minTrackingConfidence),
     });
     return handLandmarker;
 };

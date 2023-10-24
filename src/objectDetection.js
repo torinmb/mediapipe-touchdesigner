@@ -31,8 +31,8 @@ export const createObjectDetector = async (WASM_PATH, objectsDiv) => {
 			delegate: "GPU",
 		},
 		runningMode: "VIDEO",
-		maxResults: objectState.maxResults,
-		scoreThreshold: objectState.scoreThreshold,
+		maxResults: parseFloat(objectState.maxResults),
+		scoreThreshold: parseFloat(objectState.scoreThreshold),
 	});
 	return objectDetector;
 };

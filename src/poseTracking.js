@@ -13,7 +13,7 @@ export let poseState = {
     landmarker: undefined,
     results: undefined,
     resultsName: "poseResults",
-    numPoses: 2,
+    numPoses: 1,
     minDetectionConfidence: 0.5,
     minPresenceConfidence: 0.5,
     minTrackingConfidence: 0.5,
@@ -30,10 +30,10 @@ export const createPoseLandmarker = async (WASM_PATH) => {
             delegate: "GPU",
         },
         runningMode: "VIDEO",
-        numPoses: poseState.numHands,
-        minHandDetectionConfidence: poseState.minDetectionConfidence,
-        minHandPresenceConfidence: poseState.minPresenceConfidence,
-        minTrackingConfidence: poseState.minTrackingConfidence,
+        numPoses: parseFloat(poseState.numPoses),
+        minPoseDetectionConfidence: parseFloat(poseState.minDetectionConfidence),
+        minPosePresenceConfidence: parseFloat(poseState.minPresenceConfidence),
+        minTrackingConfidence: parseFloat(poseState.minTrackingConfidence),
     });
     return poseLandmarker;
 };

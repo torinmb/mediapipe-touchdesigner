@@ -30,12 +30,12 @@ export const createFaceLandmarker = async (wasm_path) => {
             delegate: "GPU",
         },
         runningMode: "VIDEO",
-        numFaces: faceLandmarkState.numFaces,
-        minDetectionConfidence: faceLandmarkState.minDetectionConfidence,
-        minPresenceConfidence: faceLandmarkState.minPresenceConfidence,
-        minTrackingConfidence: faceLandmarkState.minTrackingConfidence,
-        outputFaceBlendshapes: faceLandmarkState.outputBlendshapes,
-        outputFacialTransformationMatrixes: faceLandmarkState.outputTransformationMatrixes,
+        numFaces: parseInt(faceLandmarkState.numFaces),
+        minDetectionConfidence: parseFloat(faceLandmarkState.minDetectionConfidence),
+        minPresenceConfidence: parseFloat(faceLandmarkState.minPresenceConfidence),
+        minTrackingConfidence: parseFloat(faceLandmarkState.minTrackingConfidence),
+        outputFaceBlendshapes: parseFloat(faceLandmarkState.outputBlendshapes),
+        outputFacialTransformationMatrixes: parseFloat(faceLandmarkState.outputTransformationMatrixes),
     });
     return faceLandmarker;
 };

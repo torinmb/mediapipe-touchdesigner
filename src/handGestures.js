@@ -30,13 +30,13 @@ export const createGestureLandmarker = async (WASM_PATH) => {
             delegate: "GPU",
         },
         runningMode: "VIDEO",
-        numHands: gestureState.numHands,
-        minHandDetectionConfidence: gestureState.minDetectionConfidence,
-        minHandPresenceConfidence: gestureState.minPresenceConfidence,
-        minTrackingConfidence: gestureState.minTrackingConfidence,
+        numHands: parseInt(gestureState.numHands),
+        minHandDetectionConfidence: parseFloat(gestureState.minDetectionConfidence),
+        minHandPresenceConfidence: parseFloat(gestureState.minPresenceConfidence),
+        minTrackingConfidence: parseFloat(gestureState.minTrackingConfidence),
         cannedGesturesClassifierOptions: {
-            maxResults: gestureState.maxResults,
-            scoreThreshold: gestureState.scoreThreshold,
+            maxResults: parseFloat(gestureState.maxResults),
+            scoreThreshold: parseFloat(gestureState.scoreThreshold),
         },
     });
     return handGestures;

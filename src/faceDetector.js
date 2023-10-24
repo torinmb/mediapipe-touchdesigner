@@ -29,8 +29,8 @@ export const createFaceDetector = async (wasm_path, facesDiv) => {
 			delegate: "GPU",
 		},
 		runningMode: "VIDEO",
-		minSuppressionThreashold: faceDetectorState.minSuppressionThreashold,
-		minDetectionConfidence: faceDetectorState.minDetectionConfidence,
+		minSuppressionThreashold: parseFloat(faceDetectorState.minSuppressionThreashold),
+		minDetectionConfidence: parseFloat(faceDetectorState.minDetectionConfidence),
 	});
 	return faceDetector;
 };
