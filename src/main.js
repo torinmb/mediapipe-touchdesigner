@@ -67,6 +67,7 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
 })();
 
 function handleQueryParams() {
+  socketState.port = window.location.port;
   const urlParams = new URLSearchParams(window.location.search);
   urlParams.forEach((value, key) => {
     if (key in configMap) {
