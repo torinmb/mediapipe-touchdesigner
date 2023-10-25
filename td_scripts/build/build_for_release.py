@@ -51,6 +51,7 @@ def onCreate():
 	currentFileDAT = op('dats_with_files')
 	previousFileDAT = op('previous_dats_with_files')
 	currentToxesDAT = op('external_toxes')
+	previousToxesDAT = op('previous_tox_paths')
 	gotErrors = 0
 
 	if(Path(releaseFolder).exists()):
@@ -110,12 +111,17 @@ def onCreate():
 				print("Importing: "+ vfsFilename)
 				vfsOp.vfs.addFile(filename, overrideName="#"+vfsFilename)
 
-	print("Updating tox paths")
+	print("Saving external tox files")
+
+	previousToxesDAT.copy(currentToxesDAT)
+	previousToxesDAT.appendCol()
+	previousToxesDAT[0,-1] = "filePath"
 
 	for r in range (currentToxesDAT.numRows):
 		if (r != 0):
 			currentOp = op(currentToxesDAT[r,'path'])
 			originalToxPath = currentOp.par.externaltox.eval()
+			previousToxesDAT[r,'filePath'] = originalToxPath
 			e = Path(originalToxPath)
 			existingName = e.name
 			# If we're the build script, don't export, and remove our external tox path
@@ -129,8 +135,11 @@ def onCreate():
 				else:
 					print("***** Failed to save tox for "+ str(currentOp) + " *****")
 					gotErrors = gotErrors + 1
-				currentOp.par.externaltox = originalToxPath
-			# print("Restoring tox path for " + str(currentOp))
+				# If the external tox is not the MediaPipe tox, remove it's path
+				if(currentOp.name != "MediaPipe"):
+					currentOp.par.externaltox = ""
+				# currentOp.par.externaltox = originalToxPath
+				# print("Restoring tox path for " + str(currentOp))
 
 	print("Purging VFS")
 	purgeVFS(vfsOp)
@@ -149,6 +158,12 @@ def onCreate():
 		if (r != 0):
 			print("Restoring file path for "+previousFileDAT[r,'path'])
 			op(previousFileDAT[r,'path']).par.file = previousFileDAT[r,'filePath']
+		
+	# Restore the file paths to external Toxes
+	for r in range (previousToxesDAT.numRows):
+		if (r != 0):
+			print("Restoring file path for "+previousToxesDAT[r,'path'])
+			op(previousToxesDAT[r,'path']).par.externaltox = previousToxesDAT[r,'filePath']
 
 	op.TDResources.PopDialog.OpenDefault(
 							text="Finished release build with "+ str(gotErrors) + " errors. Please check the logs, then click OK to reload.",
