@@ -113,11 +113,8 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   segmentationCanvas.height = outputState.height;
 
   let startTimeMs = performance.now();
-  // console.log('video.currentTime', video.currentTime, 'webcamState.lastVideoTime', webcamState.lastVideoTime)
   if (webcamState.lastVideoTime !== video.currentTime) {
-    // console.log('webcamState.webcamRunning', webcamState.webcamRunning, !(video.videoWidth === 0 || video.videoHeight === 0))
     if(webcamState.webcamRunning && !(video.videoWidth === 0 || video.videoHeight === 0)) {
-      // console.log('running ')
       flippedVideo = captureAndFlipWebcam(video, webcamState);
     }
     let startDetect = Date.now();
@@ -175,9 +172,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
 
   safeSocketSend(socketState.ws, JSON.stringify({ 'timers': { 'detectTime': timeToDetect, 'drawTime': timeToDraw, 'sourceFrameRate': webcamState.frameRate } }));
 
-  // if (webcamState.webcamRunning) {
-    window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
-  // }
+  window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
 
 }
 
