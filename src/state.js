@@ -27,7 +27,7 @@ export let webcamState = {
 
 export let socketState = {
   adddress: 'ws://localhost',
-  port: '9980',
+  port: '3002',
   ws: undefined,
 };
 
