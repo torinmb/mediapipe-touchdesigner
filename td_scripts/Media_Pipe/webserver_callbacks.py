@@ -12,33 +12,48 @@
 # 		'statusReason' - The reason for the above status code being returned (ie. 'Not Found.').
 # 		'data' - The data to send back to the client. If displaying a web-page, any HTML would be put here.
 
-# return the response dictionary
+import mimetypes
+import os
+from pathlib import Path
+
 import json
 clients = {}
 
 
 # return the response dictionary
 def onHTTPRequest(webServerDAT, request, response):
-	# get the uri from the request header
-	uri = request['uri']
-
-	# if the root is requested send back the initial website
-	if uri == '/':
-		response['statusCode'] = 200 # OK
-		response['statusReason'] = 'OK'
-		#response['data'] = op('index').text
-	# if this is looking for something in the libs folder
-	# check if the dat exists and if so, send back the content
-	elif uri.startswith('/models/'):
-		response['statusCode'] = 200 # OK
-		response['statusReason'] = 'OK'
-		if op(uri[1:]):
-			response['data'] = op(uri[1:]).text
-	# else just respond with 200/OK
+	fileName = ""
+	fileContent = ""
+	requestArray = request['uri']
+	if(requestArray == "/"):
+		requestArray = "index.html"
+		# print(op('/project1/vfs_web_server/virtualFile').vfs)
+	importRoot = os.path.join(os.getcwd(), '_mpdist/')
+	# print("Path: " + importRoot + requestArray)
+	filePath = Path(importRoot + requestArray)
+	if(filePath.exists()):
+		print("Serving from file: " + request['uri'])
+		# f = filePath.open("r")
+		fileName = filePath.name
+		fileContent = filePath.read_bytes()
 	else:
-		response['statusCode'] = 200 # OK
-		response['statusReason'] = 'OK'
+		print("Serving from VFS: " + request['uri'])
+		if(requestArray == "index.html"):
+			requestArray = "#index.html"
+		requestArray = requestArray.replace("/", "#")
+		# print(op('/project1/vfs_web_server/virtualFile').vfs)
+		fileContent = op('virtualFile').vfs[requestArray].byteArray
+		fileName = op('virtualFile').vfs[requestArray].name
 	
+	mimeType = mimetypes.guess_type(fileName, strict=False)
+	if fileName.endswith('.js'):
+		mimeType = ['application/javascript']
+		
+	# print("Think this file is "+str(mimeType))
+	response['Content-Type'] = mimeType[0] # Might need content-type header
+	response['statusCode'] = 200 # OK
+	response['statusReason'] = 'OK'
+	response['data'] = fileContent
 	return response
 
 def onWebSocketOpen(webServerDAT, client, uri):
@@ -105,6 +120,10 @@ def onWebSocketReceivePong(webServerDAT, client, data):
 	return
 
 def onServerStart(webServerDAT):
+	# print("Loading MIME types")
+	mimetypes.add_type('application/octet-stream', 'task')
+	mimetypes.add_type('application/octet-stream', 'tflite')
+	print("MP server started")
 	return
 
 def onServerStop(webServerDAT):
