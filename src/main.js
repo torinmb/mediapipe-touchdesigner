@@ -25,7 +25,9 @@ import { configMap } from "./modelParams.js";
 
 const WASM_PATH = "./mediapipe/tasks-vision/0.10.7/wasm";
 const video = document.getElementById("webcam");
+let flippedVideo = null;
 webcamState.videoElement = video;
+
 const canvasElement = document.getElementById("output_canvas");
 const objectsDiv = document.getElementById("objects");
 const facesDiv = document.getElementById("faces");
@@ -59,7 +61,7 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
   // if(segmenterState.detect)
     segmenterState.landmarker = await createImageSegmenter(WASM_PATH, video, segmentationCanvas);
   webcamState.startWebcam();
-  if (webcamState.webcamRunning) {
+  if (webcamState.webcamRunning ) {
     window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
   }
 })();
@@ -86,6 +88,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
 
   if (video.videoWidth === 0 || video.videoHeight === 0) {
     console.log('videoWidth or videoHeight is 0')
+    window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
     return;
   }
 
@@ -110,7 +113,13 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   segmentationCanvas.height = outputState.height;
 
   let startTimeMs = performance.now();
+  // console.log('video.currentTime', video.currentTime, 'webcamState.lastVideoTime', webcamState.lastVideoTime)
   if (webcamState.lastVideoTime !== video.currentTime) {
+    // console.log('webcamState.webcamRunning', webcamState.webcamRunning, !(video.videoWidth === 0 || video.videoHeight === 0))
+    if(webcamState.webcamRunning && !(video.videoWidth === 0 || video.videoHeight === 0)) {
+      // console.log('running ')
+      flippedVideo = captureAndFlipWebcam(video, webcamState);
+    }
     let startDetect = Date.now();
     webcamState.lastVideoTime = video.currentTime;
     for (let landmarker of allModelState) {
@@ -119,16 +128,16 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
         let marker = landmarker.landmarker;
         if (landmarker.resultsName === 'segmenterResults') {
           video.style.opacity = 0;
-          await marker.segmentForVideo(video, startTimeMs, segmenterState.toImageBitmap);
+          await marker.segmentForVideo(flippedVideo, startTimeMs, segmenterState.toImageBitmap);
         }
         else if (landmarker.resultsName === 'gestureResults') {
-          landmarker.results = await marker.recognizeForVideo(video, startTimeMs);
+          landmarker.results = await marker.recognizeForVideo(flippedVideo, startTimeMs);
         }
         else if (landmarker.resultsName === 'imageResults') {
-          landmarker.results = await marker.classifyForVideo(video, startTimeMs);
+          landmarker.results = await marker.classifyForVideo(flippedVideo, startTimeMs);
         }
         else {
-          landmarker.results = await marker.detectForVideo(video, startTimeMs);
+          landmarker.results = await marker.detectForVideo(flippedVideo, startTimeMs);
         }
         safeSocketSend(socketState.ws, JSON.stringify({
           [landmarker['resultsName']]: landmarker.results,
@@ -153,10 +162,10 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     }
     // unique draw function for object detection
     if (objectState.detect && objectState.results) {
-      objectState.draw(video);
+      objectState.draw(flippedVideo);
     }
     if (faceDetectorState.detect && faceDetectorState.results) {
-      faceDetectorState.draw(video);
+      faceDetectorState.draw(flippedVideo);
     }
   }
   let endDraw = Date.now();
@@ -166,9 +175,9 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
 
   safeSocketSend(socketState.ws, JSON.stringify({ 'timers': { 'detectTime': timeToDetect, 'drawTime': timeToDraw, 'sourceFrameRate': webcamState.frameRate } }));
 
-  if (webcamState.webcamRunning) {
+  // if (webcamState.webcamRunning) {
     window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
-  }
+  // }
 
 }
 
@@ -222,4 +231,19 @@ async function getWebcamDevices() {
     // document.body.style.backgroundColor = "red";
     return [];
   }
+}
+
+function captureAndFlipWebcam(video, webcamState) {
+  let offscreenCanvas = webcamState.offscreenCanvas;
+  let offscreenCtx = webcamState.offscreenCtx;
+  offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+  if (webcamState.flipped) {
+      offscreenCtx.save();
+      offscreenCtx.scale(-1, 1);
+      offscreenCtx.drawImage(video, -offscreenCanvas.width, 0, offscreenCanvas.width, offscreenCanvas.height);
+      offscreenCtx.restore();
+  } else {
+      offscreenCtx.drawImage(video, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+  }
+  return offscreenCanvas; // Returning the canvas for any potential use elsewhere
 }

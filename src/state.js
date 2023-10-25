@@ -3,6 +3,9 @@ import { DrawingUtils } from "@mediapipe/tasks-vision";
 const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 
+const offscreenCanvas = document.createElement('canvas');
+const offscreenCtx = offscreenCanvas.getContext('2d');
+
 export let webcamState = {
   videoElement: "",
   webcamRunning: false,
@@ -15,6 +18,8 @@ export let webcamState = {
   height: 720,
   frameRate: 30,
   flipped: 0,
+  offscreenCanvas, 
+  offscreenCtx,
   drawingUtils: new DrawingUtils(canvasCtx),
   startWebcam: () => changeWebcam(webcamState.webcamLabel),
   changeWebcam: (webcam) => changeWebcam(webcam),
@@ -68,25 +73,28 @@ async function changeWebcam(webcam) {
       tracks.forEach((track) => {
         track.stop();
       });
+      webcamState.webcamRunning = false;
     }
 
     // Try and start a new one
     try {
       let stream = await navigator.mediaDevices.getUserMedia(constraints);
       webcamState.videoElement.srcObject = stream;
-      webcamState.webcamRunning = true;
       webcamState.webcamLabel = webcam;
       stream.getTracks().forEach(function (track) {
         let trackSettings = track.getSettings();
         webcamState.frameRate = trackSettings.frameRate;
         console.log("Webcam started with following settings: ", trackSettings);
       });
+      webcamState.webcamRunning = true;
     } catch (err) {
       console.log("Error starting webcam: " + err.name + ": " + err.message);
       socketState.ws.send(JSON.stringify({ error: 'webcamStartFail' }));
     }
     webcamState.videoElement.height = webcamState.height;
   }
+  offscreenCanvas.width = webcamState.width;
+  offscreenCanvas.height = webcamState.height;
   if(webcamState.flipped) {
     webcamState.videoElement.style.transform = 'scaleX(-1)';
   }
