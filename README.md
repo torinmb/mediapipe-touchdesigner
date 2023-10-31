@@ -194,3 +194,11 @@ To create a release zip file:
 - Give you a popup showing the number of errors.
 - Clicking ok (or anywhere!) causes the toe file to reload from the main folder so you're back where you started.
 - If there were any errors in the build, you can turn on the TouchDesigner text console and run the build again to see what the errors are.
+
+## Package Version Update
+
+`yarn version --patch`  for backward-compatible bug fixes.
+
+`yarn version --minor`  for backward-compatible new features.
+
+`yarn version --major`  for changes that break backward compatibility.
