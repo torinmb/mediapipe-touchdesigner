@@ -50,7 +50,7 @@ def onHTTPRequest(webServerDAT, request, response):
 			me.parent().addScriptError('MediaPipe files not found. You are running the development environment. Please download release.zip from GitHub to continue with prod build, or run yarn build to generate dev files')
 			print('MediaPipe files not found. You are running the development environment. Please download release.zip from GitHub to continue with prod build, or run yarn build to generate dev files')
 			return
-	me.parent().clearScriptErrors(recurse=False)
+	me.parent().clearScriptErrors(recurse=False, error='MediaPipe files*')
 	mimeType = mimetypes.guess_type(fileName, strict=False)
 	if fileName.endswith('.js'):
 		mimeType = ['application/javascript']
