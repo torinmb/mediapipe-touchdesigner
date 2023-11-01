@@ -41,10 +41,16 @@ def onHTTPRequest(webServerDAT, request, response):
 		if(requestArray == "index.html"):
 			requestArray = "#index.html"
 		requestArray = requestArray.replace("/", "#")
-		# print(op('/project1/vfs_web_server/virtualFile').vfs)
-		fileContent = op('virtualFile').vfs[requestArray].byteArray
-		fileName = op('virtualFile').vfs[requestArray].name
-	
+		if(requestArray in op('virtualFile').vfs):
+			fileContent = op('virtualFile').vfs[requestArray]
+			# print(op('/project1/vfs_web_server/virtualFile').vfs)
+			fileContent = op('virtualFile').vfs[requestArray].byteArray
+			fileName = op('virtualFile').vfs[requestArray].name
+		else:
+			me.parent().addScriptError('MediaPipe files not found. You are running the development environment. Please download release.zip from GitHub to continue with prod build, or run yarn build to generate dev files')
+			print('MediaPipe files not found. You are running the development environment. Please download release.zip from GitHub to continue with prod build, or run yarn build to generate dev files')
+			return
+	me.parent().clearScriptErrors(recurse=False)
 	mimeType = mimetypes.guess_type(fileName, strict=False)
 	if fileName.endswith('.js'):
 		mimeType = ['application/javascript']
