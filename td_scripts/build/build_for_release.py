@@ -141,6 +141,9 @@ def onCreate():
 				# currentOp.par.externaltox = originalToxPath
 				# print("Restoring tox path for " + str(currentOp))
 
+	print("Restoring file path for MediaPipe tox")
+	op(previousToxesDAT['MediaPipe','path']).par.externaltox = previousToxesDAT['MediaPipe','filePath']
+
 	print("Purging VFS")
 	purgeVFS(vfsOp)
 
