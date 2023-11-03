@@ -36,8 +36,8 @@ export const createFaceDetector = async (wasm_path, facesDiv) => {
 };
 
 export function displayFaceDetections(video) {
-	let offsetRatioX = faceDetectorState.facesDiv.width / video.videoWidth;
-	let offsetRatioY = faceDetectorState.facesDiv.height / video.videoHeight;
+	let offsetRatioX = faceDetectorState.facesDiv.width / video.width;
+	let offsetRatioY = faceDetectorState.facesDiv.height / video.height;
 
 	// Remove any highlighting from previous frame.
 	for (let child of faceDetectorState.children) {
