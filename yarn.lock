@@ -857,8 +857,8 @@ __metadata:
   resolution: "mediapipe-touchdesigner@workspace:."
   dependencies:
     "@mediapipe/tasks-vision": 0.10.7
-    typescript: ^5.0.2
-    vite: ^4.4.5
+    typescript: ^5.2
+    vite: ^4.5.0
     vite-plugin-static-copy: ^0.17.0
   languageName: unknown
   linkType: soft
@@ -1312,7 +1312,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^5.0.2":
+"typescript@npm:^5.2":
   version: 5.2.2
   resolution: "typescript@npm:5.2.2"
   bin:
@@ -1322,7 +1322,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@^5.0.2#~builtin<compat/typescript>":
+"typescript@patch:typescript@^5.2#~builtin<compat/typescript>":
   version: 5.2.2
   resolution: "typescript@patch:typescript@npm%3A5.2.2#~builtin<compat/typescript>::version=5.2.2&hash=ad5954"
   bin:
@@ -1371,7 +1371,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:^4.4.5":
+"vite@npm:^4.5.0":
   version: 4.5.0
   resolution: "vite@npm:4.5.0"
   dependencies:
