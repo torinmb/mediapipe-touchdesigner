@@ -138,6 +138,11 @@ We send the data from the MediaPipe instance back to TouchDesigner in JSON forma
 This package uses yarn with vite inside node, which gives you a few options. Firstly, you need to download and install node.js
 
 ## Installation
+Install Node.js
+
+Install yarn package manager globally
+``` npm install --global yarn ```
+
 ``` yarn install ```
 
 This installs vite and all the other dependencies required. Should only be needed the first time.
@@ -173,7 +178,6 @@ If you press F12 to open the Chrome Developer Tools you can start digging into t
 ``` yarn build ```
 
 This builds all the web page files and puts them into the `_mpdist` folder. If this folder exists, the web pages used within the `MediaPipe` COMP will be served from here.
-
 
 ## Version Update / Release
 There is a `build_release` COMP in the top level at the top of the toe file that handles an automated build process.
