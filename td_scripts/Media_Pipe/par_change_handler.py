@@ -59,6 +59,7 @@ def onCellChange(dat, cells, prev):
 	op('current_url').text = finalUrl
 	if(reloadRequired):
 		op('webBrowser1').par.Address = finalUrl
+	op('webBrowser1').allowCooking = 1
 	return
 
 def createModelData(name):
