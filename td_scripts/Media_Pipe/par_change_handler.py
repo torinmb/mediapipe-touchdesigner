@@ -14,7 +14,7 @@ import json
 import urllib.parse
 
 # noReloadPars = ['Webcam', 'Showoverlays']
-noReloadPars = ['Webcam', 'Wflip', 'Showoverlays', 'Detectfacelandmarks', 'Detectfaces', 'Detectgestures', 'Detecthands', 'Detectposes', 'Detectobjects', 'Detectimages', 'Detectsegments']
+noReloadPars = ['Webcam', 'Wflip', 'Autoport', 'Showoverlays', 'Detectfacelandmarks', 'Detectfaces', 'Detectgestures', 'Detecthands', 'Detectposes', 'Detectobjects', 'Detectimages', 'Detectsegments']
 parent().par.Reset.pulse()
 
 
@@ -40,6 +40,12 @@ def onCellChange(dat, cells, prev):
 	else:
 		reloadRequired = True
 
+	if dat[cell.row,0] == "Autoport":
+		if(dat[cell.row,1] == 1):
+			parent().par.Mediapipeport.readOnly = 1
+			op('init_port').par.startpulse.pulse()
+		else:
+			parent().par.Mediapipeport.readOnly = 0
 	if dat[cell.row,0] == "Model":
 		data = createModelData(str(cell))
 	else:
