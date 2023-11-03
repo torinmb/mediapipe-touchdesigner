@@ -38,8 +38,8 @@ export const createObjectDetector = async (WASM_PATH, objectsDiv) => {
 };
 
 export function drawObjects(video) {
-	let offsetRatioX = objectState.objectsDiv.width / video.videoWidth;
-	let offsetRatioY = objectState.objectsDiv.height / video.videoHeight;
+	let offsetRatioX = objectState.objectsDiv.width / video.width;
+	let offsetRatioY = objectState.objectsDiv.height / video.height;
 
 	// Remove any highlighting from previous frame.
 	for (let child of objectState.children) {
