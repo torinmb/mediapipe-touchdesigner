@@ -91,6 +91,7 @@ async function changeWebcam(webcam) {
       console.log("Error starting webcam: " + err.name + ": " + err.message);
       socketState.ws.send(JSON.stringify({ error: 'webcamStartFail' }));
     }
+    socketState.ws.send(JSON.stringify({ success: 'webcamStarted' }));
     webcamState.videoElement.height = webcamState.height;
   }
   offscreenCanvas.width = webcamState.width;

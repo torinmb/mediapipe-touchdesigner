@@ -42,6 +42,8 @@ def onReceiveText(dat, rowIndex, message):
 				op('webBrowser1').par.Address = op('current_url').text
 				run("me.parent().op('webBrowser1').allowCooking = True", delayMilliSeconds = 3000)
 				me.parent().addScriptError('Webcam failed to start, please ensure camera input is 720p, 8 bit. Component reloading')
+		if 'success' in data:
+			me.parent().clearScriptErrors(recurse=False, error='Webcam failed*')
 
 	except Exception as e:
 		return
