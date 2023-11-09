@@ -35,7 +35,7 @@ export const createGestureLandmarker = async (WASM_PATH) => {
         minHandPresenceConfidence: parseFloat(gestureState.minPresenceConfidence),
         minTrackingConfidence: parseFloat(gestureState.minTrackingConfidence),
         cannedGesturesClassifierOptions: {
-            maxResults: parseFloat(gestureState.maxResults),
+            maxResults: parseInt(gestureState.maxResults),
             scoreThreshold: parseFloat(gestureState.scoreThreshold),
         },
     });
