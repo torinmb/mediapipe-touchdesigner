@@ -23,7 +23,7 @@ import { segmenterState, createImageSegmenter } from "./imageSegmentation.js";
 import { webcamState, socketState, overlayState, outputState } from "./state.js";
 import { configMap } from "./modelParams.js";
 
-const WASM_PATH = "./mediapipe/tasks-vision/0.10.8/wasm";
+const WASM_PATH = "./mediapipe/wasm";
 const video = document.getElementById("webcam");
 let flippedVideo = null;
 webcamState.videoElement = video;

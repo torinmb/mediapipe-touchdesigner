@@ -14,6 +14,10 @@ export default {
             {
               src: 'src/mediapipe/*',
               dest: 'mediapipe/'
+            },
+            {
+              src: 'node_modules/@mediapipe/tasks-vision/*',
+              dest: 'mediapipe/'
             }
           ]
         })
