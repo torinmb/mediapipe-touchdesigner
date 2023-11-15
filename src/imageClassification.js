@@ -28,7 +28,7 @@ export const createImageClassifier = async (WASM_PATH) => {
 			delegate: "GPU",
 		},
 		runningMode: "VIDEO",
-		maxResults: parseFloat(imageState.maxResults),
+		maxResults: parseInt(imageState.maxResults),
 		scoreThreshold: parseFloat(imageState.scoreThreshold),
 	});
 	return imageClassifier;

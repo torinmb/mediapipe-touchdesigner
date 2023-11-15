@@ -34,8 +34,8 @@ export const createFaceLandmarker = async (wasm_path) => {
         minDetectionConfidence: parseFloat(faceLandmarkState.minDetectionConfidence),
         minPresenceConfidence: parseFloat(faceLandmarkState.minPresenceConfidence),
         minTrackingConfidence: parseFloat(faceLandmarkState.minTrackingConfidence),
-        outputFaceBlendshapes: parseFloat(faceLandmarkState.outputBlendshapes),
-        outputFacialTransformationMatrixes: parseFloat(faceLandmarkState.outputTransformationMatrixes),
+        outputFaceBlendshapes: Boolean(faceLandmarkState.outputBlendshapes),
+        outputFacialTransformationMatrixes: Boolean(faceLandmarkState.outputTransformationMatrixes),
     });
     return faceLandmarker;
 };

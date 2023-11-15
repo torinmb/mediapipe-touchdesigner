@@ -30,7 +30,7 @@ export const createPoseLandmarker = async (WASM_PATH) => {
             delegate: "GPU",
         },
         runningMode: "VIDEO",
-        numPoses: parseFloat(poseState.numPoses),
+        numPoses: parseInt(poseState.numPoses),
         minPoseDetectionConfidence: parseFloat(poseState.minDetectionConfidence),
         minPosePresenceConfidence: parseFloat(poseState.minPresenceConfidence),
         minTrackingConfidence: parseFloat(poseState.minTrackingConfidence),

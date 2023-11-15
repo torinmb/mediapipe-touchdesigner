@@ -19,7 +19,6 @@ from pathlib import Path
 import json
 clients = {}
 
-
 # return the response dictionary
 def onHTTPRequest(webServerDAT, request, response):
 	fileName = ""
@@ -133,5 +132,6 @@ def onServerStart(webServerDAT):
 	return
 
 def onServerStop(webServerDAT):
+	print("MP server stopped")
 	return
 	
