@@ -28,7 +28,7 @@ def onHTTPRequest(webServerDAT, request, response):
 		requestArray = "index.html"
 		# print(op('/project1/vfs_web_server/virtualFile').vfs)
 	importRoot = os.path.join(os.getcwd(), '_mpdist/')
-	# print("Path: " + importRoot + requestArray)
+	# print("requestArray: " + importRoot + requestArray)
 	filePath = Path(importRoot + requestArray)
 	if(filePath.exists()):
 		print("Serving from file: " + request['uri'])
@@ -40,7 +40,7 @@ def onHTTPRequest(webServerDAT, request, response):
 		if(requestArray == "index.html"):
 			requestArray = "#index.html"
 		requestArray = requestArray.replace("/", "#")
-		if(requestArray in op('virtualFile').vfs):
+		if(op('virtualFile').vfs[requestArray]):
 			fileContent = op('virtualFile').vfs[requestArray]
 			# print(op('/project1/vfs_web_server/virtualFile').vfs)
 			fileContent = op('virtualFile').vfs[requestArray].byteArray
