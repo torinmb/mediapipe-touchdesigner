@@ -14,6 +14,9 @@ def get_free_port():
     return free_port
 
 def onStart():
+	return
+
+def onCreate():
 	webServerDAT = op('webserver1')
 	webServerDAT.par.active = 0
 	thisPort = get_free_port()
@@ -21,9 +24,6 @@ def onStart():
 	webServerDAT.par.port = thisPort
 	webServerDAT.par.active = 1
 	# webServerDAT.par.restart.pulse()
-	return
-
-def onCreate():
 	return
 
 def onExit():
