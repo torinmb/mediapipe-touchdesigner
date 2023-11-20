@@ -3,6 +3,8 @@ A GPU Accelerated, self-contained, [MediaPipe](https://developers.google.com/med
 
 <img width="1053" alt="Screenshot 2023-08-14 at 2 16 44 PM" src="https://github.com/torinmb/mediapipe-touchdesigner/assets/6014011/8f7a9eb9-fa7a-4d9b-b541-bb9c6c4e0e88">
 
+# Overview
+To get an idea of what's possibe with the plugin, and a quick tutorial on how to get up and running, check out our [introduction video on YouTube](https://www.youtube.com/watch?v=Cx4Ellaj6kk "Face, Hand, Pose Tracking & More in TouchDesigner with @MediaPipe GPU Plugin")
 
 # Setup
 Download the latest **release.zip** from the [Release Section](https://github.com/torinmb/mediapipe-touchdesigner/releases). Open up the MediaPipe TouchDesigner.toe file. All of the components are stored inside the /toxes folder. The main component is MediaPipe.tox. All of the other components are examples of how to load and display the associated model data in TouchDesigner.
