@@ -24,6 +24,7 @@ export const createPoseLandmarker = async (WASM_PATH) => {
     console.log("Starting pose detection")
     console.log(poseState);
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
+    console.log('numPoses', parseInt(poseState.numPoses))
     let poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
         baseOptions: {
             modelAssetPath: poseState.modelPath,

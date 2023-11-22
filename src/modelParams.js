@@ -48,6 +48,7 @@ export const configMap = {
 
     'Jointthreshold': '',
     'Posemodeltype': value => modelCheck(poseState, value),
+    'Pnumposes': value => poseState.numPoses = value,
     'Pdetectconf': value => poseState.minDetectionConfidence = value,
     'Ppresconf': value => poseState.minPresenceConfidence = value,
     'Ptrackconf': value => poseState.minTrackingConfidence = value,
