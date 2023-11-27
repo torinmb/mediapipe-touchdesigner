@@ -37,11 +37,11 @@ def onReceiveText(dat, rowIndex, message):
 		
 		if 'error' in data:
 			if (data['error'] == 'webcamStartFail'):
-				print('Webcam failed to start, please ensure camera input is 720p, 8 bit. Component reloading')
+				print('Webcam failed to start, is it being used somewhere else? Please also ensure camera input is 720p, 8 bit. Component reloading')
 				op('webBrowser1').allowCooking = False
 				op('webBrowser1').par.Address = op('current_url').text
 				run("me.parent().op('webBrowser1').allowCooking = True", delayMilliSeconds = 3000)
-				me.parent().addScriptError('Webcam failed to start, please ensure camera input is 720p, 8 bit. Component reloading')
+				me.parent().addScriptError('Webcam failed to start, is it being used somewhere else? Please also ensure camera input is 720p, 8 bit. Component reloading')
 		if 'success' in data:
 			me.parent().clearScriptErrors(recurse=False, error='Webcam failed*')
 
