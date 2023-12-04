@@ -15,7 +15,7 @@ On the MediaPipe component once it's loaded you can select your webcam from the 
 ![image-1](https://github.com/torinmb/mediapipe-touchdesigner/assets/6014011/ffb65b9b-e916-45ee-87fc-af7480cc2ac6)
 
 # A note on resolution
-Currently the model is limited to 720p input resolution, but we're working on higher resolutions
+Currently the model is limited to 720p input resolution - as long as that's a resolution your webcam supports, you're good to go.
 
 ## Components
 The plugin consists of a number of components:
@@ -61,7 +61,7 @@ Use this to identify what the image might contain
 
 # Sending TOPs from TouchDesigner
 ## SpoutCam on Windows
-If you are on Windows, you can use Spout to send any TOP from TouchDesigner to MediaPipe by using a Syphon Spout Out TOP and SpoutCam.
+If you are on Windows, you can use Spout to send any TOP from TouchDesigner to MediaPipe by using a Syphon Spout Out TOP and SpoutCam. Take a look at our [introduction video on YouTube](https://www.youtube.com/watch?v=Cx4Ellaj6kk "Face, Hand, Pose Tracking & More in TouchDesigner with @MediaPipe GPU Plugin") for how to set it up.
 
 ### Download SpoutCam
 [SpoutCam](https://github.com/leadedge/SpoutCam/releases)
@@ -84,7 +84,16 @@ Feed your desired TOP into it
 
 The media should appear with no frames of delay!
 
-### Syphon on Mac
+### Diagnosing SpoutCam showing only noise, and other Spout problems
+For diagnosing this issue, I recommend downloading the Spout2 files from the same GitHub profile as the SpoutCam Plugin. This adds some settings and diagnostics options when working with Spout. In my case, **my laptop graphics proved to be the problem!** When running diagnostics, checking for compatibility and looking at the running spout cam process (all possible through the SpoutPanel and SpoutSettings) it told me that the texture sharing was failing, thus resulting in the noise. After reading through the SpoutSettings and their explanations (not the SpoutCamSettings!), I made sure to put all processes involving spout (so sender & receiver) on the same graphics pipeline (by changing the .exe graphic settings in Windows, this is explained in SpoutSettings), since my laptop has both integrated CPU graphics, as well as a GPU.
+
+This actually fixed my issue!
+
+So for anyone that has a laptop, multiple GPUs or any other Spout issues in combination with this TouchDesigner plugin, I recommend downloading the rest of the Spout software and tinkering a bit.
+
+Thanks to @vVattghern for finding this answer
+
+## Syphon on Mac
 There is no SpoutCam equivalent on Mac, but you can use Syphon to send video to OBS, and then use the OBS Virtual Webcam output to the MediaPipe task. It's not the most elegant solution, but it works.
 
 # Performance tips
