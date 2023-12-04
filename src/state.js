@@ -68,6 +68,9 @@ async function changeWebcam(webcam) {
           height: {
             exact: webcamState.height,
           },
+          width: {
+            exact: webcamState.width,
+          },
           frameRate: {
             ideal: webcamState.targetFrameRate,
           }
