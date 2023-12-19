@@ -61,9 +61,7 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
   // if(segmenterState.detect)
     segmenterState.landmarker = await createImageSegmenter(WASM_PATH, video, segmentationCanvas);
   webcamState.startWebcam();
-  if (webcamState.webcamRunning ) {
-    window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
-  }
+  window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
 })();
 
 function handleQueryParams() {
@@ -87,7 +85,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   let timeToDetect = 0;
   let timeToDraw = 0;
 
-  if (video.videoWidth === 0 || video.videoHeight === 0) {
+  if (!webcamState.webcamRunning || video.videoWidth === 0 || video.videoHeight === 0) {
     console.log('videoWidth or videoHeight is 0')
     window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
     return;
