@@ -43,7 +43,6 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
 (async function setup() {
   handleQueryParams();
   setupWebSocket(socketState.adddress + ":" + socketState.port, socketState);
-  webcamState.webcamDevices = await getWebcamDevices();
   // if(handState.detect)
     handState.landmarker = await createHandLandmarker(WASM_PATH);
   // if(gestureState.detect)
@@ -53,7 +52,7 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
   // if(faceDetectorState.detect)
     faceDetectorState.landmarker = await createFaceDetector(WASM_PATH, facesDiv);
   // if(poseState.detect)
-    poseState.landmarker = await createPoseLandmarker(WASM_PATH);
+    poseState.landmarker = await createPoseLandmarker(WASM_PATH, segmentationCanvas);
   // if(objectState.detect)
     objectState.landmarker = await createObjectDetector(WASM_PATH, objectsDiv);
   // if(imageState.detect)
@@ -133,7 +132,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
           landmarker.results = await marker.classifyForVideo(flippedVideo, startTimeMs);
         }
         else {
-          landmarker.results = await marker.detectForVideo(flippedVideo, startTimeMs);
+          landmarker.results = await marker.detectForVideo(flippedVideo, startTimeMs, poseState.drawPoseSegmentation);
         }
         safeSocketSend(socketState.ws, JSON.stringify({
           [landmarker['resultsName']]: landmarker.results,
@@ -179,13 +178,9 @@ function setupWebSocket(socketURL, socketState) {
   socketState.ws = new WebSocket(socketURL);
 
   socketState.ws.addEventListener('open', () => {
-    console.log('WebSocket connection opened:');
+    console.log('WebSocket connection opened');
     socketState.ws.send('pong');
-
-    getWebcamDevices().then(devices => {
-      // console.log('Availalbe webcam devices: ', devices)
-      socketState.ws.send(JSON.stringify({ type: 'webcamDevices', devices }));
-    });
+    getWebcamDevices();
   });
 
   socketState.ws.addEventListener('message', async (event) => {
@@ -213,13 +208,15 @@ function setupWebSocket(socketURL, socketState) {
 async function getWebcamDevices() {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
-    const webcams = devices.filter(device => device.kind === 'videoinput');
+    let webcams = devices.filter(device => device.kind === 'videoinput');
     // console.log("Got webcams: ", webcams);
     
     // webcams.forEach((value) => {
     //   console.log(value.label + " capabilities:", value.getCapabilities());
     // });
-    return webcams.map(({ label }) => ({ label }));
+    webcams = webcams.map(({ label }) => ({ label }));
+    webcamState.webcamDevices = webcams;
+    safeSocketSend(socketState.ws, JSON.stringify({ type: 'webcamDevices', webcams }));
   } catch (error) {
     console.error('Error getting webcam devices:', error);
     // document.body.style.backgroundColor = "red";
