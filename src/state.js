@@ -44,17 +44,29 @@ async function changeWebcam(webcam) {
   let webcamFound = true;
   if (webcam !== webcamState.webcamLabel) {
     webcamFound = false;
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const webcamDevices = devices.filter(device => device.kind === 'videoinput');
-    // console.log("Got webcams: ", webcamDevices);
-    webcamDevices.forEach((webcamDevice) => {
-      if (webcamDevice.label == webcam) {
-        webcamState.webcamId = webcamDevice.deviceId;
-        console.log("Using webcam: " + webcamDevice.label);
-        console.log("Reported capabilities:", webcamDevice.getCapabilities());
-        webcamFound = true;
-      }
-    });
+    if (!navigator.mediaDevices?.enumerateDevices) {
+      console.log("enumerateDevices() not supported.");
+    } else {
+      // List cameras and microphones.
+      navigator.mediaDevices
+        .enumerateDevices()
+        .then((devices) => {
+          devices = devices.filter(device => device.kind === 'videoinput');
+          webcamDevices.push(devices);
+          devices.forEach((device) => {
+            if (device.label == webcam) {
+              webcamState.webcamId = device.deviceId;
+              console.log("Found webcam: " + device.label);
+              console.log("Reported capabilities:", device.getCapabilities());
+            }
+            webcamFound = true;
+            // console.log(`${device.kind}: ${device.label} id = ${device.deviceId}`);
+          });
+        })
+        .catch((err) => {
+          console.error(`${err.name}: ${err.message}`);
+        });
+    }
 
     if (!webcamFound) {
       console.log("Can't find webcam: " + webcamState.webcamLabel);
