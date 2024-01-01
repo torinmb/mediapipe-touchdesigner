@@ -54,6 +54,7 @@ async function changeWebcam(webcam) {
         .then((devices) => {
           devices = devices.filter(device => device.kind === 'videoinput');
           webcamState.webcamDevices = devices;
+          // console.log(`${device.kind}: ${device.label} id = ${device.deviceId}`);
           devices.forEach((device) => {
             if (device.label == webcam) {
               webcamState.webcamId = device.deviceId;
@@ -61,16 +62,16 @@ async function changeWebcam(webcam) {
               console.log("Reported capabilities:", device.getCapabilities());
               webcamFound = true;
             }
-            if (!webcamFound) {
-              console.log("Can't find webcam: " + webcamState.webcamLabel);
-              // `socketState.ws.send(JSON.stringify({ error: 'webcamNotFound' }));
-            }
-            else if(!webcamState.webcamRunning || webcamState.webcamLabel != webcam) {
-              webcamState.webcamLabel = webcam;
-              startNewWebcam();
-              console.log(`${device.kind}: ${device.label} id = ${device.deviceId}`);
-            }
           });
+          if (!webcamFound) {
+            console.log("Can't find webcam: " + webcamState.webcamLabel);
+            // `socketState.ws.send(JSON.stringify({ error: 'webcamNotFound' }));
+          }
+          else if(!webcamState.webcamRunning || webcamState.webcamLabel != webcam) {
+            webcamState.webcamLabel = webcam;
+            console.log("Starting webcam function");
+            startNewWebcam();
+          }
         })
         .catch((err) => {
           console.error(`${err.name}: ${err.message}`);
