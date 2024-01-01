@@ -179,7 +179,7 @@ function setupWebSocket(socketURL, socketState) {
   socketState.ws = new WebSocket(socketURL);
 
   socketState.ws.addEventListener('open', () => {
-    console.log('WebSocket connection opened:');
+    console.log('WebSocket connection opened');
     socketState.ws.send('pong');
 
     getWebcamDevices().then(devices => {
