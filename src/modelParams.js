@@ -99,7 +99,7 @@ export const configMap = {
 };
 
 function modelCheck(state, value) {
-    console.log("Looking for  : " + value);
+    console.log("Looking for model : " + value);
     if (state.modelTypes.hasOwnProperty(value)) {
         console.log("Setting : " + state.modelTypes[value]);
         state.modelPath = state.modelTypes[value];
