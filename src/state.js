@@ -67,9 +67,8 @@ async function changeWebcam(webcam) {
             console.log("Can't find webcam: " + webcamState.webcamLabel);
             // `socketState.ws.send(JSON.stringify({ error: 'webcamNotFound' }));
           }
-          else if(!webcamState.webcamRunning || webcamState.webcamLabel != webcam) {
+          else if (!webcamState.webcamRunning || webcamState.webcamLabel != webcam) {
             webcamState.webcamLabel = webcam;
-            console.log("Starting webcam function");
             startNewWebcam();
           }
         })
@@ -86,11 +85,11 @@ async function startNewWebcam() {
       deviceId: {
         exact: webcamState.webcamId,
       },
-      height: {
-        exact: webcamState.height,
-      },
       width: {
         exact: webcamState.width,
+      },
+      height: {
+        exact: webcamState.height,
       },
       frameRate: {
         ideal: webcamState.targetFrameRate,
