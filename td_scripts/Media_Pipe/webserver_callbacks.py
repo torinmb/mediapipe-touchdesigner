@@ -95,6 +95,9 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 	elif(data.find('imageResults', 2, 100) != -1):
 		op('image_results').text = data
 		return
+	elif(data.find('imageEmbedderResults', 2, 100) != -1):
+		op('image_embedder_results').text = data
+		return
 	elif(data.find('timers', 2, 100) != -1):
 		# print(json.dumps(data['detectTime']))
 		op('timers').clear()

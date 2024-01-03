@@ -6,6 +6,7 @@ import { objectState } from "./objectDetection";
 import { faceDetectorState } from "./faceDetector";
 import { imageState } from "./imageClassification";
 import { segmenterState } from "./imageSegmentation";
+import { imageEmbedderState } from "./imageEmbedder";
 
 import { webcamState, socketState, overlayState, outputState } from './state.js';
 
@@ -32,6 +33,7 @@ export const configMap = {
     'Detectobjects': value => detectSwitch(objectState, parseInt(value) === 1),
     'Detectimages': value => detectSwitch(imageState, parseInt(value) === 1),
     'Detectsegments': value => detectSwitch(segmenterState, parseInt(value) === 1),
+    'Detectimageembeddings': value => detectSwitch(imageEmbedderState, parseInt(value) === 1),
     'Showoverlays': value => overlaySwitch(parseInt(value) === 1),
 
     'Hnumhands': value => handState.numHands = value,
@@ -73,8 +75,11 @@ export const configMap = {
     'Iscore': value => imageState.scoreThreshold = value,
 
     'Smodeltype': value => modelCheck(segmenterState, value),
-    'Smodeltype': value => modelCheck(segmenterState, value),
+    
     'Sshowmulticlassbackgroundonly': value => segmenterState.showMultiClassBackgroundOnly = parseInt(value) === 1,
+
+    'Iemodeltype': value => modelCheck(imageEmbedderState, value)
+
     // 'Scolor0r': value => segmenterState.legendColors[0][0] = Math.round(value * 255.0),
     // 'Scolor0g': value => segmenterState.legendColors[0][1] = Math.round(value * 255.0),
     // 'Scolor0b': value => segmenterState.legendColors[0][2] = Math.round(value * 255.0),
