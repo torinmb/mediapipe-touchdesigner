@@ -91,6 +91,7 @@ async function startNewWebcam() {
       height: {
         exact: webcamState.height,
       },
+      aspectRatio: 1.7777777777777777,
       frameRate: {
         ideal: webcamState.targetFrameRate,
       }
