@@ -15,6 +15,6 @@
   "dependencies": {
     "@mediapipe/tasks-vision": "0.10.9",
     "vite-plugin-static-copy": "^0.17.0",
-    "yarn": "^1.22.20"
+    "yarn": "^1.22.21"
   }
 }
