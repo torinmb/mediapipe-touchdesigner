@@ -77,6 +77,12 @@ async function changeWebcam(webcam) {
         });
     }
   }
+  if (webcamState.flipped) {
+    webcamState.videoElement.style.transform = 'scaleX(-1)';
+  }
+  else {
+    webcamState.videoElement.style.transform = 'scaleX(1)';
+  }
 }
 
 async function startNewWebcam() {
@@ -127,10 +133,4 @@ async function startNewWebcam() {
 
   offscreenCanvas.width = webcamState.width;
   offscreenCanvas.height = webcamState.height;
-  if (webcamState.flipped) {
-    webcamState.videoElement.style.transform = 'scaleX(-1)';
-  }
-  else {
-    webcamState.videoElement.style.transform = 'scaleX(1)';
-  }
 }
