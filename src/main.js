@@ -20,6 +20,7 @@ import { poseState, createPoseLandmarker } from "./poseTracking.js";
 import { objectState, createObjectDetector } from "./objectDetection.js";
 import { imageState, createImageClassifier } from "./imageClassification.js";
 import { segmenterState, createImageSegmenter } from "./imageSegmentation.js";
+import { imageEmbedderState, createImageEmbedder } from "./imageEmbedder.js";
 import { webcamState, socketState, overlayState, outputState } from "./state.js";
 import { configMap } from "./modelParams.js";
 
@@ -36,7 +37,7 @@ const segmentationCanvas = document.getElementById("segmentation");
 // Keep a reference of all the child elements we create
 // so we can remove them easilly on each render.
 
-let allModelState = [faceLandmarkState, faceDetectorState, handState, gestureState, poseState, objectState, imageState, segmenterState];
+let allModelState = [faceLandmarkState, faceDetectorState, handState, gestureState, poseState, objectState, imageState, segmenterState, imageEmbedderState];
 let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseState];
 
 
@@ -60,10 +61,10 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
     imageState.landmarker = await createImageClassifier(WASM_PATH);
   // if(segmenterState.detect)
     segmenterState.landmarker = await createImageSegmenter(WASM_PATH, video, segmentationCanvas);
+
+    imageEmbedderState.landmarker = await createImageEmbedder(WASM_PATH);
   webcamState.startWebcam();
-  if (webcamState.webcamRunning ) {
-    window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
-  }
+  window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
 })();
 
 function handleQueryParams() {
@@ -87,7 +88,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   let timeToDetect = 0;
   let timeToDraw = 0;
 
-  if (video.videoWidth === 0 || video.videoHeight === 0) {
+  if (!webcamState.webcamRunning || video.videoWidth === 0 || video.videoHeight === 0) {
     console.log('videoWidth or videoHeight is 0')
     window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
     return;
@@ -133,6 +134,9 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
         }
         else if (landmarker.resultsName === 'imageResults') {
           landmarker.results = await marker.classifyForVideo(flippedVideo, startTimeMs);
+        }
+        else if (landmarker.resultsName === 'imageEmbedderResults') {
+          landmarker.results = await marker.embedForVideo(video, startTimeMs);
         }
         else {
           landmarker.results = await marker.detectForVideo(flippedVideo, startTimeMs);
@@ -181,7 +185,7 @@ function setupWebSocket(socketURL, socketState) {
   socketState.ws = new WebSocket(socketURL);
 
   socketState.ws.addEventListener('open', () => {
-    console.log('WebSocket connection opened:');
+    console.log('WebSocket connection opened');
     socketState.ws.send('pong');
 
     getWebcamDevices().then(devices => {
