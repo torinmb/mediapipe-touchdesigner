@@ -89,7 +89,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   let timeToDraw = 0;
 
   if (!webcamState.webcamRunning || video.videoWidth === 0 || video.videoHeight === 0) {
-    console.log('videoWidth or videoHeight is 0')
+    // console.log('videoWidth or videoHeight is 0')
     window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
     return;
   }
@@ -113,6 +113,9 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   segmentationCanvas.style.height = outputState.height;
   segmentationCanvas.width = outputState.width;
   segmentationCanvas.height = outputState.height;
+  
+  webcamState.offscreenCanvas.width = outputState.width;
+  webcamState.offscreenCanvas.height = outputState.height;
 
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
