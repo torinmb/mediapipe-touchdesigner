@@ -1,4 +1,9 @@
 # MediaPipe TouchDesigner Plugin
+
+[![Total Downloads](https://img.shields.io/github/downloads/torinmb/mediapipe-touchdesigner/total?style=for-the-badge&label=Total%20Downloads)](https://github.com/torinmb/mediapipe-touchdesigner/releases/latest/download/release.zip)
+
+[![Download Latest Release](https://img.shields.io/badge/Download_Latest_Release_%E2%86%93-blank?style=for-the-badge)](https://github.com/torinmb/mediapipe-touchdesigner/releases/latest/download/release.zip)
+
 A GPU Accelerated, self-contained, [MediaPipe](https://developers.google.com/mediapipe) Plugin for TouchDesigner that runs on Mac and PC with no installation. This project currently supports all MediaPipe vision models except Interactive Segmentation and Image Embedding.
 
 <img width="1053" alt="Screenshot 2023-08-14 at 2 16 44 PM" src="https://github.com/torinmb/mediapipe-touchdesigner/assets/6014011/8f7a9eb9-fa7a-4d9b-b541-bb9c6c4e0e88">
