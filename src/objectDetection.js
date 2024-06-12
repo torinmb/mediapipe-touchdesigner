@@ -1,7 +1,7 @@
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
 
 let objectModelTypes = {
-	'fast': './mediapipe/models/object_detection/ssd_mobilenet_v2.tflite',
+	'lite': './mediapipe/models/object_detection/ssd_mobilenet_v2.tflite',
 	'full': './mediapipe/models/object_detection/efficientdet_lite0.tflite',
 	'accurate': './mediapipe/models/object_detection/efficientdet_lite2.tflite',
 }
