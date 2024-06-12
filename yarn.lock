@@ -180,10 +180,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mediapipe/tasks-vision@npm:0.10.11":
-  version: 0.10.11
-  resolution: "@mediapipe/tasks-vision@npm:0.10.11"
-  checksum: 10c0/9557cd6f67a0c691f73681964cd78f177715ee9f233ccc55d84f047ef19abbbfa93c59aab1ff3fd4095d5edf87abcc46de784c53788e2148140b0b14a9643bb7
+"@mediapipe/tasks-vision@npm:0.10.14":
+  version: 0.10.14
+  resolution: "@mediapipe/tasks-vision@npm:0.10.14"
+  checksum: 10c0/dea1d094153fcb91e76d1a266b6a79baf9cbdd106a786adc0236ded87099b5242c89e0e5b73a3f5d57d7e23ff657dd37f40b9261e12a330762041cd9549fadcc
   languageName: node
   linkType: hard
 
@@ -988,7 +988,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "mediapipe-touchdesigner@workspace:."
   dependencies:
-    "@mediapipe/tasks-vision": "npm:0.10.11"
+    "@mediapipe/tasks-vision": "npm:0.10.14"
     typescript: "npm:^5.4.5"
     vite: "npm:^5.2.8"
     vite-plugin-static-copy: "npm:^1.0.2"
