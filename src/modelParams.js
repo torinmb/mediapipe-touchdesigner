@@ -67,7 +67,7 @@ export const configMap = {
     'Fdminsuppression': value => faceDetectorState.minSuppressionThreshold = value,
 
     'Onumobjects': value => objectState.maxResults = value,
-    'OmodelType': value => modelCheck(objectState, value),
+    'Omodeltype': value => modelCheck(objectState, value),
     'Oscore': value => objectState.scoreThreshold = value,
 
     'Inumoresults': value => imageState.maxResults = value,
