@@ -19,18 +19,17 @@ def onCook(scriptOp):
 	scriptOp.appendChan('m30')
 	scriptOp.appendChan('m01')
 	scriptOp.appendChan('m11')
-	scriptOp.appendChan('m12')
-	scriptOp.appendChan('m13')
-	scriptOp.appendChan('m20')
 	scriptOp.appendChan('m21')
-	scriptOp.appendChan('m22')
-	scriptOp.appendChan('m23')
-	scriptOp.appendChan('m30')
 	scriptOp.appendChan('m31')
+	scriptOp.appendChan('m02')
+	scriptOp.appendChan('m12')
+	scriptOp.appendChan('m22')
 	scriptOp.appendChan('m32')
+	scriptOp.appendChan('m03')
+	scriptOp.appendChan('m13')
+	scriptOp.appendChan('m23')
 	scriptOp.appendChan('m33')
-	# scriptOp.appendChan('y')
-	# scriptOp.appendChan('z')
+
 	if(op('in1').text != ""):
 		rawdata = json.loads(op('in1').text)
 			
@@ -53,15 +52,15 @@ def onCook(scriptOp):
 				scriptOp['m30'][i] = transmatricies["data"][3]
 				scriptOp['m01'][i] = transmatricies["data"][4]
 				scriptOp['m11'][i] = transmatricies["data"][5]
-				scriptOp['m12'][i] = transmatricies["data"][6]
-				scriptOp['m13'][i] = transmatricies["data"][7]
-				scriptOp['m20'][i] = transmatricies["data"][8]
-				scriptOp['m21'][i] = transmatricies["data"][9]
+				scriptOp['m21'][i] = transmatricies["data"][6]
+				scriptOp['m31'][i] = transmatricies["data"][7]
+				scriptOp['m02'][i] = transmatricies["data"][8]
+				scriptOp['m12'][i] = transmatricies["data"][9]
 				scriptOp['m22'][i] = transmatricies["data"][10]
-				scriptOp['m23'][i] = transmatricies["data"][11]
-				scriptOp['m30'][i] = transmatricies["data"][12]
-				scriptOp['m31'][i] = transmatricies["data"][13]
-				scriptOp['m32'][i] = transmatricies["data"][14]
+				scriptOp['m32'][i] = transmatricies["data"][11]
+				scriptOp['m03'][i] = transmatricies["data"][12]
+				scriptOp['m13'][i] = transmatricies["data"][13]
+				scriptOp['m23'][i] = transmatricies["data"][14]
 				scriptOp['m33'][i] = transmatricies["data"][15]
 				i += 1
 
