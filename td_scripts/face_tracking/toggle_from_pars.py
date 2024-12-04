@@ -16,15 +16,21 @@ def onValuesChanged(changes):
 		# use par.eval() to get current value
 		par = c.par
 		if(par.name == "Chops"):
+			if(par == False):
+				op('point_render1').allowCooking = False
+				parent().par.Points = 0
 			op('Extract_CHOPs').allowCooking = par
 		elif (par.name == "Points"):
+			if(par == True):
+				op('Extract_CHOPs').allowCooking = True
+				parent().par.Chops = 1
 			op('point_render1').allowCooking = par
 		elif(par.name == "Sops"):
 			op('Build_SOPs').allowCooking = par
-		# elif(par.name == "Blendshapes"):
-			# op('Extract_CHOPs').allowCooking = par
-		# elif(par.name == "Transformationmatricies"):
-			# op('Extract_CHOPs').allowCooking = par
+		elif(par.name == "Blendshapes"):
+			op('Extract_BlendShapes').allowCooking = par
+		elif(par.name == "Transformationmatricies"):
+			op('Extract_Transformation_Matrix').allowCooking = par
 	return
 
 def onPulse(par):
