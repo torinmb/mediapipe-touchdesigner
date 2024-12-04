@@ -26,7 +26,6 @@ def onCook(scriptOp):
 		if not len(rawdata):
 			return
 		digits = scriptOp.parent().digits -1
-		print("digits: " + str(digits))
 		resScale = op('resolution')['ratio']
 		# Check to see if we have a face
 		if(len(rawdata['faceLandmarkResults']) > 0 and len(rawdata['faceLandmarkResults']['faceLandmarks']) > digits and rawdata['faceLandmarkResults']['faceLandmarks'][digits]):
