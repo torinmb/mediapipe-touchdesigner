@@ -26,7 +26,7 @@ def onCook(scriptOp):
 		if not len(rawdata):
 			return
 		digits = scriptOp.digits -1
-		resScale = op('resolution')['height']/op('resolution')['width']
+		resScale = op('resolution')['ratio']
 		# Check to see if we have a face
 		if(len(rawdata['faceLandmarkResults']) > 0 and len(rawdata['faceLandmarkResults']['faceLandmarks']) > digits and rawdata['faceLandmarkResults']['faceLandmarks'][digits]):
 			scriptOp.copy(scriptOp.inputs[0])
@@ -37,13 +37,13 @@ def onCook(scriptOp):
 			# Stop when we reach the irises (point 468)
 			i=0
 			while i<468:
-				scriptOp.points[i].P = (landmarks[i]['x'], -1*(landmarks[i]['y'] * resScale)+.78, landmarks[i]['z'])
+				scriptOp.points[i].P = (landmarks[i]['x'], -1*(landmarks[i]['y'] * resScale)+.78, -1*landmarks[i]['z'])
 				i += 1
 		# 	# Right iris
 			op(irisTable)[1,0] = "Right iris center"
 			op(irisTable)[1,1] = landmarks[468]['x']
 			op(irisTable)[1,2] = -1*(landmarks[468]['y'] * resScale)+.78
-			op(irisTable)[1,3] = landmarks[468]['z']
+			op(irisTable)[1,3] = -1*landmarks[468]['z']
 		
 			op(irisTable)[2,0] = "Right iris radius"
 			op(irisTable)[2,1] = abs(landmarks[469]['x'] - landmarks[471]['x']) / 2
