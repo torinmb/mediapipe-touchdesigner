@@ -118,16 +118,17 @@ def onCook(scriptOp):
 						scriptOp['z'][i] = landmarks[point]['z']
 						i += 1
 			else:
+				i = 0
 				for landmarks in rawdata['faceLandmarkResults']['faceLandmarks']:
-
 					# print(rawdata['faceResults']['faceLandmarks'])
 					# landmarks = rawdata['faceLandmarkResults']['faceLandmarks'][digits]
-						scriptOp.numSamples = scriptOp.numSamples + len(landmarks)
+					scriptOp.numSamples = scriptOp.numSamples + len(landmarks)
 
-						for i in range (len(landmarks)):
-							scriptOp['x'][i] = landmarks[i]['x']
-							scriptOp['y'][i] = 1- landmarks[i]['y']
-							scriptOp['z'][i] = landmarks[i]['z']
+					for landmark in landmarks:
+						scriptOp['x'][i] = landmark['x']
+						scriptOp['y'][i] = 1- landmark['y']
+						scriptOp['z'][i] = landmark['z']
+						i += 1
 
 		# No faces detected, so make a 0 filled CHOP
 		else:
