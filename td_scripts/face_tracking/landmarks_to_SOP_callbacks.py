@@ -37,7 +37,7 @@ def onCook(scriptOp):
 			# For every point we have, edit the position of the existing face points
 			# Stop when we reach the irises (point 468)
 			i=0
-			while i<468:
+			while i<478:
 				scriptOp.points[i].P = (landmarks[i]['x'], -1*(landmarks[i]['y'] * resScale)+.78, -1*landmarks[i]['z'])
 				i += 1
 		# 	# Right iris
