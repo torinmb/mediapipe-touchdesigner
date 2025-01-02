@@ -59,7 +59,7 @@ def onCook(scriptOp):
 			op(irisTable)[4,2] = abs(landmarks[475]['y'] - landmarks[477]['y']) / 2 * resScale
 
 			op('replace_irises').allowCooking = True
-			op('switch1').par.input = 1
+			op('switch1').par.input = 0
 
 		else:
 			# print("no face")
@@ -71,5 +71,5 @@ def onCook(scriptOp):
 			op(irisTable).appendRow(["Left iris center",0,0,0])
 			op(irisTable).appendRow(["Left iris radius",0,0,0])
 			op('replace_irises').allowCooking = False
-			op('switch1').par.input = 0
+			op('switch1').par.input = 1
 			return
