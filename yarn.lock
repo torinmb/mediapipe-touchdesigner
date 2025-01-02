@@ -1029,7 +1029,7 @@ __metadata:
   resolution: "mediapipe-touchdesigner@workspace:."
   dependencies:
     "@mediapipe/tasks-vision": "npm:0.10.18"
-    vite: "npm:^6.0.6"
+    vite: "npm:^6.0.7"
     vite-plugin-static-copy: "npm:^2.2.0"
   languageName: unknown
   linkType: soft
@@ -1599,7 +1599,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:^6.0.6":
+"vite@npm:^6.0.7":
   version: 6.0.7
   resolution: "vite@npm:6.0.7"
   dependencies:
