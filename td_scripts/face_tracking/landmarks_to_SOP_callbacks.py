@@ -21,7 +21,7 @@ def onCook(scriptOp):
 	scriptOp.clear()
 	irisTable = op('irises'+str(scriptOp.digits))
 
-	if(op('in1').text != ""):
+	if(op('in1').text != "" and parent().parent().parent().par.Sops == True):
 		rawdata = json.loads(op('in1').text)
 		if not len(rawdata):
 			return
@@ -60,16 +60,21 @@ def onCook(scriptOp):
 
 			op('replace_irises').allowCooking = True
 			op('switch1').par.input = 0
+		return
 
-		else:
-			# print("no face")
-			op(irisTable).clear()
-			# op(irisTable).setSize(5, 4)
-			op(irisTable).insertRow(["Description","x","y","z"])
-			op(irisTable).appendRow(["Right iris center",0,0,0])
-			op(irisTable).appendRow(["Right iris radius",0,0,0])
-			op(irisTable).appendRow(["Left iris center",0,0,0])
-			op(irisTable).appendRow(["Left iris radius",0,0,0])
-			op('replace_irises').allowCooking = False
-			op('switch1').par.input = 1
-			return
+	# print("no face")
+	i=0
+	while i<478:
+		scriptOp.points[i].P = (0, 0, 0)
+		i += 1
+
+	op(irisTable).clear()
+	# op(irisTable).setSize(5, 4)
+	op(irisTable).insertRow(["Description","x","y","z"])
+	op(irisTable).appendRow(["Right iris center",0,0,0])
+	op(irisTable).appendRow(["Right iris radius",0,0,0])
+	op(irisTable).appendRow(["Left iris center",0,0,0])
+	op(irisTable).appendRow(["Left iris radius",0,0,0])
+	op('replace_irises').allowCooking = False
+	op('switch1').par.input = 1
+	return
