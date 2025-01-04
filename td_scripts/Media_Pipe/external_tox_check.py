@@ -8,7 +8,9 @@
 def onStart():
 	return
 
-def dialogChoice(non):
+def dialogChoice(choice):
+	if(choice['button'] == "Help"):
+		a = ui.viewFile('https://github.com/torinmb/mediapipe-touchdesigner/blob/canonical-face-mapping/external_tox.md')
 	return
 
 def onCreate():
@@ -17,7 +19,7 @@ def onCreate():
 		op.TDResources.PopDialog.OpenDefault(
 			text='Check "Enable External tox" toggle to keep save times fast',
 			title='Externalise MediaPipe tox',
-			buttons=['OK'],
+			buttons=['Close', 'Help'],
 			callback=dialogChoice,
 			details='',
 			textEntry=False,
@@ -25,7 +27,6 @@ def onCreate():
 			enterButton=1,
 			escOnClickAway=True
 		)
-		# The MediaPipe tox is very large (500MB+) to keep toe file saves fast and small, it is strongly suggested that you externalise the MediaPipe tox. Would you like to do that now?
 	return
 
 def onExit():
