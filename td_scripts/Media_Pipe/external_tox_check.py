@@ -22,14 +22,10 @@ def onCreate():
 	if currentState==False:
 		# Check if the file exists at either location
 		if os.path.exists(current_dir_path):
-			parent().par.enableexternaltox = True
-			parent().par.externaltox = 'MediaPipe.tox'
-			print(f"MediaPipe.tox found at {current_dir_path}")
+			run("parent().par.enableexternaltox = True", delayFrames=1)
 		elif os.path.exists(toxes_dir_path):
-			parent().par.enableexternaltox = True
-			parent().par.externaltox = 'toxes/MediaPipe.tox'
+			run("parent().par.enableexternaltox = True", delayFrames=1)
 		else:
-			print("MediaPipe.tox not found in either location.")
 			op.TDResources.PopDialog.OpenDefault(
 				text='Check "Enable External tox" toggle to keep save times fast',
 				title='Externalise MediaPipe tox',
