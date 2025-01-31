@@ -5,6 +5,8 @@ import shutil
 import zipfile
 import platform
 
+from datetime import datetime
+
 # me - this DAT
 # 
 # frame - the current frame
@@ -12,9 +14,10 @@ import platform
 # 
 # Make sure the corresponding toggle is enabled in the Execute DAT.
 
-def purgeVFS(op):
+def purgeVFS(op, logfile):
 	vfiles = []
-	print("Found " + str(len(op.vfs)) + " virtual file(s) for deletion")
+	print("Found " + str(len(op.vfs)), " virtual file(s) for deletion")
+	logfile.write("Found " + str(len(op.vfs)) + " virtual file(s) for deletion\n")
 
 	# Get all the virtual files
 	for f in op.vfs:
@@ -41,6 +44,10 @@ def onStart():
 	return
 
 def onCreate():
+	now = datetime.now() # current date and time
+	date_time = now.strftime("%Y-%m-%d %H-%M-%S")
+	logfilename = "buildlog " + date_time + ".txt"
+	logfile = open(logfilename, "a")
 	clear()
 
 	releaseFolder = 'release'
@@ -56,18 +63,23 @@ def onCreate():
 
 	if(Path(releaseFolder).exists()):
 		print("Removing existing release dir")
+		logfile.write("Removing existing release dir\n")
 		try:
 			shutil.rmtree(releaseFolder)
 			print(str(releaseFolder) + " removed successfully")
+			logfile.write(str(releaseFolder) + " removed successfully\n")
 		except OSError as o:
 			print(f"Error, {o.strerror}: {releaseFolder}")
+			logfile.write(f"Error, {o.strerror}: {releaseFolder}\n")
 			gotErrors = gotErrors + 1
 	print("Creating new release folder")
+	logfile.write("Creating new release folder\n")
 	
 	os.mkdir(os.path.join(os.getcwd(), releaseFolder))
 	os.mkdir(os.path.join(os.getcwd(), toxReleaseFolder))
 
 	print("Unlinking Text DATs")
+	logfile.write("Unlinking Text DATs\n")
 
 	previousFileDAT.copy(currentFileDAT)
 	previousFileDAT.appendCol()
@@ -75,11 +87,13 @@ def onCreate():
 
 	for r in range (currentFileDAT.numRows):
 		if (r != 0 and currentFileDAT[r,'name'] != "shortcuts"):
-			print("Removing file path for "+currentFileDAT[r,'path'])
+			print("Removing file path for " + currentFileDAT[r,'path'])
+			logfile.write("Removing file path for " + currentFileDAT[r,'path'] + "\n")
 			previousFileDAT[r,'filePath'] = op(currentFileDAT[r,'path']).par.file.eval()
 			op(currentFileDAT[r,'path']).par.file = ""
 
 	print("Initing yarn build")
+	logfile.write("Initing yarn build\n")
 	
 	# Specify the path to the desired directory
 	directory_path = Path.cwd()
@@ -96,22 +110,27 @@ def onCreate():
 		subprocess.check_call("yarn build",shell=True, env=my_env, cwd=directory_path)
 	except:
 		print("***** Yarn build failed, moving on... *****")
+		logfile.write("***** Yarn build failed, moving on... *****\n")
 		gotErrors = gotErrors + 1
 
 	importRoot = directory_path.joinpath(distFolder)
-	purgeVFS(vfsOp)
+	purgeVFS(vfsOp, logfile)
 	print("Checking for new files at: " + str(importRoot))
+	logfile.write("Checking for new files at: " + str(importRoot) + "\n")
 
 	if(Path(importRoot).exists):
 		print("Importing files from: " + str(importRoot))
+		logfile.write("Importing files from: " + str(importRoot) + "\n")
 		for filename in Path(importRoot).rglob('*'):
 			if (filename.is_file()):
 				file_path = filename.relative_to(importRoot)
 				vfsFilename = "#".join(file_path.parts)
-				print("Importing: "+ vfsFilename)
+				print("Importing: " + vfsFilename)
+				logfile.write("Importing: " + vfsFilename + "\n")
 				vfsOp.vfs.addFile(filename, overrideName="#"+vfsFilename)
 
 	print("Saving external tox files")
+	logfile.write("Saving external tox files\n")
 
 	previousToxesDAT.copy(currentToxesDAT)
 	previousToxesDAT.appendCol()
@@ -132,8 +151,10 @@ def onCreate():
 				currentOp.par.externaltox = (str(directory_path.joinpath(toxReleaseFolder, existingName)))
 				if(currentOp.saveExternalTox(recurse=False)):
 					print("Saved " + str(currentOp))
+					logfile.write("Saved " + str(currentOp) + "\n")
 				else:
-					print("***** Failed to save tox for "+ str(currentOp) + " *****")
+					print("***** Failed to save tox for ", str(currentOp), " *****")
+					logfile.write("***** Failed to save tox for " + str(currentOp) + " *****\n")
 					gotErrors = gotErrors + 1
 				# If the external tox is not the MediaPipe tox, remove it's path
 				if(currentOp.name != "MediaPipe"):
@@ -142,10 +163,12 @@ def onCreate():
 				# print("Restoring tox path for " + str(currentOp))
 
 	print("Restoring file path for MediaPipe tox")
+	logfile.write("Restoring file path for MediaPipe tox\n")
 	op(previousToxesDAT['MediaPipe','path']).par.externaltox = previousToxesDAT['MediaPipe','filePath']
 
 	print("Purging VFS")
-	purgeVFS(vfsOp)
+	logfile.write("Purging VFS\n")
+	purgeVFS(vfsOp, logfile)
 
 	# Save our toe file and copy it to the release folder
 	currentFolder = project.folder
@@ -159,13 +182,15 @@ def onCreate():
 	# Restore the file paths to Text DATs
 	for r in range (previousFileDAT.numRows):
 		if (r != 0):
-			print("Restoring file path for "+previousFileDAT[r,'path'])
+			print("Restoring file path for " + previousFileDAT[r,'path'])
+			logfile.write("Restoring file path for " + previousFileDAT[r,'path'] + "\n")
 			op(previousFileDAT[r,'path']).par.file = previousFileDAT[r,'filePath']
 		
 	# Restore the file paths to external Toxes
 	for r in range (previousToxesDAT.numRows):
 		if (r != 0):
-			print("Restoring file path for "+previousToxesDAT[r,'path'])
+			print("Restoring file path for " + previousToxesDAT[r,'path'])
+			logfile.write("Restoring file path for " + previousToxesDAT[r,'path'] + "\n")
 			op(previousToxesDAT[r,'path']).par.externaltox = previousToxesDAT[r,'filePath']
 
 	op.TDResources.PopDialog.OpenDefault(
@@ -194,6 +219,7 @@ def onCreate():
 
 	# # Put our tox path back into the MediaPipe COMP
 	# mpOp.par.externaltox = originalToxPath
+	logfile.close()
 	return
 
 def onExit():
