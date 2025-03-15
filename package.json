@@ -9,11 +9,11 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^6.0.7"
+    "vite": "^6.2.2"
   },
   "dependencies": {
-    "@mediapipe/tasks-vision": "0.10.18",
+    "@mediapipe/tasks-vision": "0.10.21",
     "vite-plugin-static-copy": "^2.2.0"
   },
-  "packageManager": "yarn@4.6.0"
+  "packageManager": "yarn@4.7.0"
 }
