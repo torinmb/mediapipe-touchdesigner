@@ -159,14 +159,15 @@ We send the data from the MediaPipe instance back to TouchDesigner in JSON forma
 This package uses yarn with vite inside node, which gives you a few options. Firstly, you need to download and install node.js
 
 ## Installation
-Install Node.js
+Install latest Node.js
 
-Install yarn package manager globally
-``` npm install --global yarn ```
+Install the mediapipe packages so we can roll them into the release later (otherwise we'll be using yarn)
+``` npm install ```
 
+Install yarn package manager
 ``` yarn install ```
 
-This installs vite and all the other dependencies required. Should only be needed the first time.
+This installs vite and all the other dependencies required. Should only be needed the first time. If it doesn't work, you may need to do ```enable corepack``` first
 
 ## Debugging of the web page
 There are 2 options for debugging the web page
