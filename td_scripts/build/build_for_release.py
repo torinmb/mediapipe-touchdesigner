@@ -4,6 +4,8 @@ from pathlib import Path
 import shutil
 import zipfile
 import platform
+import json
+import re
 
 from datetime import datetime
 
@@ -40,17 +42,75 @@ def dialogChoice(popupInfo):
 	# print("current File: " + popupInfo["details"])
 	project.load(popupInfo["details"])	
 
+def buildChoice(info):
+	if info['button'] == "Cancel":
+		return
+	else:
+		escaped_version = re.sub(r'[<>:"/\\|?*]', '_', info['enteredText'])
+		build(escaped_version)
+
+def increment_last_digit(version):
+    # Extract numeric part (e.g., remove "v" or other prefixes)
+    match = re.match(r"([^\d]*)([\d.]+)", version)
+    if not match:
+        raise ValueError("Invalid version format")
+
+    prefix, numeric_part = match.groups()
+    parts = numeric_part.split(".")
+
+    try:
+        parts[-1] = str(int(parts[-1]) + 1)  # Increment last number
+    except ValueError:
+        raise ValueError("Invalid numeric format in version")
+
+    return prefix + ".".join(parts)  # Keep original prefix
+
 def onStart():
+	lastVersion = ""
+	try:
+		parent_folder = os.getcwd()
+		with open(parent_folder + "/package.json", "r") as file:
+			data = json.load(file)
+		lastVersion = data.get("version")
+		newVersion = increment_last_digit(lastVersion)
+	except:
+		newVersion = ""
+
+	op.TDResources.PopDialog.OpenDefault(
+			title="Build MediaPipe release",
+			text="Please enter the version number for this build",
+			buttons=['Start', 'Cancel'],
+			callback=buildChoice,
+			details="",
+			textEntry=newVersion,
+			escButton=2,
+			enterButton=1)
 	return
 
 def onCreate():
+	return
+
+def build(releaseVersion):
 	now = datetime.now() # current date and time
 	date_time = now.strftime("%Y-%m-%d %H-%M-%S")
-	logfilename = "buildlog " + date_time + ".txt"
+	logfilename = "buildlog_" + releaseVersion + "_" + date_time + ".txt"
 	logfile = open(logfilename, "a")
 	clear()
 
-	releaseFolder = 'release'
+	try:
+		parent_folder = os.getcwd()
+		with open(parent_folder + "/package.json", "r") as file:
+			data = json.load(file)
+		data["version"] = releaseVersion
+
+		with open(parent_folder + "/package.json", "w") as file:
+			json.dump(data, file, indent = 2)  # Pretty-print with indentation
+		print("Updated version number in package.json")
+
+	except:
+		print("Could not write new version number to package.json")
+	
+	releaseFolder = "mediapipe_v" + releaseVersion
 	fullReleasePath = Path(os.getcwd() + "/" + releaseFolder)
 	toxReleaseFolder = releaseFolder+'/toxes'
 	distFolder = '_mpdist'
@@ -177,7 +237,7 @@ def onCreate():
 	project.save(releaseFolder + "/MediaPipe TouchDesigner.toe")
 	
 	# Zip everything up
-	create_zip_from_paths(fullReleasePath, "../release.zip")
+	create_zip_from_paths(fullReleasePath, "../" + releaseFolder + ".zip")
 
 	# Restore the file paths to Text DATs
 	for r in range (previousFileDAT.numRows):
