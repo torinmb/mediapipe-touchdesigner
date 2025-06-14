@@ -72,6 +72,8 @@ def onWebSocketClose(webServerDAT, client):
 	return
 
 def onWebSocketReceiveText(webServerDAT, client, data):
+	if not me.time.play:
+		return
 	# If we receive results data, dump it directly into the relevant DAT
 	# Doing this here as TD 2022.33910 is much faster processing this at the WS server than WS client
 	if(data.find('handResults', 2, 100) != -1):
