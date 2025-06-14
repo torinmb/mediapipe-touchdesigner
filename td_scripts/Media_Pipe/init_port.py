@@ -14,9 +14,15 @@ def get_free_port():
     return free_port
 
 def onStart():
+	if parent().par.Autoport:
+		start()
 	return
 
 def onCreate():
+	start()
+	return
+	
+def start():
 	webServerDAT = op('webserver1')
 	webServerDAT.par.active = 0
 	thisPort = get_free_port()
