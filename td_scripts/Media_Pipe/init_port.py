@@ -14,6 +14,7 @@ def get_free_port():
     return free_port
 
 def onStart():
+
 	if parent().par.Autoport:
 		start()
 	return
@@ -29,6 +30,10 @@ def start():
 	print('Using port ' + str(thisPort))
 	webServerDAT.par.port = thisPort
 	webServerDAT.par.active = 1
+	try:
+		op('webBrowser1/webrender1').par.dpiscale = 1
+	except:
+		pass	
 	# webServerDAT.par.restart.pulse()
 	return
 
