@@ -13,7 +13,7 @@ video {
   position: absolute;
 }
 .objects p, .faces p {
-  display: block;
+  /* display: block; */
   white-space: nowrap;
   position: absolute;
   background-color: #9D44F8;
@@ -26,6 +26,15 @@ video {
   padding: 0px 10px 5px 5px 
 }
 
+video, canvas, .objects, .faces {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;   /* Fill the viewport width */
+  height: 100vh;  /* Fill the viewport height */
+  object-fit: cover; /* Crop to fill */
+}
+
 .key-point {
   position: absolute;
   z-index: 1;
@@ -34,8 +43,5 @@ video {
   background-color: #ffffff;
   /* border: 1px solid #ffffff; */
   border-radius: 50%;
-  display: block;
-}
-
-segmentation {
+  /* display: block; */
 }
