@@ -119,7 +119,7 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 	return
 
 def onWebSocketReceiveBinary(webServerDAT, client, data):
-	webServerDAT.webSocketSendBinary(client, data)
+	# webServerDAT.webSocketSendBinary(client, data)
 	return
 
 def onWebSocketReceivePing(webServerDAT, client, data):
