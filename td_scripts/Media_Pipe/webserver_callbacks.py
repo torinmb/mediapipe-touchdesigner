@@ -67,8 +67,9 @@ def onWebSocketOpen(webServerDAT, client, uri):
 	return
 
 def onWebSocketClose(webServerDAT, client):
-	if(clients[client]):
-		del clients[client]
+	if client in clients:
+		if clients[client]:
+			del clients[client]
 	return
 
 def onWebSocketReceiveText(webServerDAT, client, data):
