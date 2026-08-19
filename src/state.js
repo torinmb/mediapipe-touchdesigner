@@ -13,10 +13,11 @@ export let webcamState = {
     webcamLabel: "",
     webcamId: "default",
     lastVideoTime: -1,
-    targetFrameRate: 30,
+    sourceFrame: 0,
+    targetFrameRate: 60,
     width: window.innerWidth,
     height: window.innerHeight,
-    frameRate: 30,
+    frameRate: 60,
     flipped: 0,
     offscreenCanvas,
     offscreenCtx,
@@ -29,6 +30,7 @@ export let socketState = {
     adddress: "ws://localhost",
     port: "3002",
     ws: undefined,
+    segmentationWs: undefined,
 };
 
 export let overlayState = {
@@ -94,7 +96,11 @@ async function changeWebcam(webcam) {
 }
 
 async function startNewWebcam() {
-    const constraints = {
+	const requestedFrameRate =
+		Number.isFinite(Number(webcamState.targetFrameRate))
+			? Number(webcamState.targetFrameRate)
+			: 60;
+	const constraints = {
         video: {
             deviceId: {
                 exact: webcamState.webcamId,
@@ -108,9 +114,9 @@ async function startNewWebcam() {
                 // exact: webcamState.height,
             },
             // aspectRatio: 1.7777777777777777,
-            frameRate: {
-                ideal: webcamState.targetFrameRate,
-            },
+			frameRate: {
+				ideal: requestedFrameRate,
+			},
         },
     };
 
@@ -123,10 +129,24 @@ async function startNewWebcam() {
         webcamState.webcamRunning = false;
     }
 
-    // Try and start a new one
-    try {
-        let stream = await navigator.mediaDevices.getUserMedia(constraints);
-        webcamState.videoElement.srcObject = stream;
+	// Try and start a new one
+	try {
+		let stream;
+		try {
+			stream = await navigator.mediaDevices.getUserMedia(constraints);
+		} catch (preferredFrameRateError) {
+			if (requestedFrameRate <= 30) {
+				throw preferredFrameRateError;
+			}
+
+			console.warn(
+				`Webcam failed at the preferred ${requestedFrameRate} FPS; retrying at 30 FPS`,
+				preferredFrameRateError,
+			);
+			constraints.video.frameRate.ideal = 30;
+			stream = await navigator.mediaDevices.getUserMedia(constraints);
+		}
+		webcamState.videoElement.srcObject = stream;
         stream.getTracks().forEach(function (track) {
             let trackSettings = track.getSettings();
             webcamState.frameRate = trackSettings.frameRate;

@@ -65,6 +65,26 @@ Use this to key out segmentation results
 
 Note: If you're hoping to get the most accurate web-cam cutout use the MultiCam model in the MediaPipe.tox. There's also a toggle to display only the background cutout which you can enable while on the multiclass model.
 
+Segmentation is sent directly to the MediaPipe Web Server DAT as a binary image
+and copied into the `seg_data` Script TOP. The browser does not render the
+segmentation output. It uses a dedicated `/segmentation` WebSocket connection
+on the same server and port so landmark and control JSON cannot queue ahead of
+mask packets or their acknowledgements. Single-mask models and the multiclass background-only
+option produce a one-channel float32 confidence mask. The normal multiclass
+option produces an RGBA8 image using the configured legend colors; change
+`DEFAULT_COLORED_OUTPUT_FORMAT` in `src/imageSegmentation.js` to
+`COLORED_OUTPUT_FLOAT32` for full-precision colored transport. Resize the TOP
+after `seg_data` if a larger texture is needed. Binary masks are sent at each
+model's native tensor resolution: 256x256 for Selfie and Selfie Multiclass,
+256x144 for Selfie Landscape, 512x512 for Hair Segmenter, and 257x257 for
+DeepLab V3.
+
+The `timers` CHOP includes `segFrame`, `segMediaTimeMs`, `segTimestampMs`,
+`segInferenceMs`, `segPipelineMs`, and receive-frame metadata. `segCacheOffset`
+is the negative frame offset to use for a webcam cache; it is calculated from
+the per-mask pipeline and packing latency using the Web Server DAT's
+`me.time.rate`.
+
 ### Image classification tox
 Use this to identify what the image might contain
 [Image classification guide](https://developers.google.com/mediapipe/solutions/vision/image_classifier)
@@ -115,7 +135,7 @@ There are lots of interesting bits of data in the CHOP output of the MediaPipe t
 How long the MP detector took to run in ms.
 
 ### `drawTime`
-How long the overlays and segmentation colors took to draw in ms.
+How long the browser overlays took to draw in ms.
 
 ### `sourceFrameRate`
 The frame rate of the webcam video source MediaPipe is using.

@@ -19,7 +19,12 @@ import { gestureState, createGestureLandmarker } from "./handGestures.js";
 import { poseState, createPoseLandmarker } from "./poseTracking.js";
 import { objectState, createObjectDetector } from "./objectDetection.js";
 import { imageState, createImageClassifier } from "./imageClassification.js";
-import { segmenterState, createImageSegmenter } from "./imageSegmentation.js";
+import {
+  segmenterState,
+  createImageSegmenter,
+  formatSegmentationBinary,
+  prepareSegmentationInput,
+} from "./imageSegmentation.js";
 import { imageEmbedderState, createImageEmbedder } from "./imageEmbedder.js";
 import { webcamState, socketState, overlayState, outputState } from "./state.js";
 import { configMap } from "./modelParams.js";
@@ -32,7 +37,7 @@ webcamState.videoElement = video;
 const canvasElement = document.getElementById("output_canvas");
 const objectsDiv = document.getElementById("objects");
 const facesDiv = document.getElementById("faces");
-const segmentationCanvas = document.getElementById("segmentation");
+const SEGMENTATION_ACK_TIMEOUT_MS = 1000;
 
 // Keep a reference of all the child elements we create
 // so we can remove them easilly on each render.
@@ -43,7 +48,12 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
 
 (async function setup() {
   handleQueryParams();
-  setupWebSocket(socketState.adddress + ":" + socketState.port, socketState);
+  const socketURL = socketState.adddress + ":" + socketState.port;
+  setupWebSocket(socketURL, socketState);
+  setupSegmentationWebSocket(
+    socketURL.replace(/\/$/, '') + '/segmentation',
+    socketState,
+  );
   webcamState.webcamDevices = await getWebcamDevices();
   // if(handState.detect)
     handState.landmarker = await createHandLandmarker(WASM_PATH);
@@ -60,7 +70,7 @@ let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseStat
   // if(imageState.detect)
     imageState.landmarker = await createImageClassifier(WASM_PATH);
   // if(segmenterState.detect)
-    segmenterState.landmarker = await createImageSegmenter(WASM_PATH, video, segmentationCanvas);
+    segmenterState.landmarker = await createImageSegmenter(WASM_PATH);
 
     imageEmbedderState.landmarker = await createImageEmbedder(WASM_PATH);
   webcamState.startWebcam();
@@ -78,9 +88,60 @@ function handleQueryParams() {
 }
 
 function safeSocketSend(ws, data) {
-  if (ws.readyState === ws.OPEN) {
-    ws.send(data);
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    return false;
   }
+
+  try {
+    ws.send(data);
+    return true;
+  } catch (error) {
+    console.error("WebSocket send failed", error);
+    return false;
+  }
+}
+
+function canProcessSegmentationFrame(ws) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    return false;
+  }
+
+  if (segmenterState.inFlightPacketSequence !== null) {
+    const inFlightAgeMs =
+      performance.now() - segmenterState.inFlightSentAtMs;
+    if (inFlightAgeMs < SEGMENTATION_ACK_TIMEOUT_MS) {
+      segmenterState.skippedInFlight++;
+      return false;
+    }
+
+    // A missing acknowledgement must not permanently stop segmentation.
+    // Treat the old packet as lost so a missing acknowledgement cannot lock
+    // segmentation permanently.
+    segmenterState.ackTimeouts++;
+    segmenterState.inFlightPacketSequence = null;
+    segmenterState.inFlightSentAtMs = 0;
+  }
+
+  return true;
+}
+
+function acknowledgeSegmentationPacket(packetSequence) {
+  if (!Number.isInteger(packetSequence)) {
+    return;
+  }
+
+  const acknowledgedSequence = packetSequence >>> 0;
+  if (acknowledgedSequence !== segmenterState.inFlightPacketSequence) {
+    return;
+  }
+
+  segmenterState.acknowledgedPackets++;
+  segmenterState.lastAckRoundTripMs = Math.max(
+    0,
+    performance.now() - segmenterState.inFlightSentAtMs,
+  );
+  segmenterState.inFlightPacketSequence = null;
+  segmenterState.inFlightSentAtMs = 0;
 }
 
 async function predictWebcam(allModelState, objectState, webcamState, video) {
@@ -109,16 +170,13 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   facesDiv.width = outputState.width;
   facesDiv.height = outputState.height;
 
-  segmentationCanvas.style.width = outputState.width;
-  segmentationCanvas.style.height = outputState.height;
-  segmentationCanvas.width = outputState.width;
-  segmentationCanvas.height = outputState.height;
-  
   webcamState.offscreenCanvas.width = outputState.width;
   webcamState.offscreenCanvas.height = outputState.height;
 
   let startTimeMs = performance.now();
   if (webcamState.lastVideoTime !== video.currentTime) {
+    const sourceFrame = getSourceFrame(video, webcamState);
+    const sourceMediaTimeMs = video.currentTime * 1000;
     if(webcamState.webcamRunning && !(video.videoWidth === 0 || video.videoHeight === 0)) {
       flippedVideo = captureAndFlipWebcam(video, webcamState);
     }
@@ -129,25 +187,57 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
         // Gesture Model has a different function for detection
         let marker = landmarker.landmarker;
         if (landmarker.resultsName === 'segmenterResults') {
-          video.style.opacity = 0;
-          await marker.segmentForVideo(flippedVideo, startTimeMs, segmenterState.toImageBitmap);
+          if (!canProcessSegmentationFrame(socketState.segmentationWs)) {
+            continue;
+          }
+          const segmentationStartedMs = performance.now();
+          const segmentationInput = prepareSegmentationInput(flippedVideo);
+          marker.segmentForVideo(segmentationInput, startTimeMs, (results) => {
+            segmenterState.attemptedPackets++;
+            try {
+              const completedMs = performance.now();
+              const packStartedMs = performance.now();
+              segmenterState.packetSequence =
+                (segmenterState.packetSequence + 1) >>> 0;
+              const packet = formatSegmentationBinary(results, {
+                sourceFrame,
+                packetSequence: segmenterState.packetSequence,
+                sourceMediaTimeMs,
+                mediaPipeTimestampMs: startTimeMs,
+                segmentationStartedMs,
+                completedMs,
+              });
+              segmenterState.lastPackTimeMs =
+                performance.now() - packStartedMs;
+              if (packet && safeSocketSend(socketState.segmentationWs, packet)) {
+                segmenterState.sentPackets++;
+                segmenterState.lastPacketBytes = packet.byteLength;
+                segmenterState.inFlightPacketSequence =
+                  segmenterState.packetSequence;
+                segmenterState.inFlightSentAtMs = performance.now();
+              }
+            } catch (error) {
+              segmenterState.sendErrors++;
+              console.error("Failed to send segmentation output", error);
+            }
+          });
         }
         else if (landmarker.resultsName === 'gestureResults') {
           landmarker.results = await marker.recognizeForVideo(flippedVideo, startTimeMs);
+          sendLandmarkerResults(landmarker, video);
         }
         else if (landmarker.resultsName === 'imageResults') {
           landmarker.results = await marker.classifyForVideo(flippedVideo, startTimeMs);
+          sendLandmarkerResults(landmarker, video);
         }
         else if (landmarker.resultsName === 'imageEmbedderResults') {
           landmarker.results = await marker.embedForVideo(video, startTimeMs);
+          sendLandmarkerResults(landmarker, video);
         }
         else {
           landmarker.results = await marker.detectForVideo(flippedVideo, startTimeMs);
+          sendLandmarkerResults(landmarker, video);
         }
-        safeSocketSend(socketState.ws, JSON.stringify({
-          [landmarker['resultsName']]: landmarker.results,
-          'resolution': { 'width': video.videoWidth, 'height': video.videoHeight }
-        }));
       }
       let endDetect = Date.now();
       timeToDetect = Math.round(endDetect - startDetect);
@@ -155,10 +245,6 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   }
 
   let startDraw = Date.now();
-  if (segmenterState.detect && segmenterState.results) {
-    // segmenterState.draw();
-    // segmenterState.results.close();
-  }
   if (overlayState.show) {
     for (let landmarker of landmarkerModelState) {
       if (landmarker.detect && landmarker.results) {
@@ -178,10 +264,47 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   // Figure out how long this took
   // Note that this is not the same as the video time
 
-  safeSocketSend(socketState.ws, JSON.stringify({ 'timers': { 'detectTime': timeToDetect, 'drawTime': timeToDraw, 'sourceFrameRate': webcamState.frameRate } }));
+  safeSocketSend(socketState.ws, JSON.stringify({
+    timers: {
+      detectTime: timeToDetect,
+      drawTime: timeToDraw,
+      sourceFrameRate: webcamState.frameRate,
+      segmentationTransport: {
+        enabled: Number(segmenterState.detect),
+        attemptedPackets: segmenterState.attemptedPackets,
+        sentPackets: segmenterState.sentPackets,
+        sendErrors: segmenterState.sendErrors,
+        bufferedBytes: socketState.segmentationWs?.bufferedAmount ?? 0,
+        packTimeMs: segmenterState.lastPackTimeMs,
+        acknowledgedPackets: segmenterState.acknowledgedPackets,
+        skippedInFlight: segmenterState.skippedInFlight,
+        ackTimeouts: segmenterState.ackTimeouts,
+        inFlight: Number(segmenterState.inFlightPacketSequence !== null),
+        ackRoundTripMs: segmenterState.lastAckRoundTripMs,
+        packetBytes: segmenterState.lastPacketBytes,
+      },
+    },
+  }));
 
   window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
 
+}
+
+function sendLandmarkerResults(landmarker, video) {
+  safeSocketSend(socketState.ws, JSON.stringify({
+    [landmarker.resultsName]: landmarker.results,
+    resolution: { width: video.videoWidth, height: video.videoHeight },
+  }));
+}
+
+function getSourceFrame(video, webcamState) {
+  const videoQuality = video.getVideoPlaybackQuality?.();
+  if (Number.isFinite(videoQuality?.totalVideoFrames)) {
+    return videoQuality.totalVideoFrames >>> 0;
+  }
+
+  webcamState.sourceFrame = (webcamState.sourceFrame + 1) >>> 0;
+  return webcamState.sourceFrame;
 }
 
 function setupWebSocket(socketURL, socketState) {
@@ -216,6 +339,45 @@ function setupWebSocket(socketURL, socketState) {
 
   socketState.ws.addEventListener('close', () => {
     console.log('Socket connection closed');
+  });
+}
+
+function setupSegmentationWebSocket(socketURL, socketState) {
+  const ws = new WebSocket(socketURL);
+  socketState.segmentationWs = ws;
+
+  ws.addEventListener('open', () => {
+    console.log('Segmentation WebSocket connection opened');
+    segmenterState.inFlightPacketSequence = null;
+    segmenterState.inFlightSentAtMs = 0;
+  });
+
+  ws.addEventListener('message', (event) => {
+    if (typeof event.data !== 'string') {
+      return;
+    }
+    if (event.data === 'ping' || event.data === 'pong') {
+      return;
+    }
+
+    try {
+      const data = JSON.parse(event.data);
+      if (Object.prototype.hasOwnProperty.call(data, 'segAck')) {
+        acknowledgeSegmentationPacket(Number(data.segAck));
+      }
+    } catch (error) {
+      console.warn('Ignoring invalid segmentation socket message', error);
+    }
+  });
+
+  ws.addEventListener('error', (error) => {
+    console.error('Error in segmentation websocket connection', error);
+  });
+
+  ws.addEventListener('close', () => {
+    console.log('Segmentation socket connection closed');
+    segmenterState.inFlightPacketSequence = null;
+    segmenterState.inFlightSentAtMs = 0;
   });
 }
 
