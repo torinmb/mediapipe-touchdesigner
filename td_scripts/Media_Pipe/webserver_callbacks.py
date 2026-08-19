@@ -13,9 +13,10 @@
 # 		'data' - The data to send back to the client. If displaying a web-page, any HTML would be put here.
 
 import mimetypes
-import math
 import os
 import struct
+import time
+from collections import deque
 from pathlib import Path
 
 import json
@@ -23,15 +24,25 @@ import numpy as np
 clients = {}
 
 SEGMENTATION_MAGIC = b'MPSG'
-SEGMENTATION_HEADER_BYTES = 56
-SEGMENTATION_PROTOCOL_VERSION = 1
+SEGMENTATION_HEADER_BYTES = 72
+SEGMENTATION_PROTOCOL_VERSION = 2
 SEGMENTATION_DTYPE_UINT8 = 1
 SEGMENTATION_DTYPE_FLOAT32 = 2
 SEGMENTATION_LAYOUT_HWC = 3
 SEGMENTATION_MODE_COLORED = 2
 
+# The WebSocket callback normally runs partway through a TouchDesigner frame,
+# after the Cache TOP's newest image was captured. Move the lookup half a frame
+# toward the present to compensate for that average within-frame phase.
+SEGMENTATION_CACHE_PHASE_FRAMES = 0.5
+SEGMENTATION_PENDING_TIMEOUT_MS = 900.0
+SEGMENTATION_QUEUE_LIMIT = 32
+
 latestSegmentationMeta = None
+pendingSegmentation = None
+segmentationQueue = deque()
 segmentationReceiveCount = 0
+segmentationDroppedUnmatched = 0
 
 # return the response dictionary
 def onHTTPRequest(webServerDAT, request, response):
@@ -81,6 +92,14 @@ def onWebSocketOpen(webServerDAT, client, uri):
 	return
 
 def onWebSocketClose(webServerDAT, client):
+	global pendingSegmentation, segmentationQueue
+
+	if pendingSegmentation is not None and pendingSegmentation['client'] == client:
+		pendingSegmentation = None
+	segmentationQueue = deque(
+		packet for packet in segmentationQueue if packet['client'] != client
+	)
+	_promoteQueuedSegmentation()
 	if client in clients:
 		del clients[client]
 	return
@@ -128,8 +147,15 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 		transportData = timerData.get('segmentationTransport', {})
 		segmentationEnabled = bool(transportData.get('enabled', 0))
 		if not segmentationEnabled:
+			# Control-socket timer messages can be older than a packet already
+			# received on the dedicated segmentation socket. Never let stale
+			# telemetry cancel that newer pending mask; its own timeout handles it.
 			transportData = {}
-		packTimeMs = transportData.get('packTimeMs', 0)
+		packTimeMs = (
+			latestSegmentationMeta['packTimeMs']
+			if segmentationEnabled and latestSegmentationMeta is not None
+			else transportData.get('packTimeMs', 0)
+		)
 		_appendTimerChannel(timers, 'segAttempted', transportData.get('attemptedPackets', 0))
 		_appendTimerChannel(timers, 'segSent', transportData.get('sentPackets', 0))
 		_appendTimerChannel(timers, 'segSendErrors', transportData.get('sendErrors', 0))
@@ -143,24 +169,7 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 		_appendTimerChannel(timers, 'segPacketBytes', transportData.get('packetBytes', 0))
 
 		if segmentationEnabled and latestSegmentationMeta is not None:
-			_appendTimerChannel(timers, 'segFrame', latestSegmentationMeta['sourceFrame'])
-			_appendTimerChannel(timers, 'segPacketSequence', latestSegmentationMeta['packetSequence'])
-			_appendTimerChannel(timers, 'segReceived', latestSegmentationMeta['receiveCount'])
-			_appendTimerChannel(timers, 'segMediaTimeMs', latestSegmentationMeta['sourceMediaTimeMs'])
-			_appendTimerChannel(timers, 'segTimestampMs', latestSegmentationMeta['mediaPipeTimestampMs'])
-			_appendTimerChannel(timers, 'segInferenceMs', latestSegmentationMeta['inferenceTimeMs'])
-			_appendTimerChannel(timers, 'segPipelineMs', latestSegmentationMeta['pipelineTimeMs'])
-			segCacheLatencyMs = latestSegmentationMeta['pipelineTimeMs'] + packTimeMs
-			segCacheOffset = -int(math.ceil(segCacheLatencyMs * me.time.rate / 1000.0))
-			_appendTimerChannel(timers, 'segCacheLatencyMs', segCacheLatencyMs)
-			_appendTimerChannel(timers, 'segCacheOffset', segCacheOffset)
-			_appendTimerChannel(timers, 'segReceiveFrame', latestSegmentationMeta['receiveFrame'])
-			_appendTimerChannel(timers, 'segWidth', latestSegmentationMeta['width'])
-			_appendTimerChannel(timers, 'segHeight', latestSegmentationMeta['height'])
-			_appendTimerChannel(timers, 'segChannels', latestSegmentationMeta['channels'])
-			_appendTimerChannel(timers, 'segDtype', latestSegmentationMeta['dtype'])
-			_appendTimerChannel(timers, 'segMode', latestSegmentationMeta['mode'])
-			_appendTimerChannel(timers, 'segIsMulticlass', int(latestSegmentationMeta['mode'] == SEGMENTATION_MODE_COLORED))
+			_writeSegmentationMetadata(timers, latestSegmentationMeta)
 		else:
 			for channelName in (
 				'segFrame',
@@ -172,6 +181,7 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 				'segPipelineMs',
 				'segCacheLatencyMs',
 				'segCacheOffset',
+				'segFixedCacheOffset',
 				'segReceiveFrame',
 				'segWidth',
 				'segHeight',
@@ -179,8 +189,14 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 				'segDtype',
 				'segMode',
 				'segIsMulticlass',
+				'segSyncWaitMs',
 			):
 				_appendTimerChannel(timers, channelName, 0)
+		_writePendingSegmentationMetadata(timers)
+		# Give an exact marker match priority even if control-socket traffic
+		# delayed this timer message close to the pending timeout.
+		_tryCommitPendingSegmentation()
+		_expirePendingSegmentation()
 	# If this is any other type of message, forward it to the other clients
 	else:
 		# print('received WS from client: ' +client)
@@ -195,8 +211,218 @@ def _appendTimerChannel(chop, name, value):
 	channel[0] = value
 	return
 
+def _setTimerChannel(chop, name, value):
+	channel = chop[name]
+	if channel is None:
+		channel = chop.appendChan(name)
+	channel[0] = value
+	return
+
+def _writeSegmentationMetadata(timers, metadata):
+	cacheLatencyMs = metadata['cacheLatencyMs']
+	cacheOffset = metadata.get('cacheOffset')
+	if cacheOffset is None:
+		latencyFrames = cacheLatencyMs * me.time.rate / 1000.0
+		# Compatibility fallback for projects without the seg_offset Script CHOP.
+		cacheOffset = min(
+			0.0,
+			SEGMENTATION_CACHE_PHASE_FRAMES - latencyFrames,
+		)
+	_setTimerChannel(timers, 'segFrame', metadata['sourceFrame'])
+	_setTimerChannel(timers, 'segPacketSequence', metadata['packetSequence'])
+	_setTimerChannel(timers, 'segReceived', metadata['receiveCount'])
+	_setTimerChannel(timers, 'segMediaTimeMs', metadata['sourceMediaTimeMs'])
+	_setTimerChannel(timers, 'segTimestampMs', metadata['mediaPipeTimestampMs'])
+	_setTimerChannel(timers, 'segInferenceMs', metadata['inferenceTimeMs'])
+	_setTimerChannel(timers, 'segPipelineMs', metadata['pipelineTimeMs'])
+	_setTimerChannel(timers, 'segCacheLatencyMs', cacheLatencyMs)
+	_setTimerChannel(timers, 'segCacheOffset', cacheOffset)
+	_setTimerChannel(
+		timers,
+		'segFixedCacheOffset',
+		metadata.get('fixedCacheOffset', 0),
+	)
+	_setTimerChannel(timers, 'segReceiveFrame', metadata['receiveFrame'])
+	_setTimerChannel(timers, 'segWidth', metadata['width'])
+	_setTimerChannel(timers, 'segHeight', metadata['height'])
+	_setTimerChannel(timers, 'segChannels', metadata['channels'])
+	_setTimerChannel(timers, 'segDtype', metadata['dtype'])
+	_setTimerChannel(timers, 'segMode', metadata['mode'])
+	_setTimerChannel(
+		timers,
+		'segIsMulticlass',
+		int(metadata['mode'] == SEGMENTATION_MODE_COLORED),
+	)
+	_setTimerChannel(timers, 'segPackMs', metadata['packTimeMs'])
+	_setTimerChannel(timers, 'segSyncWaitMs', metadata.get('syncWaitMs', 0))
+	return
+
+def _writePendingSegmentationMetadata(timers):
+	_setTimerChannel(
+		timers,
+		'segPendingQueueDepth',
+		len(segmentationQueue) + int(pendingSegmentation is not None),
+	)
+	if pendingSegmentation is None:
+		_setTimerChannel(timers, 'segPending', 0)
+		_setTimerChannel(timers, 'segPendingFrame', 0)
+		_setTimerChannel(timers, 'segPendingSequence', 0)
+		_setTimerChannel(timers, 'segPendingAgeMs', 0)
+	else:
+		metadata = pendingSegmentation['metadata']
+		pendingAgeMs = max(
+			0,
+			time.monotonic() * 1000.0 - pendingSegmentation['queuedAtMs'],
+		)
+		_setTimerChannel(timers, 'segPending', 1)
+		_setTimerChannel(timers, 'segPendingFrame', metadata['sourceFrame'])
+		_setTimerChannel(timers, 'segPendingSequence', metadata['packetSequence'])
+		_setTimerChannel(timers, 'segPendingAgeMs', pendingAgeMs)
+	_setTimerChannel(
+		timers,
+		'segDroppedUnmatched',
+		segmentationDroppedUnmatched,
+	)
+	return
+
+def _sendSegmentationAck(packet):
+	if packet.get('acknowledged', False):
+		return
+	try:
+		packet['webServerDAT'].webSocketSendText(
+			packet['client'],
+			json.dumps({'segAck': packet['metadata']['packetSequence']}),
+		)
+		packet['acknowledged'] = True
+	except Exception as error:
+		debug('Failed to acknowledge MediaPipe segmentation: {}'.format(error))
+	return
+
+def _promoteQueuedSegmentation():
+	global pendingSegmentation
+
+	if pendingSegmentation is None and segmentationQueue:
+		pendingSegmentation = segmentationQueue.popleft()
+	return
+
+def _enqueueSegmentation(packet):
+	global pendingSegmentation, segmentationDroppedUnmatched
+
+	if pendingSegmentation is None:
+		pendingSegmentation = packet
+		return
+	if len(segmentationQueue) >= SEGMENTATION_QUEUE_LIMIT:
+		segmentationQueue.popleft()
+		segmentationDroppedUnmatched += 1
+	segmentationQueue.append(packet)
+	return
+
+def _dropPendingSegmentation(sendAck):
+	global pendingSegmentation, segmentationDroppedUnmatched
+
+	packet = pendingSegmentation
+	if packet is None:
+		return False
+	pendingSegmentation = None
+	segmentationDroppedUnmatched += 1
+	if sendAck:
+		_sendSegmentationAck(packet)
+	_promoteQueuedSegmentation()
+	timers = op('timers')
+	if timers is not None:
+		_writePendingSegmentationMetadata(timers)
+	return True
+
+def _expirePendingSegmentation():
+	if pendingSegmentation is None:
+		return False
+	pendingAgeMs = (
+		time.monotonic() * 1000.0 - pendingSegmentation['queuedAtMs']
+	)
+	if pendingAgeMs < SEGMENTATION_PENDING_TIMEOUT_MS:
+		return False
+	return _dropPendingSegmentation(sendAck=True)
+
+def _commitPendingSegmentation(cacheOffset=None, fixedCacheOffset=None):
+	global latestSegmentationMeta, pendingSegmentation
+	global segmentationReceiveCount
+
+	packet = pendingSegmentation
+	if packet is None:
+		return False
+
+	segData = op('seg_data')
+	if segData is None:
+		debug("MediaPipe segmentation receiver could not find op('seg_data')")
+		_dropPendingSegmentation(sendAck=True)
+		return False
+
+	try:
+		segData.copyNumpyArray(packet['array'])
+		segmentationReceiveCount += 1
+		metadata = dict(packet['metadata'])
+		metadata['receiveCount'] = segmentationReceiveCount
+		metadata['receiveFrame'] = int(absTime.frame)
+		metadata['syncWaitMs'] = max(
+			0,
+			time.monotonic() * 1000.0 - packet['queuedAtMs'],
+		)
+		if cacheOffset is not None:
+			metadata['cacheOffset'] = int(cacheOffset)
+		if fixedCacheOffset is not None:
+			metadata['fixedCacheOffset'] = int(fixedCacheOffset)
+
+		latestSegmentationMeta = metadata
+		pendingSegmentation = None
+		_promoteQueuedSegmentation()
+		timers = op('timers')
+		if timers is not None:
+			_writeSegmentationMetadata(timers, metadata)
+			_writePendingSegmentationMetadata(timers)
+		_sendSegmentationAck(packet)
+		return True
+	except Exception as error:
+		debug('Failed to commit MediaPipe segmentation: {}'.format(error))
+		_dropPendingSegmentation(sendAck=True)
+		return False
+
+def _tryCommitPendingSegmentation():
+	if pendingSegmentation is None:
+		return False
+
+	segOffset = op('seg_offset')
+	if segOffset is None:
+		return _commitPendingSegmentation()
+
+	try:
+		pendingMatched = segOffset['segPendingMatched']
+		pendingFrame = segOffset['segPendingFrame']
+		pendingOffset = segOffset['segPendingCacheOffset']
+		pendingFixedReady = segOffset['segPendingFixedReady']
+		fixedCacheOffset = segOffset['segFixedCacheOffset']
+	except Exception:
+		return False
+	if (
+		pendingMatched is None
+		or pendingFrame is None
+		or pendingOffset is None
+		or pendingFixedReady is None
+		or fixedCacheOffset is None
+		or pendingMatched[0] < 0.5
+		or pendingFixedReady[0] < 0.5
+	):
+		return False
+
+	targetFrame = pendingSegmentation['metadata']['sourceFrame'] & 0x00ffffff
+	if int(pendingFrame[0]) != targetFrame:
+		return False
+	return _commitPendingSegmentation(
+		int(pendingOffset[0]),
+		int(fixedCacheOffset[0]),
+	)
+
 def onWebSocketReceiveBinary(webServerDAT, client, data):
-	global latestSegmentationMeta, segmentationReceiveCount
+	global pendingSegmentation
 
 	if len(data) >= 4 and bytes(data[0:4]) == SEGMENTATION_MAGIC:
 		if len(data) < SEGMENTATION_HEADER_BYTES:
@@ -221,7 +447,9 @@ def onWebSocketReceiveBinary(webServerDAT, client, data):
 				mediaPipeTimestampMs,
 				segmentationStartedMs,
 				completedMs,
-			) = struct.unpack_from('<4sBBBBHHBBHII4d', data, 0)
+				packetReadyMs,
+				browserTimeOriginMs,
+			) = struct.unpack_from('<4sBBBBHHBBHII6d', data, 0)
 
 			if (
 				magic != SEGMENTATION_MAGIC
@@ -242,28 +470,35 @@ def onWebSocketReceiveBinary(webServerDAT, client, data):
 				debug('MediaPipe segmentation payload length does not match its header')
 				return
 
-			segData = op('seg_data')
-			if segData is None:
-				debug("MediaPipe segmentation receiver could not find op('seg_data')")
-				return
-
 			numpyDtype = '<f4' if dtype == SEGMENTATION_DTYPE_FLOAT32 else np.uint8
 			array = np.frombuffer(payload, dtype=numpyDtype, count=width * height * channels)
-			array = array.reshape((height, width, channels))
-			segData.copyNumpyArray(array)
-			segmentationReceiveCount += 1
+			# The WebSocket callback's byte buffer is only borrowed. Keep one owned,
+			# contiguous NumPy packet until its exact Web Render frame is cached.
+			array = array.reshape((height, width, channels)).copy()
 
-			latestSegmentationMeta = {
+			packTimeMs = max(0, packetReadyMs - completedMs)
+			pipelineTimeMs = max(0, completedMs - mediaPipeTimestampMs)
+			fallbackCacheLatencyMs = pipelineTimeMs + packTimeMs
+			receiveTimeEpochMs = time.time() * 1000.0
+			sourceTimeEpochMs = browserTimeOriginMs + mediaPipeTimestampMs
+			endToEndLatencyMs = receiveTimeEpochMs - sourceTimeEpochMs
+			# Both clocks use the local machine's epoch. Fall back to packet-local
+			# monotonic timing if the system clock changes or the value is invalid.
+			if endToEndLatencyMs < 0 or endToEndLatencyMs > 10000:
+				endToEndLatencyMs = fallbackCacheLatencyMs
+			metadata = {
 				'sourceFrame': sourceFrame,
 				'packetSequence': packetSequence,
-				'receiveCount': segmentationReceiveCount,
 				'sourceMediaTimeMs': sourceMediaTimeMs,
 				'mediaPipeTimestampMs': mediaPipeTimestampMs,
 				'segmentationStartedMs': segmentationStartedMs,
 				'completedMs': completedMs,
-				'inferenceTimeMs': completedMs - segmentationStartedMs,
-				'pipelineTimeMs': completedMs - mediaPipeTimestampMs,
-				'receiveFrame': int(absTime.frame),
+				'packetReadyMs': packetReadyMs,
+				'inferenceTimeMs': max(0, completedMs - segmentationStartedMs),
+				'pipelineTimeMs': pipelineTimeMs,
+				'packTimeMs': packTimeMs,
+				'cacheLatencyMs': endToEndLatencyMs,
+				'packetReceiveFrame': int(absTime.frame),
 				'width': width,
 				'height': height,
 				'channels': channels,
@@ -271,16 +506,29 @@ def onWebSocketReceiveBinary(webServerDAT, client, data):
 				'maskCount': maskCount,
 				'mode': mode,
 			}
-			webServerDAT.webSocketSendText(
-				client,
-				json.dumps({'segAck': packetSequence}),
-			)
+			packet = {
+				'array': array,
+				'metadata': metadata,
+				'queuedAtMs': time.monotonic() * 1000.0,
+				'webServerDAT': webServerDAT,
+				'client': client,
+				'acknowledged': False,
+			}
+			_enqueueSegmentation(packet)
+			# The owned NumPy copy makes it safe to release browser backpressure
+			# immediately. Publication into seg_data remains delayed until the
+			# corresponding webcam frame reaches the fixed Cache TOP index.
+			_sendSegmentationAck(packet)
+			timers = op('timers')
+			if timers is not None:
+				_writePendingSegmentationMetadata(timers)
+			_tryCommitPendingSegmentation()
 		except Exception as error:
 			debug('Failed to receive MediaPipe segmentation: {}'.format(error))
 			return
 
-		# This packet originated in the browser and has already been consumed by
-		# seg_data. Do not echo the full mask back to the sending browser.
+		# This packet is retained until seg_offset confirms that its exact browser
+		# frame exists in the Cache TOP history. Do not echo the binary payload.
 		return
 
 	# Preserve the previous behavior for binary messages owned by other clients.
@@ -302,5 +550,8 @@ def onServerStart(webServerDAT):
 	return
 
 def onServerStop(webServerDAT):
+	global pendingSegmentation, segmentationQueue
+	pendingSegmentation = None
+	segmentationQueue.clear()
 	print("MP server stopped")
 	return

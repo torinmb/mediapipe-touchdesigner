@@ -37,7 +37,12 @@ webcamState.videoElement = video;
 const canvasElement = document.getElementById("output_canvas");
 const objectsDiv = document.getElementById("objects");
 const facesDiv = document.getElementById("faces");
+const webcamCanvas = document.getElementById("webcam_canvas");
+const webcamCanvasContext = webcamCanvas.getContext("2d", { alpha: false });
+const frameMarkerPixel = webcamCanvasContext.createImageData(1, 1);
 const SEGMENTATION_ACK_TIMEOUT_MS = 1000;
+const FRAME_MARKER_MASK = 0x00ffffff;
+const FRAME_MARKER_DEBUG_RED = false;
 
 // Keep a reference of all the child elements we create
 // so we can remove them easilly on each render.
@@ -178,7 +183,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     const sourceFrame = getSourceFrame(video, webcamState);
     const sourceMediaTimeMs = video.currentTime * 1000;
     if(webcamState.webcamRunning && !(video.videoWidth === 0 || video.videoHeight === 0)) {
-      flippedVideo = captureAndFlipWebcam(video, webcamState);
+      flippedVideo = captureAndFlipWebcam(video, webcamState, sourceFrame);
     }
     let startDetect = Date.now();
     webcamState.lastVideoTime = video.currentTime;
@@ -307,6 +312,20 @@ function getSourceFrame(video, webcamState) {
   return webcamState.sourceFrame;
 }
 
+function writeFrameMarker(sourceFrame, context, outputHeight) {
+  // The segmentation packet carries sourceFrame as uint32. The visible marker
+  // carries its low 24 bits as little-endian RGB so TouchDesigner can recover
+  // the same frame ID from one normalized RGBA pixel:
+  // R + (G << 8) + (B << 16).
+  const markerFrame = (sourceFrame >>> 0) & FRAME_MARKER_MASK;
+  const pixel = frameMarkerPixel.data;
+  pixel[0] = FRAME_MARKER_DEBUG_RED ? 0xff : markerFrame & 0xff;
+  pixel[1] = FRAME_MARKER_DEBUG_RED ? 0 : (markerFrame >>> 8) & 0xff;
+  pixel[2] = FRAME_MARKER_DEBUG_RED ? 0 : (markerFrame >>> 16) & 0xff;
+  pixel[3] = 0xff;
+  context.putImageData(frameMarkerPixel, 0, outputHeight - 1);
+}
+
 function setupWebSocket(socketURL, socketState) {
   socketState.ws = new WebSocket(socketURL);
 
@@ -398,7 +417,7 @@ async function getWebcamDevices() {
   }
 }
 
-function captureAndFlipWebcam(video, webcamState) {
+function captureAndFlipWebcam(video, webcamState, sourceFrame) {
   let offscreenCanvas = webcamState.offscreenCanvas;
   let offscreenCtx = webcamState.offscreenCtx;
   offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
@@ -410,5 +429,18 @@ function captureAndFlipWebcam(video, webcamState) {
   } else {
       offscreenCtx.drawImage(video, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
   }
+
+  // The visible Web Render image is a snapshot of the exact clean canvas sent
+  // to MediaPipe. Draw its marker in the same synchronous canvas update so the
+  // frame ID cannot be composited over a newer live-video frame.
+  if (
+    webcamCanvas.width !== offscreenCanvas.width ||
+    webcamCanvas.height !== offscreenCanvas.height
+  ) {
+    webcamCanvas.width = offscreenCanvas.width;
+    webcamCanvas.height = offscreenCanvas.height;
+  }
+  webcamCanvasContext.drawImage(offscreenCanvas, 0, 0);
+  writeFrameMarker(sourceFrame, webcamCanvasContext, webcamCanvas.height);
   return offscreenCanvas; // Returning the canvas for any potential use elsewhere
 }

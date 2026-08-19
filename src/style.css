@@ -4,7 +4,10 @@ html, body {
   overflow: hidden; /* Hide scrollbars */
 }
 video {
-  opacity: 1;
+  /* Keep the MediaStream playing, but expose only the frame snapshots whose
+     pixels are atomically paired with the bottom-left frame marker. */
+  opacity: 0;
+  pointer-events: none;
 }
 .highlighter {
   background: rgba(0, 255, 0, 0);

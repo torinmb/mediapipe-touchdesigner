@@ -49,6 +49,7 @@ def onCook(scriptOp):
 		'segPipelineMs',
 		'segCacheLatencyMs',
 		'segCacheOffset',
+		'segFixedCacheOffset',
 		'segReceiveFrame',
 		'segWidth',
 		'segHeight',
@@ -61,9 +62,28 @@ def onCook(scriptOp):
 		'segSendErrors',
 		'segBufferedBytes',
 		'segPackMs',
+		'segSyncWaitMs',
+		'segPending',
+		'segPendingFrame',
+		'segPendingSequence',
+		'segPendingAgeMs',
+		'segPendingQueueDepth',
+		'segDroppedUnmatched',
 	)
 	for channelName in segmentationChannels:
 		if channelName in availableChannels:
+			value = inputChop[channelName][0]
+			if channelName == 'segCacheOffset':
+				receivedPackets = inputChop['segReceived'][0]
+				receiveFrame = inputChop['segReceiveFrame'][0]
+				if receivedPackets > 0 and receiveFrame > 0:
+					maskAgeFrames = max(
+						0,
+						int(absTime.frame) - int(receiveFrame),
+					)
+					value -= maskAgeFrames
+				else:
+					value = 0
 			scriptOp.appendChan(channelName)
-			scriptOp[channelName][0] = inputChop[channelName][0]
+			scriptOp[channelName][0] = value
 	return

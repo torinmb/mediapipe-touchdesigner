@@ -1,9 +1,9 @@
 import { FilesetResolver, ImageSegmenter } from "@mediapipe/tasks-vision";
 
 const SEGMENTATION_MAGIC = [0x4d, 0x50, 0x53, 0x47]; // "MPSG"
-export const SEGMENTATION_HEADER_BYTES = 56;
+export const SEGMENTATION_HEADER_BYTES = 72;
 
-const SEGMENTATION_PROTOCOL_VERSION = 1;
+const SEGMENTATION_PROTOCOL_VERSION = 2;
 const DTYPE_UINT8 = 1;
 const DTYPE_FLOAT32 = 2;
 const LAYOUT_HWC = 3;
@@ -588,5 +588,15 @@ export function formatSegmentationBinary(results, timing) {
     header.setFloat64(48, timing.completedMs, true);
 
     copyPayload(packet, output.data, SEGMENTATION_HEADER_BYTES, output.dtype);
+    // Record packing completion in the packet itself. This keeps the packing
+    // duration associated with the exact mask instead of pairing it later with
+    // telemetry arriving over the separate control socket.
+    header.setFloat64(56, performance.now(), true);
+    // TouchDesigner can combine this epoch with the monotonic timestamps above
+    // to include socket/callback scheduling in end-to-end cache latency.
+    const browserTimeOriginMs = Number.isFinite(performance.timeOrigin)
+        ? performance.timeOrigin
+        : Date.now() - performance.now();
+    header.setFloat64(64, browserTimeOriginMs, true);
     return packet.buffer;
 }
