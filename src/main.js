@@ -14,7 +14,6 @@
 
 import { faceLandmarkState, createFaceLandmarker } from "./faceLandmarks.js";
 import { faceDetectorState, createFaceDetector } from "./faceDetector.js";
-import { handState, createHandLandmarker } from "./handDetection.js";
 import { gestureState, createGestureLandmarker } from "./handGestures.js";
 import { poseState, createPoseLandmarker } from "./poseTracking.js";
 import { objectState, createObjectDetector } from "./objectDetection.js";
@@ -53,8 +52,11 @@ const FRAME_MARKER_DEBUG_RED = false;
 // Keep a reference of all the child elements we create
 // so we can remove them easilly on each render.
 
-let allModelState = [faceLandmarkState, faceDetectorState, handState, gestureState, poseState, objectState, imageState, segmenterState, imageEmbedderState];
-let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseState];
+// Hand tracking runs through the gesture recognizer only: it contains the same
+// hand landmark model plus gesture classification, so a separate
+// HandLandmarker would duplicate the work.
+let allModelState = [faceLandmarkState, faceDetectorState, gestureState, poseState, objectState, imageState, segmenterState, imageEmbedderState];
+let landmarkerModelState = [faceLandmarkState, gestureState, poseState];
 
 const controlTransport = {
   timersSent: 0,
@@ -75,8 +77,6 @@ let outputSizeKey = "";
   setupWebSocket(socketURL, socketState);
   const segmentationSocketURL = socketURL.replace(/\/$/, '') + '/segmentation';
   webcamState.webcamDevices = await getWebcamDevices();
-  // if(handState.detect)
-    handState.landmarker = await createHandLandmarker(WASM_PATH);
   // if(gestureState.detect)
     gestureState.landmarker = await createGestureLandmarker(WASM_PATH);
   // if(faceLandmarkState.detect)

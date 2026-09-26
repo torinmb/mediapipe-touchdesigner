@@ -1,5 +1,4 @@
 import { faceLandmarkState } from "./faceLandmarks";
-import { handState } from "./handDetection";
 import { gestureState } from "./handGestures";
 import { poseState } from "./poseTracking";
 import { objectState } from "./objectDetection";
@@ -9,6 +8,15 @@ import { segmenterState } from "./imageSegmentation";
 import { imageEmbedderState } from "./imageEmbedder";
 
 import { webcamState, socketState, overlayState, outputState } from './state.js';
+
+// Hands and gestures share one model (the gesture recognizer). Either toggle
+// enables it, so an older URL with Detecthands=0 cannot switch gestures off.
+const handTracking = { hands: false, gestures: gestureState.detect };
+
+function setHandTracking(key, value) {
+    handTracking[key] = parseInt(value) === 1;
+    detectSwitch(gestureState, handTracking.hands || handTracking.gestures);
+}
 
 export const configMap = {
     'Wsaddress': value => socketState.adddress = value,
@@ -27,8 +35,8 @@ export const configMap = {
 
     'Detectfacelandmarks': value => detectSwitch(faceLandmarkState, parseInt(value) === 1),
     'Detectfaces': value => detectSwitch(faceDetectorState, parseInt(value) === 1),
-    'Detectgestures': value => detectSwitch(gestureState, parseInt(value) === 1),
-    'Detecthands': value => detectSwitch(handState, parseInt(value) === 1),
+    'Detectgestures': value => setHandTracking('gestures', value),
+    'Detecthands': value => setHandTracking('hands', value),
     'Detectposes': value => detectSwitch(poseState, parseInt(value) === 1),
     'Detectobjects': value => detectSwitch(objectState, parseInt(value) === 1),
     'Detectimages': value => detectSwitch(imageState, parseInt(value) === 1),
@@ -36,16 +44,18 @@ export const configMap = {
     'Detectimageembeddings': value => detectSwitch(imageEmbedderState, parseInt(value) === 1),
     'Showoverlays': value => overlaySwitch(parseInt(value) === 1),
 
-    'Hnumhands': value => handState.numHands = value,
-    'Hdetectconf': value => handState.minDetectionConfidence = value,
-    'Hpresconf': value => handState.minPresenceConfidence = value,
-    'Htrackconf': value => handState.minTrackingConfidence = value,
+    // TouchDesigner's hand tracking page sends the H* confidences and Gnumhands;
+    // both prefixes configure the gesture recognizer.
+    'Hnumhands': value => gestureState.numHands = value,
+    'Hdetectconf': value => gestureState.minDetectionConfidence = value,
+    'Hpresconf': value => gestureState.minPresenceConfidence = value,
+    'Htrackconf': value => gestureState.minTrackingConfidence = value,
 
     'Gnumhands': value => gestureState.numHands = value,
     'Gdetectconf': value => gestureState.minDetectionConfidence = value,
     'Gpresconf': value => gestureState.minPresenceConfidence = value,
     'Gtrackconf': value => gestureState.minTrackingConfidence = value,
-    'Gnumgestures': value => gestureState.maxNumGestures = value,
+    'Gnumgestures': value => gestureState.maxResults = value,
     'Gscore': value => gestureState.scoreThreshold = value,
 
     'Jointthreshold': '',

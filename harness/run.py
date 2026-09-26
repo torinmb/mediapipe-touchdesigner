@@ -36,7 +36,7 @@ MEDIA = HARNESS / 'media'
 FEATURES = {
 	'face': ('Detectfacelandmarks', 'faceLandmarkResults'),
 	'facedet': ('Detectfaces', 'faceDetectorResults'),
-	'hands': ('Detecthands', 'handResults'),
+	'hands': ('Detecthands', 'gestureResults'),  # runs the gesture recognizer
 	'gestures': ('Detectgestures', 'gestureResults'),
 	'pose': ('Detectposes', 'poseResults'),
 	'objects': ('Detectobjects', 'objectResults'),
