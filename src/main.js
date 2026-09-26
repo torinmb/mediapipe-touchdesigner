@@ -28,6 +28,7 @@ import {
 import { imageEmbedderState, createImageEmbedder } from "./imageEmbedder.js";
 import { webcamState, socketState, overlayState, outputState } from "./state.js";
 import { configMap } from "./modelParams.js";
+import { createSegmentationSocket } from "./segmentationSocket.js";
 
 const WASM_PATH = "./mediapipe/wasm";
 const video = document.getElementById("webcam");
@@ -35,12 +36,21 @@ let flippedVideo = null;
 webcamState.videoElement = video;
 
 const canvasElement = document.getElementById("output_canvas");
+const canvasContext = canvasElement.getContext("2d");
 const objectsDiv = document.getElementById("objects");
 const facesDiv = document.getElementById("faces");
 const webcamCanvas = document.getElementById("webcam_canvas");
 const webcamCanvasContext = webcamCanvas.getContext("2d", { alpha: false });
 const frameMarkerPixel = webcamCanvasContext.createImageData(1, 1);
 const SEGMENTATION_ACK_TIMEOUT_MS = 1000;
+// Pipeline the next mask while TouchDesigner is still receiving the previous
+// one. Set to 1 to restore strict one-packet-at-a-time delivery.
+const SEGMENTATION_MAX_IN_FLIGHT = 2;
+// TouchDesigner acknowledges each timers message. When it falls further behind
+// than this many frames, drop that frame's results instead of queueing stale
+// data behind them (latest-wins).
+const CONTROL_MAX_FRAMES_IN_FLIGHT = 3;
+const CONTROL_ACK_STALL_MS = 1000;
 const FRAME_MARKER_MASK = 0x00ffffff;
 const FRAME_MARKER_DEBUG_RED = false;
 
@@ -49,6 +59,18 @@ const FRAME_MARKER_DEBUG_RED = false;
 
 let allModelState = [faceLandmarkState, faceDetectorState, handState, gestureState, poseState, objectState, imageState, segmenterState, imageEmbedderState];
 let landmarkerModelState = [faceLandmarkState, handState, gestureState, poseState];
+
+const controlTransport = {
+  timersSent: 0,
+  timersAcked: 0,
+  // Stays false with older TouchDesigner callbacks that never acknowledge, so
+  // they keep receiving every result as before.
+  ackSupported: false,
+  lastAckAtMs: 0,
+  droppedResults: 0,
+  sendResultsThisFrame: true,
+};
+let outputSizeKey = "";
 
 
 (async function setup() {
@@ -111,20 +133,19 @@ function canProcessSegmentationFrame(ws) {
     return false;
   }
 
-  if (segmenterState.inFlightPacketSequence !== null) {
-    const inFlightAgeMs =
-      performance.now() - segmenterState.inFlightSentAtMs;
-    if (inFlightAgeMs < SEGMENTATION_ACK_TIMEOUT_MS) {
-      segmenterState.skippedInFlight++;
-      return false;
+  // A missing acknowledgement must not permanently stop segmentation. Treat
+  // packets that were never acknowledged as lost.
+  const now = performance.now();
+  for (const [sequence, sentAtMs] of segmenterState.inFlightPackets) {
+    if (now - sentAtMs >= SEGMENTATION_ACK_TIMEOUT_MS) {
+      segmenterState.ackTimeouts++;
+      segmenterState.inFlightPackets.delete(sequence);
     }
+  }
 
-    // A missing acknowledgement must not permanently stop segmentation.
-    // Treat the old packet as lost so a missing acknowledgement cannot lock
-    // segmentation permanently.
-    segmenterState.ackTimeouts++;
-    segmenterState.inFlightPacketSequence = null;
-    segmenterState.inFlightSentAtMs = 0;
+  if (segmenterState.inFlightPackets.size >= SEGMENTATION_MAX_IN_FLIGHT) {
+    segmenterState.skippedInFlight++;
+    return false;
   }
 
   return true;
@@ -136,17 +157,84 @@ function acknowledgeSegmentationPacket(packetSequence) {
   }
 
   const acknowledgedSequence = packetSequence >>> 0;
-  if (acknowledgedSequence !== segmenterState.inFlightPacketSequence) {
+  const sentAtMs = segmenterState.inFlightPackets.get(acknowledgedSequence);
+  if (sentAtMs === undefined) {
     return;
   }
 
   segmenterState.acknowledgedPackets++;
-  segmenterState.lastAckRoundTripMs = Math.max(
-    0,
-    performance.now() - segmenterState.inFlightSentAtMs,
-  );
-  segmenterState.inFlightPacketSequence = null;
-  segmenterState.inFlightSentAtMs = 0;
+  segmenterState.lastAckRoundTripMs = Math.max(0, performance.now() - sentAtMs);
+  segmenterState.inFlightPackets.delete(acknowledgedSequence);
+}
+
+function canSendResults() {
+  if (!controlTransport.ackSupported) {
+    return true;
+  }
+
+  const framesInFlight =
+    controlTransport.timersSent - controlTransport.timersAcked;
+  if (framesInFlight < CONTROL_MAX_FRAMES_IN_FLIGHT) {
+    return true;
+  }
+
+  // TouchDesigner stopped acknowledging (older callbacks, server restart).
+  // Fall back to unthrottled sending until acknowledgements resume.
+  if (performance.now() - controlTransport.lastAckAtMs > CONTROL_ACK_STALL_MS) {
+    controlTransport.ackSupported = false;
+    return true;
+  }
+  return false;
+}
+
+function acknowledgeTimers(count) {
+  if (!Number.isFinite(count)) {
+    return;
+  }
+  controlTransport.timersAcked = Math.max(controlTransport.timersAcked, count);
+  controlTransport.ackSupported = true;
+  controlTransport.lastAckAtMs = performance.now();
+}
+
+function resizeOutputElements() {
+  const width = outputState.width;
+  const height = outputState.height;
+  const sizeKey = `${width}x${height}`;
+  if (sizeKey === outputSizeKey) {
+    return false;
+  }
+  outputSizeKey = sizeKey;
+
+  // Assigning canvas.width reallocates the backing store, so only do it when
+  // the output size actually changes.
+  canvasElement.style.width = width;
+  canvasElement.style.height = height;
+  canvasElement.width = width;
+  canvasElement.height = height;
+
+  objectsDiv.style.width = width;
+  objectsDiv.style.height = height;
+  objectsDiv.width = width;
+  objectsDiv.height = height;
+
+  facesDiv.style.width = width;
+  facesDiv.style.height = height;
+  facesDiv.width = width;
+  facesDiv.height = height;
+
+  webcamState.offscreenCanvas.width = width;
+  webcamState.offscreenCanvas.height = height;
+  return true;
+}
+
+function clearOutputCanvas() {
+  // Matches the old per-frame canvas.width reset: clear pixels and state.
+  if (typeof canvasContext.reset === "function") {
+    canvasContext.reset();
+    return;
+  }
+  canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+  canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
 }
 
 async function predictWebcam(allModelState, objectState, webcamState, video) {
@@ -160,26 +248,17 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     return;
   }
 
-  canvasElement.style.width = outputState.width;
-  canvasElement.style.height = outputState.height;
-  canvasElement.width = outputState.width;
-  canvasElement.height = outputState.height;
-
-  objectsDiv.style.width = outputState.width;
-  objectsDiv.style.height = outputState.height;
-  objectsDiv.width = outputState.width;
-  objectsDiv.height = outputState.height;
-
-  facesDiv.style.width = outputState.width;
-  facesDiv.style.height = outputState.height;
-  facesDiv.width = outputState.width;
-  facesDiv.height = outputState.height;
-
-  webcamState.offscreenCanvas.width = outputState.width;
-  webcamState.offscreenCanvas.height = outputState.height;
+  if (!resizeOutputElements()) {
+    clearOutputCanvas();
+  }
 
   let startTimeMs = performance.now();
-  if (webcamState.lastVideoTime !== video.currentTime) {
+  const hasNewFrame = webcamState.lastVideoTime !== video.currentTime;
+  controlTransport.sendResultsThisFrame = canSendResults();
+  if (hasNewFrame) {
+    if (!controlTransport.sendResultsThisFrame) {
+      controlTransport.droppedResults++;
+    }
     const sourceFrame = getSourceFrame(video, webcamState);
     const sourceMediaTimeMs = video.currentTime * 1000;
     if(webcamState.webcamRunning && !(video.videoWidth === 0 || video.videoHeight === 0)) {
@@ -214,12 +293,15 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
               });
               segmenterState.lastPackTimeMs =
                 performance.now() - packStartedMs;
+              // Read the size first: sending transfers (detaches) the buffer.
+              const packetBytes = packet?.byteLength ?? 0;
               if (packet && safeSocketSend(socketState.segmentationWs, packet)) {
                 segmenterState.sentPackets++;
-                segmenterState.lastPacketBytes = packet.byteLength;
-                segmenterState.inFlightPacketSequence =
-                  segmenterState.packetSequence;
-                segmenterState.inFlightSentAtMs = performance.now();
+                segmenterState.lastPacketBytes = packetBytes;
+                segmenterState.inFlightPackets.set(
+                  segmenterState.packetSequence,
+                  performance.now(),
+                );
               }
             } catch (error) {
               segmenterState.sendErrors++;
@@ -269,7 +351,14 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
   // Figure out how long this took
   // Note that this is not the same as the video time
 
-  safeSocketSend(socketState.ws, JSON.stringify({
+  // Telemetry is only meaningful for processed frames. While a mask is in
+  // flight keep sending every tick: each timers message also lets
+  // TouchDesigner retry committing its pending mask. Under backpressure hold
+  // timers too; acknowledgements for the ones already queued still arrive.
+  const sendTimers =
+    controlTransport.sendResultsThisFrame &&
+    (hasNewFrame || segmenterState.inFlightPackets.size > 0);
+  if (sendTimers && safeSocketSend(socketState.ws, JSON.stringify({
     timers: {
       detectTime: timeToDetect,
       drawTime: timeToDraw,
@@ -284,18 +373,29 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
         acknowledgedPackets: segmenterState.acknowledgedPackets,
         skippedInFlight: segmenterState.skippedInFlight,
         ackTimeouts: segmenterState.ackTimeouts,
-        inFlight: Number(segmenterState.inFlightPacketSequence !== null),
+        inFlight: segmenterState.inFlightPackets.size,
         ackRoundTripMs: segmenterState.lastAckRoundTripMs,
         packetBytes: segmenterState.lastPacketBytes,
       },
+      controlTransport: {
+        ackSupported: Number(controlTransport.ackSupported),
+        framesInFlight:
+          controlTransport.timersSent - controlTransport.timersAcked,
+        droppedResultFrames: controlTransport.droppedResults,
+      },
     },
-  }));
+  }))) {
+    controlTransport.timersSent++;
+  }
 
   window.requestAnimationFrame(() => predictWebcam(allModelState, objectState, webcamState, video));
 
 }
 
 function sendLandmarkerResults(landmarker, video) {
+  if (!controlTransport.sendResultsThisFrame) {
+    return;
+  }
   safeSocketSend(socketState.ws, JSON.stringify({
     [landmarker.resultsName]: landmarker.results,
     resolution: { width: video.videoWidth, height: video.videoHeight },
@@ -331,6 +431,9 @@ function setupWebSocket(socketURL, socketState) {
 
   socketState.ws.addEventListener('open', () => {
     console.log('WebSocket connection opened');
+    controlTransport.timersSent = 0;
+    controlTransport.timersAcked = 0;
+    controlTransport.ackSupported = false;
     socketState.ws.send('pong');
 
     getWebcamDevices().then(devices => {
@@ -343,7 +446,17 @@ function setupWebSocket(socketURL, socketState) {
     // Process received messages as needed
     if (event.data === 'ping' || event.data === 'pong') return;
 
-    const data = JSON.parse(event.data);
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch (error) {
+      console.warn('Ignoring invalid control socket message', error);
+      return;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'timersAck')) {
+      acknowledgeTimers(Number(data.timersAck));
+      return;
+    }
     for (let [key, value] of Object.entries(data)) {
       if (key in configMap) {
         console.log("Got WS dats: " + key + " : " + value);
@@ -362,13 +475,17 @@ function setupWebSocket(socketURL, socketState) {
 }
 
 function setupSegmentationWebSocket(socketURL, socketState) {
-  const ws = new WebSocket(socketURL);
+  attachSegmentationSocket(
+    createSegmentationSocket(socketURL, attachSegmentationSocket),
+  );
+}
+
+function attachSegmentationSocket(ws) {
   socketState.segmentationWs = ws;
 
   ws.addEventListener('open', () => {
     console.log('Segmentation WebSocket connection opened');
-    segmenterState.inFlightPacketSequence = null;
-    segmenterState.inFlightSentAtMs = 0;
+    segmenterState.inFlightPackets.clear();
   });
 
   ws.addEventListener('message', (event) => {
@@ -395,8 +512,7 @@ function setupSegmentationWebSocket(socketURL, socketState) {
 
   ws.addEventListener('close', () => {
     console.log('Segmentation socket connection closed');
-    segmenterState.inFlightPacketSequence = null;
-    segmenterState.inFlightSentAtMs = 0;
+    segmenterState.inFlightPackets.clear();
   });
 }
 

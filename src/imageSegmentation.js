@@ -62,8 +62,8 @@ export const segmenterState = {
     sendErrors: 0,
     packetSequence: 0,
     lastPackTimeMs: 0,
-    inFlightPacketSequence: null,
-    inFlightSentAtMs: 0,
+    // packetSequence -> performance.now() when sent, awaiting TD's segAck.
+    inFlightPackets: new Map(),
     acknowledgedPackets: 0,
     skippedInFlight: 0,
     ackTimeouts: 0,

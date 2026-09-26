@@ -21,6 +21,7 @@ from pathlib import Path
 import json
 import numpy as np
 clients = {}
+timersReceived = {}
 
 SEGMENTATION_MAGIC = b'MPSG'
 SEGMENTATION_HEADER_BYTES = 72
@@ -85,6 +86,7 @@ def onHTTPRequest(webServerDAT, request, response):
 
 def onWebSocketOpen(webServerDAT, client, uri):
 	clients[client] = uri
+	timersReceived[client] = 0
 	print(client, uri)
 	return
 
@@ -95,13 +97,27 @@ def onWebSocketClose(webServerDAT, client):
 		pendingSegmentation = None
 	if client in clients:
 		del clients[client]
+	timersReceived.pop(client, None)
 	return
 
 def _isSegmentationClient(client):
 	uri = str(clients.get(client, ''))
 	return uri.split('?', 1)[0].rstrip('/') == '/segmentation'
 
+def _acknowledgeTimers(webServerDAT, client):
+	# The browser sends one timers message per processed frame. Echoing the
+	# running count lets it see how far behind TouchDesigner is and drop stale
+	# results instead of queueing them (latest-wins flow control).
+	count = timersReceived.get(client, 0) + 1
+	timersReceived[client] = count
+	webServerDAT.webSocketSendText(client, '{"timersAck":%d}' % count)
+	return
+
 def onWebSocketReceiveText(webServerDAT, client, data):
+	# Acknowledge before the play check so a paused timeline cannot leave the
+	# browser's flow control waiting on acknowledgements that never arrive.
+	if data.startswith('{"timers"'):
+		_acknowledgeTimers(webServerDAT, client)
 	if not me.time.play:
 		return
 	# If we receive results data, dump it directly into the relevant DAT
