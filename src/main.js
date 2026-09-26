@@ -39,7 +39,9 @@ const objectsDiv = document.getElementById("objects");
 const facesDiv = document.getElementById("faces");
 const webcamCanvas = document.getElementById("webcam_canvas");
 const webcamCanvasContext = webcamCanvas.getContext("2d", { alpha: false });
-const frameMarkerPixel = webcamCanvasContext.createImageData(1, 1);
+const frameMarkerCanvas = document.getElementById("frame_marker");
+const frameMarkerContext = frameMarkerCanvas.getContext("2d", { alpha: false });
+const frameMarkerPixel = frameMarkerContext.createImageData(1, 1);
 // TouchDesigner acknowledges each timers message. When it falls further behind
 // than this many frames, drop that frame's results instead of queueing stale
 // data behind them (latest-wins).
@@ -349,7 +351,7 @@ function getSourceFrame(video, webcamState) {
   return webcamState.sourceFrame;
 }
 
-function writeFrameMarker(sourceFrame, context, outputHeight) {
+function writeFrameMarker(sourceFrame) {
   // The segmentation packet carries sourceFrame as uint32. The visible marker
   // carries its low 24 bits as little-endian RGB so TouchDesigner can recover
   // the same frame ID from one normalized RGBA pixel:
@@ -360,7 +362,7 @@ function writeFrameMarker(sourceFrame, context, outputHeight) {
   pixel[1] = FRAME_MARKER_DEBUG_RED ? 0 : (markerFrame >>> 8) & 0xff;
   pixel[2] = FRAME_MARKER_DEBUG_RED ? 0 : (markerFrame >>> 16) & 0xff;
   pixel[3] = 0xff;
-  context.putImageData(frameMarkerPixel, 0, outputHeight - 1);
+  frameMarkerContext.putImageData(frameMarkerPixel, 0, 0);
 }
 
 function setupWebSocket(socketURL, socketState) {
@@ -442,8 +444,8 @@ function captureAndFlipWebcam(video, webcamState, sourceFrame) {
   }
 
   // The visible Web Render image is a snapshot of the exact clean canvas sent
-  // to MediaPipe. Draw its marker in the same synchronous canvas update so the
-  // frame ID cannot be composited over a newer live-video frame.
+  // to MediaPipe. Write its marker in the same synchronous update so the frame
+  // ID is always composited together with this exact image.
   if (
     webcamCanvas.width !== offscreenCanvas.width ||
     webcamCanvas.height !== offscreenCanvas.height
@@ -452,6 +454,6 @@ function captureAndFlipWebcam(video, webcamState, sourceFrame) {
     webcamCanvas.height = offscreenCanvas.height;
   }
   webcamCanvasContext.drawImage(offscreenCanvas, 0, 0);
-  writeFrameMarker(sourceFrame, webcamCanvasContext, webcamCanvas.height);
+  writeFrameMarker(sourceFrame);
   return offscreenCanvas; // Returning the canvas for any potential use elsewhere
 }

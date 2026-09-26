@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Parallel models experiment</title>
+</head>
+<body>
+  <video id="video" autoplay playsinline muted></video>
+  <pre id="log"></pre>
+  <script type="module">
+    // ?workers=N (0 = everything on this main thread) &seconds=S &warmup=W
+    import { createModels, runModels } from "./models.js";
+
+    const params = new URLSearchParams(location.search);
+    const workerCount = Number(params.get("workers") ?? 0);
+    const seconds = Number(params.get("seconds") ?? 8);
+    const warmup = Number(params.get("warmup") ?? 3);
+    const wasmPath = new URL("/mediapipe/wasm", location.href).href;
+    // Per-model cost measured on the main thread, used to balance workers.
+    const cost = { objects: 28, gestures: 21, hands: 18.5, face: 16, pose: 14, image: 13, embed: 12, facedet: 9.5 };
+    const names = (params.get("models") ?? Object.keys(cost).join(",")).split(",");
+    const log = (text) => (document.getElementById("log").textContent += text + "\n");
+
+    function balance(count) {
+      const groups = Array.from({ length: count }, () => ({ names: [], cost: 0 }));
+      for (const name of [...names].sort((a, b) => cost[b] - cost[a])) {
+        const lightest = groups.reduce((a, b) => (b.cost < a.cost ? b : a));
+        lightest.names.push(name);
+        lightest.cost += cost[name];
+      }
+      return groups.map((group) => group.names);
+    }
+
+    const video = document.getElementById("video");
+    video.srcObject = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
+    await new Promise((resolve) => (video.onloadeddata = resolve));
+
+    let process;
+    let groups;
+    if (workerCount === 0) {
+      groups = [names];
+      const models = await createModels(names, wasmPath, () => new OffscreenCanvas(1, 1));
+      process = async (timestampMs) => {
+        const image = await createImageBitmap(video);
+        runModels(models, image, timestampMs);
+        image.close();
+      };
+    } else {
+      groups = balance(workerCount);
+      const workers = await Promise.all(groups.map((group) => new Promise((resolve, reject) => {
+        const worker = new Worker(new URL("./modelWorker.js", import.meta.url), { type: "module" });
+        worker.onmessage = (event) => event.data.type === "ready" ? resolve(worker) : reject(new Error(event.data.message));
+        worker.onerror = reject;
+        worker.postMessage({ type: "init", names: group, wasmPath });
+      })));
+      process = async (timestampMs) => {
+        // Every worker gets its own snapshot of the same frame.
+        const images = await Promise.all(workers.map(() => createImageBitmap(video)));
+        await Promise.all(workers.map((worker, index) => new Promise((resolve) => {
+          worker.onmessage = (event) => resolve(event.data.times);
+          worker.postMessage({ type: "frame", image: images[index], timestampMs }, [images[index]]);
+        })));
+      };
+    }
+    log(`groups: ${JSON.stringify(groups)}`);
+
+    // Process frames back to back, as fast as all groups can finish one.
+    const frameTimes = [];
+    const startedAt = performance.now();
+    let timestampMs = 0;
+    while (performance.now() - startedAt < (warmup + seconds) * 1000) {
+      const start = performance.now();
+      timestampMs = Math.max(timestampMs + 1, performance.now());
+      await process(timestampMs);
+      if (performance.now() - startedAt > warmup * 1000) {
+        frameTimes.push(performance.now() - start);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    frameTimes.sort((a, b) => a - b);
+    const avg = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+    window.__result = {
+      workers: workerCount,
+      groups,
+      frames: frameTimes.length,
+      avgMs: avg,
+      p95Ms: frameTimes[Math.floor(frameTimes.length * 0.95)],
+      fps: 1000 / avg,
+    };
+    log(JSON.stringify(window.__result));
+  </script>
+</body>
+</html>

@@ -38,6 +38,21 @@ video, canvas, .objects, .faces {
   object-fit: cover; /* Crop to fill */
 }
 
+/* The frame marker is the topmost pixel at the viewport's bottom-left corner,
+   where TouchDesigner samples it, so overlays can never cover it and output
+   sizes that crop the webcam canvas cannot move it. */
+#frame_marker {
+  position: fixed;
+  top: auto;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  z-index: 2147483647;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
 .key-point {
   position: absolute;
   z-index: 1;
