@@ -54,6 +54,10 @@ harness/.venv/bin/python harness/run.py compare harness/out/before.jsonl harness
 git show v0.5.2:td_scripts/Media_Pipe/webserver_callbacks.py > /tmp/old/webserver_callbacks.py  # etc.
 harness/.venv/bin/python harness/run.py run --features face,seg --td-scripts /tmp/old
 
+# save real masks, then prove raw + zlib packets land bit-identical in seg_data
+harness/.venv/bin/python harness/run.py run --features seg --save-seg harness/out/masks
+harness/.venv/bin/python harness/test_seg_packets.py harness/out/masks
+
 # server only: open the printed URL in a real browser with your real webcam
 harness/.venv/bin/python harness/run.py serve --port 9980
 ```
@@ -82,10 +86,21 @@ compared relative to that spread. Two
 unchanged runs of Vidtest differ by about 0.001. Consumers `json.loads` the
 DAT text, so text formatting doesn't need to match byte for byte.
 
+## Frame sync (Web Render emulation)
+
+By default `run` emulates the Web Render TOP: a lossless CDP screencast
+delivers every frame the page paints, the harness reads the bottom-left frame
+marker pixel from it, and the real `seg_offset.py` Script CHOP cooks on it
+every TD frame. Masks then commit only once their exact frame has been
+displayed, exactly as in TD. The report shows marker samples/s, the share of
+frames with a cache match and the average sync wait; `textport.log` gets a
+`[sync]` line whenever the marker or pending frame changes.
+`--no-frame-sync` restores commit-on-arrival.
+
 ## Limits
 
-- `op('seg_offset')` is `None` (there's no Web Render TOP to read the frame-marker pixel from), so masks
-  commit on arrival using the callbacks' existing fallback. Frame-marker matching isn't exercised.
+- The emulated Web Render has no Cache TOP images; only the marker history
+  that `seg_offset.py` keeps is modelled.
 - TD's own WebSocket server internals aren't emulated; this server ingests
   everything. `--max-msgs-per-frame` / `--max-kb-per-frame` are knobs to model
   a limit. Calibrate them against what you see in real TD.

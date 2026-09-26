@@ -16,6 +16,7 @@ import mimetypes
 import os
 import struct
 import time
+import zlib
 from pathlib import Path
 
 import json
@@ -30,6 +31,10 @@ SEGMENTATION_DTYPE_UINT8 = 1
 SEGMENTATION_DTYPE_FLOAT32 = 2
 SEGMENTATION_LAYOUT_HWC = 3
 SEGMENTATION_MODE_COLORED = 2
+# Header flags (uint16 at byte 14). The browser only sets FLAG_ZLIB after this
+# server advertises support, so older callbacks never receive compressed masks.
+SEGMENTATION_FLAG_ZLIB = 0x0001
+SEGMENTATION_SUPPORTED_FLAGS = SEGMENTATION_FLAG_ZLIB
 
 # The WebSocket callback normally runs partway through a TouchDesigner frame,
 # after the Cache TOP's newest image was captured. Move the lookup half a frame
@@ -88,6 +93,9 @@ def onWebSocketOpen(webServerDAT, client, uri):
 	clients[client] = uri
 	timersReceived[client] = 0
 	print(client, uri)
+	if _isSegmentationClient(client):
+		# Lets the browser send zlib-compressed masks (decompressed below).
+		webServerDAT.webSocketSendText(client, '{"segCapabilities":{"zlib":1}}')
 	return
 
 def onWebSocketClose(webServerDAT, client):
@@ -404,7 +412,7 @@ def onWebSocketReceiveBinary(webServerDAT, client, data):
 				width,
 				channels,
 				maskCount,
-				_reserved,
+				flags,
 				sourceFrame,
 				packetSequence,
 				sourceMediaTimeMs,
@@ -423,6 +431,7 @@ def onWebSocketReceiveBinary(webServerDAT, client, data):
 				or channels not in (1, 4)
 				or width <= 0
 				or height <= 0
+				or flags & ~SEGMENTATION_SUPPORTED_FLAGS
 			):
 				debug('Received unsupported MediaPipe segmentation packet')
 				return
@@ -430,6 +439,9 @@ def onWebSocketReceiveBinary(webServerDAT, client, data):
 			bytesPerValue = 4 if dtype == SEGMENTATION_DTYPE_FLOAT32 else 1
 			expectedBytes = width * height * channels * bytesPerValue
 			payload = memoryview(data)[SEGMENTATION_HEADER_BYTES:]
+			if flags & SEGMENTATION_FLAG_ZLIB:
+				# Lossless: yields the exact bytes the browser packed.
+				payload = zlib.decompress(payload)
 			if len(payload) != expectedBytes:
 				debug('MediaPipe segmentation payload length does not match its header')
 				return
@@ -471,9 +483,13 @@ def onWebSocketReceiveBinary(webServerDAT, client, data):
 				'mode': mode,
 			}
 			if pendingSegmentation is not None:
-				# This should only occur after the browser's own ACK timeout. Prefer
-				# the newest result and release the old sender immediately.
-				_dropPendingSegmentation(sendAck=True)
+				# The pending mask's frame may have reached the Web Render since the
+				# last check. Commits are otherwise only attempted when a message
+				# arrives, and on a slow page (many models) the next mask is often
+				# the first message after that frame is displayed. Commit it if it
+				# matched; otherwise prefer the newest mask and release the old one.
+				if not _tryCommitPendingSegmentation():
+					_dropPendingSegmentation(sendAck=True)
 			pendingSegmentation = {
 				'array': array,
 				'metadata': metadata,

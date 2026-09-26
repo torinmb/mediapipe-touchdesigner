@@ -30,7 +30,6 @@ export let socketState = {
     adddress: "ws://localhost",
     port: "3002",
     ws: undefined,
-    segmentationWs: undefined,
 };
 
 export let overlayState = {

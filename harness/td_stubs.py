@@ -56,6 +56,14 @@ class FakeCHOP:
 		return {name: channel[0] for name, channel in self._chans.items()}
 
 
+class FakeScriptCHOP(FakeCHOP):
+	"""A Script CHOP: its callbacks' onCook(scriptOp) fills it from inputs."""
+
+	def __init__(self, name, inputs):
+		super().__init__(name)
+		self.inputs = inputs
+
+
 class FakeTextDAT:
 	def __init__(self, name, onWrite=None):
 		self.name = name

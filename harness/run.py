@@ -107,6 +107,37 @@ def startViteDev():
 	sys.exit('vite dev server did not start')
 
 
+async def sampleFrameMarker(page, td, height, stop):
+	"""Stand-in for the Web Render TOP: receive every frame the page's
+	compositor paints (lossless PNG screencast) and hand the displayed
+	bottom-left pixel (the frame marker) to the fake TD."""
+	import base64
+	import io
+
+	from PIL import Image
+
+	session = await page.context.new_cdp_session(page)
+
+	async def onFrame(event):
+		try:
+			image = Image.open(io.BytesIO(base64.b64decode(event['data'])))
+			td.setMarkerPixel(image.convert('RGB').getpixel((0, image.height - 1)))
+		except Exception as error:
+			print('marker decode failed: {}'.format(error))
+		try:
+			await session.send('Page.screencastFrameAck', {'sessionId': event['sessionId']})
+		except Exception:
+			pass
+
+	session.on('Page.screencastFrame', lambda event: asyncio.ensure_future(onFrame(event)))
+	await session.send('Page.startScreencast', {'format': 'png', 'everyNthFrame': 1})
+	await stop.wait()
+	try:
+		await session.send('Page.stopScreencast')
+	except Exception:
+		pass
+
+
 # ----------------------------------------------------------------- reporting
 
 def joinLatency(td, browserSockets):
@@ -190,6 +221,10 @@ def printReport(report):
 		print()
 		print('seg_data: {} commits ({:.1f}/s)  last {}'.format(
 			seg['commits'], seg['commitsPerSec'], seg['last']))
+		if seg.get('frameSync'):
+			print('  frame sync: marker samples {:.1f}/s, frames with cache match {:.0f}%, sync wait avg {} ms'.format(
+				seg['markerSamples'] / td['elapsedSec'], seg['cacheMatchedFramePct'],
+				fmt(seg['syncWaitMs']).strip()))
 		print('  end-to-end latency avg {} p95 {} ms | inference avg {} ms | droppedUnmatched {}'.format(
 			fmt(seg['endToEndLatencyMs']).strip(), fmt(seg['endToEndLatencyMs'], 'p95').strip(),
 			fmt(seg['inferenceMs']).strip(), seg['droppedUnmatched']))
@@ -261,6 +296,8 @@ async def runCommand(args):
 		verbose=args.verbose,
 		logPath=OUT / 'textport.log',
 		scriptsDir=args.td_scripts,
+		saveSegDir=args.save_seg,
+		frameSync=not args.no_frame_sync,
 	).start()
 	print('fake TD listening on http://localhost:{}'.format(td.port))
 	vite = None
@@ -317,6 +354,10 @@ async def runCommand(args):
 		print('opening {}'.format(url))
 		pageOpenedAt = time.time()
 		await page.goto(url)
+		stopSampling = asyncio.Event()
+		sampler = None
+		if td.frameSync:
+			sampler = asyncio.create_task(sampleFrameMarker(page, td, args.height, stopSampling))
 
 		expected = {FEATURES[f][1] for f in features}
 		deadline = time.time() + args.ready_timeout
@@ -337,6 +378,9 @@ async def runCommand(args):
 		await asyncio.sleep(args.seconds)
 		snapshot = td.snapshot()
 		sockets = await page.evaluate('window.__harnessSockets')
+		stopSampling.set()
+		if sampler is not None:
+			await sampler
 		await browser.close()
 	td.stop()
 	if vite is not None:
@@ -541,6 +585,9 @@ def main():
 	run.add_argument('--height', type=int, default=720)
 	run.add_argument('--headed', action='store_true', help='show the Chrome window')
 	run.add_argument('--label', help='name for the report file')
+	run.add_argument('--no-frame-sync', action='store_true',
+		help='skip the Web Render marker emulation; masks commit on arrival')
+	run.add_argument('--save-seg', help='save every 10th committed seg_data array (.npy) to this directory')
 	run.add_argument('--json', action='store_true', help='print the full JSON report')
 
 	serve = sub.add_parser('serve', help='fake TD server only; bring your own browser')

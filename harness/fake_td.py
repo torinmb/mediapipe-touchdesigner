@@ -16,7 +16,9 @@ from pathlib import Path
 
 from aiohttp import ClientSession, WSMsgType, web
 
-from td_stubs import TDEnvironment, arrayDigest
+import numpy as np
+
+from td_stubs import FakeCHOP, FakeScriptCHOP, TDEnvironment, arrayDigest
 
 REPO = Path(__file__).resolve().parent.parent
 SCRIPTS = REPO / 'td_scripts' / 'Media_Pipe'
@@ -81,6 +83,7 @@ class Metrics:
 		self.segLast = None
 		self.browserTimers = collections.defaultdict(list)
 		self.sentToBrowser = collections.Counter()
+		self.cacheMatchedFrames = 0
 
 
 class Connection:
@@ -134,6 +137,9 @@ class FakeTD:
 		verbose=False,
 		logPath=None,
 		scriptsDir=SCRIPTS,
+		saveSegDir=None,
+		saveSegEvery=10,
+		frameSync=False,
 	):
 		self.port = port
 		self.fps = fps
@@ -143,6 +149,10 @@ class FakeTD:
 		self._logFile = open(logPath, 'w') if logPath else None
 		self._recordFile = open(recordPath, 'w') if recordPath else None
 		self._recording = False
+		self.saveSegDir = Path(saveSegDir) if saveSegDir else None
+		self.saveSegEvery = max(1, saveSegEvery)
+		if self.saveSegDir:
+			self.saveSegDir.mkdir(parents=True, exist_ok=True)
 
 		self._lock = threading.Lock()
 		self._events = collections.deque()
@@ -167,6 +177,21 @@ class FakeTD:
 		scriptsDir = Path(scriptsDir)
 		self.server = self.env.loadCallbacks(scriptsDir / 'webserver_callbacks.py')
 		self.ws1 = self.env.loadCallbacks(scriptsDir / 'websocket_callbacks.py')
+		# Frame sync: emulate the Web Render TOP's bottom-left marker pixel and
+		# cook the real seg_offset.py Script CHOP every frame, so masks commit
+		# only once their exact frame has been "displayed", as in TD.
+		self.frameSync = frameSync
+		self.markerRGB = None
+		self.markerSamples = 0
+		if frameSync:
+			self.markerCHOP = FakeCHOP('marker_rgb')
+			for channel in ('r', 'g', 'b'):
+				self.markerCHOP.appendChan(channel)
+			self.segOffsetCHOP = FakeScriptCHOP(
+				'seg_offset', [self.markerCHOP, self.env.ops['timers']]
+			)
+			self.segOffset = self.env.loadCallbacks(scriptsDir / 'seg_offset.py')
+			self.env.ops['seg_offset'] = self.segOffsetCHOP
 		self.webServerDAT = WebServerDATStub(self)
 		self.websocket1DAT = WebSocketDATStub(self)
 		self._lastSegSequence = None
@@ -193,6 +218,12 @@ class FakeTD:
 
 	def _onTopCopy(self, name, array):
 		self.metrics.segCommits += 1
+		if (
+			self.saveSegDir
+			and self._recording
+			and self.metrics.segCommits % self.saveSegEvery == 0
+		):
+			np.save(self.saveSegDir / 'seg_{:05d}.npy'.format(self.metrics.segCommits), array)
 		self._record({
 			'op': name,
 			'shape': list(array.shape),
@@ -336,6 +367,7 @@ class FakeTD:
 			self.env.absTime.seconds = frameIndex * period
 
 			workStart = time.perf_counter()
+			self._cookSegOffset()
 			messages, byteCount = self._cookFrame()
 			self._cookDownstream()
 			workMs = (time.perf_counter() - workStart) * 1000.0
@@ -441,6 +473,34 @@ class FakeTD:
 			else:
 				self.metrics.browserTimers[key].append(value)
 
+	def setMarkerPixel(self, rgb):
+		"""Latest displayed bottom-left pixel (0-255 ints) from the page."""
+		self.markerRGB = rgb
+		self.markerSamples += 1
+
+	def _cookSegOffset(self):
+		if not self.frameSync or self.markerRGB is None:
+			return
+		for channel, value in zip(('r', 'g', 'b'), self.markerRGB):
+			self.markerCHOP[channel][0] = value / 255.0
+		try:
+			self.segOffset.onCook(self.segOffsetCHOP)
+		except Exception as error:
+			self.log('[exception] seg_offset: {!r}'.format(error))
+		marker = self.segOffsetCHOP['segMarkerFrame']
+		pending = self.segOffsetCHOP['segPendingFrame']
+		sample = (
+			int(marker[0]) if marker is not None else None,
+			int(pending[0]) if pending is not None else None,
+		)
+		if sample != getattr(self, '_lastSyncSample', None):
+			self._lastSyncSample = sample
+			self.log('[sync] frame {} marker {} pending {} rgb {}'.format(
+				self.env.absTime.frame, sample[0], sample[1], self.markerRGB))
+		matched = self.segOffsetCHOP['segCacheMatched']
+		if matched is not None:
+			self.metrics.cacheMatchedFrames += int(matched[0] > 0.5)
+
 	def _checkSegmentationCommit(self):
 		meta = self.server.latestSegmentationMeta
 		if meta is None or meta['packetSequence'] == self._lastSegSequence:
@@ -517,6 +577,9 @@ class FakeTD:
 				'inferenceMs': summarize(metrics.segInferenceMs),
 				'last': metrics.segLast,
 				'droppedUnmatched': self.server.segmentationDroppedUnmatched,
+				'frameSync': self.frameSync,
+				'markerSamples': self.markerSamples,
+				'cacheMatchedFramePct': 100.0 * metrics.cacheMatchedFrames / max(1, metrics.frames),
 			},
 			'browserTimers': {
 				key: summarize([float(v) for v in values])
