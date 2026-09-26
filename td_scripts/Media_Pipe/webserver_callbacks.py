@@ -16,7 +16,6 @@ import mimetypes
 import os
 import struct
 import time
-from collections import deque
 from pathlib import Path
 
 import json
@@ -36,11 +35,9 @@ SEGMENTATION_MODE_COLORED = 2
 # toward the present to compensate for that average within-frame phase.
 SEGMENTATION_CACHE_PHASE_FRAMES = 0.5
 SEGMENTATION_PENDING_TIMEOUT_MS = 900.0
-SEGMENTATION_QUEUE_LIMIT = 32
 
 latestSegmentationMeta = None
 pendingSegmentation = None
-segmentationQueue = deque()
 segmentationReceiveCount = 0
 segmentationDroppedUnmatched = 0
 
@@ -92,14 +89,10 @@ def onWebSocketOpen(webServerDAT, client, uri):
 	return
 
 def onWebSocketClose(webServerDAT, client):
-	global pendingSegmentation, segmentationQueue
+	global pendingSegmentation
 
 	if pendingSegmentation is not None and pendingSegmentation['client'] == client:
 		pendingSegmentation = None
-	segmentationQueue = deque(
-		packet for packet in segmentationQueue if packet['client'] != client
-	)
-	_promoteQueuedSegmentation()
 	if client in clients:
 		del clients[client]
 	return
@@ -181,7 +174,6 @@ def onWebSocketReceiveText(webServerDAT, client, data):
 				'segPipelineMs',
 				'segCacheLatencyMs',
 				'segCacheOffset',
-				'segFixedCacheOffset',
 				'segReceiveFrame',
 				'segWidth',
 				'segHeight',
@@ -237,11 +229,6 @@ def _writeSegmentationMetadata(timers, metadata):
 	_setTimerChannel(timers, 'segPipelineMs', metadata['pipelineTimeMs'])
 	_setTimerChannel(timers, 'segCacheLatencyMs', cacheLatencyMs)
 	_setTimerChannel(timers, 'segCacheOffset', cacheOffset)
-	_setTimerChannel(
-		timers,
-		'segFixedCacheOffset',
-		metadata.get('fixedCacheOffset', 0),
-	)
 	_setTimerChannel(timers, 'segReceiveFrame', metadata['receiveFrame'])
 	_setTimerChannel(timers, 'segWidth', metadata['width'])
 	_setTimerChannel(timers, 'segHeight', metadata['height'])
@@ -258,11 +245,6 @@ def _writeSegmentationMetadata(timers, metadata):
 	return
 
 def _writePendingSegmentationMetadata(timers):
-	_setTimerChannel(
-		timers,
-		'segPendingQueueDepth',
-		len(segmentationQueue) + int(pendingSegmentation is not None),
-	)
 	if pendingSegmentation is None:
 		_setTimerChannel(timers, 'segPending', 0)
 		_setTimerChannel(timers, 'segPendingFrame', 0)
@@ -286,35 +268,13 @@ def _writePendingSegmentationMetadata(timers):
 	return
 
 def _sendSegmentationAck(packet):
-	if packet.get('acknowledged', False):
-		return
 	try:
 		packet['webServerDAT'].webSocketSendText(
 			packet['client'],
 			json.dumps({'segAck': packet['metadata']['packetSequence']}),
 		)
-		packet['acknowledged'] = True
 	except Exception as error:
 		debug('Failed to acknowledge MediaPipe segmentation: {}'.format(error))
-	return
-
-def _promoteQueuedSegmentation():
-	global pendingSegmentation
-
-	if pendingSegmentation is None and segmentationQueue:
-		pendingSegmentation = segmentationQueue.popleft()
-	return
-
-def _enqueueSegmentation(packet):
-	global pendingSegmentation, segmentationDroppedUnmatched
-
-	if pendingSegmentation is None:
-		pendingSegmentation = packet
-		return
-	if len(segmentationQueue) >= SEGMENTATION_QUEUE_LIMIT:
-		segmentationQueue.popleft()
-		segmentationDroppedUnmatched += 1
-	segmentationQueue.append(packet)
 	return
 
 def _dropPendingSegmentation(sendAck):
@@ -327,7 +287,6 @@ def _dropPendingSegmentation(sendAck):
 	segmentationDroppedUnmatched += 1
 	if sendAck:
 		_sendSegmentationAck(packet)
-	_promoteQueuedSegmentation()
 	timers = op('timers')
 	if timers is not None:
 		_writePendingSegmentationMetadata(timers)
@@ -343,7 +302,7 @@ def _expirePendingSegmentation():
 		return False
 	return _dropPendingSegmentation(sendAck=True)
 
-def _commitPendingSegmentation(cacheOffset=None, fixedCacheOffset=None):
+def _commitPendingSegmentation(cacheOffset=None):
 	global latestSegmentationMeta, pendingSegmentation
 	global segmentationReceiveCount
 
@@ -369,12 +328,9 @@ def _commitPendingSegmentation(cacheOffset=None, fixedCacheOffset=None):
 		)
 		if cacheOffset is not None:
 			metadata['cacheOffset'] = int(cacheOffset)
-		if fixedCacheOffset is not None:
-			metadata['fixedCacheOffset'] = int(fixedCacheOffset)
 
 		latestSegmentationMeta = metadata
 		pendingSegmentation = None
-		_promoteQueuedSegmentation()
 		timers = op('timers')
 		if timers is not None:
 			_writeSegmentationMetadata(timers, metadata)
@@ -398,28 +354,20 @@ def _tryCommitPendingSegmentation():
 		pendingMatched = segOffset['segPendingMatched']
 		pendingFrame = segOffset['segPendingFrame']
 		pendingOffset = segOffset['segPendingCacheOffset']
-		pendingFixedReady = segOffset['segPendingFixedReady']
-		fixedCacheOffset = segOffset['segFixedCacheOffset']
 	except Exception:
 		return False
 	if (
 		pendingMatched is None
 		or pendingFrame is None
 		or pendingOffset is None
-		or pendingFixedReady is None
-		or fixedCacheOffset is None
 		or pendingMatched[0] < 0.5
-		or pendingFixedReady[0] < 0.5
 	):
 		return False
 
 	targetFrame = pendingSegmentation['metadata']['sourceFrame'] & 0x00ffffff
 	if int(pendingFrame[0]) != targetFrame:
 		return False
-	return _commitPendingSegmentation(
-		int(pendingOffset[0]),
-		int(fixedCacheOffset[0]),
-	)
+	return _commitPendingSegmentation(int(pendingOffset[0]))
 
 def onWebSocketReceiveBinary(webServerDAT, client, data):
 	global pendingSegmentation
@@ -506,19 +454,17 @@ def onWebSocketReceiveBinary(webServerDAT, client, data):
 				'maskCount': maskCount,
 				'mode': mode,
 			}
-			packet = {
+			if pendingSegmentation is not None:
+				# This should only occur after the browser's own ACK timeout. Prefer
+				# the newest result and release the old sender immediately.
+				_dropPendingSegmentation(sendAck=True)
+			pendingSegmentation = {
 				'array': array,
 				'metadata': metadata,
 				'queuedAtMs': time.monotonic() * 1000.0,
 				'webServerDAT': webServerDAT,
 				'client': client,
-				'acknowledged': False,
 			}
-			_enqueueSegmentation(packet)
-			# The owned NumPy copy makes it safe to release browser backpressure
-			# immediately. Publication into seg_data remains delayed until the
-			# corresponding webcam frame reaches the fixed Cache TOP index.
-			_sendSegmentationAck(packet)
 			timers = op('timers')
 			if timers is not None:
 				_writePendingSegmentationMetadata(timers)
@@ -550,8 +496,7 @@ def onServerStart(webServerDAT):
 	return
 
 def onServerStop(webServerDAT):
-	global pendingSegmentation, segmentationQueue
+	global pendingSegmentation
 	pendingSegmentation = None
-	segmentationQueue.clear()
 	print("MP server stopped")
 	return

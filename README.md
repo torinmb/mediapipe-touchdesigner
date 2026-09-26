@@ -81,9 +81,33 @@ DeepLab V3.
 
 The `timers` CHOP includes `segFrame`, `segMediaTimeMs`, `segTimestampMs`,
 `segInferenceMs`, `segPipelineMs`, and receive-frame metadata. `segCacheOffset`
-is the negative frame offset to use for a webcam cache; it is calculated from
-the per-mask pipeline and packing latency using the Web Server DAT's
-`me.time.rate`.
+is the negative frame offset to use for a webcam cache. Its base value is
+calculated from that mask packet's end-to-end latency using the Web Server
+DAT's `me.time.rate`. It remains fractional for Cache TOP frame interpolation
+and includes a half-frame correction for the WebSocket callback's position
+within the TouchDesigner frame. It then becomes one frame more negative for
+every TouchDesigner frame in which that same mask remains active. Enable the
+Cache TOP's `Interpolate Frames` parameter, with `Step Size` set to 1, to use
+the fractional offset.
+
+The bottom-left pixel of the browser output carries the low 24 bits of
+`segFrame` as an opaque RGB frame marker. The byte order is little-endian:
+red contains bits 0-7, green contains bits 8-15, and blue contains bits 16-23.
+TouchDesigner exposes TOP color channels in the 0-1 range, so decode the marker
+after converting each channel to its nearest 8-bit integer:
+`R8 + G8 * 256 + B8 * 65536`. Crop the marker pixel out of the visible output
+after reading it. The visible webcam and marker are drawn into the same canvas
+update, while MediaPipe receives the corresponding clean canvas before the
+marker is added.
+
+`seg_offset` keeps a frame-marker history matching Cache TOP insertions. A new
+segmentation packet remains pending in CPU memory until its `segFrame` appears
+in that history; only then is its NumPy array copied into `seg_data` and its ACK
+returned to the browser. This prevents a mask from becoming active before its
+source webcam frame is available. `segPending`, `segPendingFrame`,
+`segPendingAgeMs`, `segSyncWaitMs`, and `segDroppedUnmatched` provide sync-gate
+diagnostics. Unmatched packets are dropped and acknowledged after 900 ms so a
+missing Web Render frame cannot stop segmentation permanently.
 
 ### Image classification tox
 Use this to identify what the image might contain

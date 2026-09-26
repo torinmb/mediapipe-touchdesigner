@@ -8,19 +8,6 @@ FRAME_MARKER_MASK = 0x00ffffff
 FRAME_MARKER_HALF_RANGE = 0x00800000
 MAX_CACHE_HISTORY = 4096
 
-# The Cache TOP contains the image carrying the current marker one slot behind
-# the marker CHOP because of TouchDesigner's TOP/CHOP cook order. The user
-# previously compensated for this with `segCacheOffset - 1`.
-CACHE_TOP_PHASE_OFFSET = -1
-
-# Smooth playout mode: keep the webcam moving at this constant Cache TOP index
-# and publish each segmentation mask when its source marker reaches that slot.
-# Use segFixedCacheOffset directly; do not subtract the phase offset again.
-FIXED_CACHE_OUTPUT_INDEX = -6
-FIXED_MARKER_HISTORY_OFFSET = (
-	FIXED_CACHE_OUTPUT_INDEX - CACHE_TOP_PHASE_OFFSET
-)
-
 # One marker is appended per absolute TouchDesigner frame in which this Script
 # CHOP cooks. With a Cache TOP using Active, Step Size 1, and Always Cook, these
 # entries have the same ordering as its cached images: the newest marker is
@@ -93,8 +80,6 @@ def onCook(scriptOp):
 		_writeChannel(scriptOp, 'segPendingFrame', 0)
 		_writeChannel(scriptOp, 'segPendingCacheOffset', 0)
 		_writeChannel(scriptOp, 'segPendingMatched', 0)
-		_writeChannel(scriptOp, 'segPendingFixedReady', 0)
-		_writeChannel(scriptOp, 'segFixedCacheOffset', FIXED_CACHE_OUTPUT_INDEX)
 		return
 
 	rgbChop = scriptOp.inputs[0]
@@ -121,10 +106,6 @@ def onCook(scriptOp):
 		_findCacheOffset(pendingFrame) if pendingAvailable else None
 	)
 	pendingMatched = pendingCacheOffset is not None
-	pendingFixedReady = (
-		pendingMatched
-		and pendingCacheOffset <= FIXED_MARKER_HISTORY_OFFSET
-	)
 
 	targetFrame = int(_channelValue(timers, 'segFrame', 0)) & FRAME_MARKER_MASK
 	cacheOffset = _findCacheOffset(targetFrame) if segReceived > 0 else None
@@ -145,6 +126,4 @@ def onCook(scriptOp):
 		pendingCacheOffset if pendingMatched else 0,
 	)
 	_writeChannel(scriptOp, 'segPendingMatched', int(pendingMatched))
-	_writeChannel(scriptOp, 'segPendingFixedReady', int(pendingFixedReady))
-	_writeChannel(scriptOp, 'segFixedCacheOffset', FIXED_CACHE_OUTPUT_INDEX)
 	return

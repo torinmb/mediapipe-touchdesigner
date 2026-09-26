@@ -49,7 +49,6 @@ def onCook(scriptOp):
 		'segPipelineMs',
 		'segCacheLatencyMs',
 		'segCacheOffset',
-		'segFixedCacheOffset',
 		'segReceiveFrame',
 		'segWidth',
 		'segHeight',
@@ -67,7 +66,6 @@ def onCook(scriptOp):
 		'segPendingFrame',
 		'segPendingSequence',
 		'segPendingAgeMs',
-		'segPendingQueueDepth',
 		'segDroppedUnmatched',
 	)
 	for channelName in segmentationChannels:
