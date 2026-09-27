@@ -23,7 +23,7 @@ self.addEventListener("message", async (event) => {
     const message = event.data;
     if (message.type === "init") {
         try {
-            models = await createModels(message.names, message.wasmPath, () => new OffscreenCanvas(1, 1));
+            models = await createModels(message.names, message.wasmPath, () => new OffscreenCanvas(1, 1), message.cpuNames);
             self.postMessage({ type: "ready" });
         } catch (error) {
             self.postMessage({ type: "error", message: String(error) });

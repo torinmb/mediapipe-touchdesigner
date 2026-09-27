@@ -6,6 +6,7 @@ Runs the app's eight default models on the same video frames with N workers
 has finished a frame. Close TouchDesigner first: it shares the GPU.
 
   harness/.venv/bin/python harness/experiments/run_parallel.py [--workers 0,1,2,4,8] [--rounds 2]
+  harness/.venv/bin/python harness/experiments/run_parallel.py --query 'workers=0' --query 'workers=0&cpu=image,embed'
 """
 
 import argparse
@@ -32,13 +33,14 @@ async def main(args):
 				'--ignore-gpu-blocklist',
 				'--enable-gpu',
 			])
+			configs = args.query or ['workers={}'.format(w) for w in args.workers]
 			for round_ in range(args.rounds):
-				for workers in args.workers:
+				for config in configs:
 					page = await browser.new_page()
 					errors = []
 					page.on('pageerror', lambda error: errors.append(str(error)))
-					url = '{}/harness/experiments/parallel.html?workers={}&seconds={}&models={}'.format(
-						base, workers, args.seconds, args.models)
+					url = '{}/harness/experiments/parallel.html?{}&seconds={}&models={}'.format(
+						base, config, args.seconds, args.models)
 					await page.goto(url)
 					try:
 						await page.wait_for_function('window.__result', timeout=180000)
@@ -46,18 +48,18 @@ async def main(args):
 					except Exception as error:
 						result = {'error': str(error), 'pageErrors': errors}
 					await page.close()
-					results.setdefault(workers, []).append(result)
-					print('round {} workers {}: {}'.format(round_ + 1, workers, result), flush=True)
+					results.setdefault(config, []).append(result)
+					print('round {} {}: {}'.format(round_ + 1, config, result), flush=True)
 			await browser.close()
 	finally:
 		vite.terminate()
 
 	print()
-	print('{:>8} {:>22} {:>22}'.format('workers', 'avg ms per frame', 'fps'))
-	for workers, runs in results.items():
+	print('{:<44} {:>22} {:>22}'.format('config', 'avg ms per frame', 'fps'))
+	for config, runs in results.items():
 		ok = [run for run in runs if 'avgMs' in run]
-		print('{:>8} {:>22} {:>22}'.format(
-			workers,
+		print('{:<44} {:>22} {:>22}'.format(
+			config[:44],
 			' / '.join('{:.1f}'.format(run['avgMs']) for run in ok),
 			' / '.join('{:.1f}'.format(run['fps']) for run in ok)))
 
@@ -68,4 +70,5 @@ if __name__ == '__main__':
 	parser.add_argument('--rounds', type=int, default=2)
 	parser.add_argument('--seconds', type=int, default=8)
 	parser.add_argument('--models', default='objects,gestures,hands,face,pose,image,embed,facedet')
+	parser.add_argument('--query', action='append', help='page query per config (repeatable); overrides --workers')
 	asyncio.run(main(parser.parse_args()))

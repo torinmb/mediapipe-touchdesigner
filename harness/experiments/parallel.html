@@ -9,16 +9,33 @@
   <pre id="log"></pre>
   <script type="module">
     // ?workers=N (0 = everything on this main thread) &seconds=S &warmup=W
+    // &cpu=a,b (models on the CPU delegate) &groups=a+b|c+d (explicit workers)
+    // &lib=1.0.1 (vendored MediaPipe build; main thread only) &shared=1 (one
+    // canvas, so all tasks share a single WebGL context; main thread only)
     import { createModels, runModels } from "./models.js";
 
     const params = new URLSearchParams(location.search);
     const workerCount = Number(params.get("workers") ?? 0);
     const seconds = Number(params.get("seconds") ?? 8);
     const warmup = Number(params.get("warmup") ?? 3);
-    const wasmPath = new URL("/mediapipe/wasm", location.href).href;
+    const libVersion = params.get("lib");
+    const lib = libVersion
+      ? await import(`./vendor/tasks-vision-${libVersion}/vision_bundle.mjs`)
+      : undefined;
+    const wasmPath = libVersion
+      ? new URL(`./vendor/tasks-vision-${libVersion}/wasm`, location.href).href
+      : new URL("/mediapipe/wasm", location.href).href;
+    const sharedCanvas = params.get("shared") === "1" ? new OffscreenCanvas(1, 1) : null;
+    const makeCanvas = () => sharedCanvas ?? new OffscreenCanvas(1, 1);
     // Per-model cost measured on the main thread, used to balance workers.
     const cost = { objects: 28, gestures: 21, hands: 18.5, face: 16, pose: 14, image: 13, embed: 12, facedet: 9.5 };
     const names = (params.get("models") ?? Object.keys(cost).join(",")).split(",");
+    const cpuNames = (params.get("cpu") ?? "").split(",").filter(Boolean);
+    const explicitGroups = params.get("groups")?.split("|").map((group) => group.split("+"));
+    const modelTimes = {};
+    const recordTimes = (times) => {
+      for (const [name, ms] of Object.entries(times)) (modelTimes[name] ??= []).push(ms);
+    };
     const log = (text) => (document.getElementById("log").textContent += text + "\n");
 
     function balance(count) {
@@ -37,27 +54,28 @@
 
     let process;
     let groups;
-    if (workerCount === 0) {
+    if (workerCount === 0 && !explicitGroups) {
       groups = [names];
-      const models = await createModels(names, wasmPath, () => new OffscreenCanvas(1, 1));
+      const models = await createModels(names, wasmPath, makeCanvas, cpuNames, lib);
       process = async (timestampMs) => {
         const image = await createImageBitmap(video);
-        runModels(models, image, timestampMs);
+        const times = runModels(models, image, timestampMs);
+        if (measuring) recordTimes(times);
         image.close();
       };
     } else {
-      groups = balance(workerCount);
+      groups = explicitGroups ?? balance(workerCount);
       const workers = await Promise.all(groups.map((group) => new Promise((resolve, reject) => {
         const worker = new Worker(new URL("./modelWorker.js", import.meta.url), { type: "module" });
         worker.onmessage = (event) => event.data.type === "ready" ? resolve(worker) : reject(new Error(event.data.message));
         worker.onerror = reject;
-        worker.postMessage({ type: "init", names: group, wasmPath });
+        worker.postMessage({ type: "init", names: group, wasmPath, cpuNames });
       })));
       process = async (timestampMs) => {
         // Every worker gets its own snapshot of the same frame.
         const images = await Promise.all(workers.map(() => createImageBitmap(video)));
         await Promise.all(workers.map((worker, index) => new Promise((resolve) => {
-          worker.onmessage = (event) => resolve(event.data.times);
+          worker.onmessage = (event) => { if (measuring) recordTimes(event.data.times); resolve(); };
           worker.postMessage({ type: "frame", image: images[index], timestampMs }, [images[index]]);
         })));
       };
@@ -66,10 +84,12 @@
 
     // Process frames back to back, as fast as all groups can finish one.
     const frameTimes = [];
+    let measuring = false;
     const startedAt = performance.now();
     let timestampMs = 0;
     while (performance.now() - startedAt < (warmup + seconds) * 1000) {
       const start = performance.now();
+      measuring = performance.now() - startedAt > warmup * 1000;
       timestampMs = Math.max(timestampMs + 1, performance.now());
       await process(timestampMs);
       if (performance.now() - startedAt > warmup * 1000) {
@@ -82,6 +102,10 @@
     window.__result = {
       workers: workerCount,
       groups,
+      cpu: cpuNames,
+      lib: libVersion ?? "0.10.18",
+      shared: Boolean(sharedCanvas),
+      perModelMs: Object.fromEntries(Object.entries(modelTimes).map(([name, values]) => [name, values.reduce((a, b) => a + b, 0) / values.length])),
       frames: frameTimes.length,
       avgMs: avg,
       p95Ms: frameTimes[Math.floor(frameTimes.length * 0.95)],

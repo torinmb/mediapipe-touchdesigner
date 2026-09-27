@@ -2,3 +2,4 @@
 out/
 media/
 __pycache__/
+experiments/vendor/
