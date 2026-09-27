@@ -11,25 +11,6 @@ import { SegmentationProcessor } from "./segmentationPipeline.js";
 
 const BUFFERED_REPORT_INTERVAL_MS = 50;
 
-// MediaPipe loads its WASM glue with importScripts(), which module workers do
-// not support. Load it with a synchronous request instead and evaluate it at
-// global scope so it defines the same globals (ModuleFactory).
-try {
-    importScripts();
-} catch (error) {
-    self.importScripts = (...urls) => {
-        for (const url of urls) {
-            const request = new XMLHttpRequest();
-            request.open("GET", String(url), false);
-            request.send();
-            if (request.status < 200 || request.status >= 300) {
-                throw new Error(`Failed to load ${url}: ${request.status}`);
-            }
-            (0, eval)(`${request.responseText}\n//# sourceURL=${url}`);
-        }
-    };
-}
-
 let ws;
 let processor;
 let bufferedReportTimer;
@@ -87,6 +68,8 @@ async function init(message) {
         const candidate = new SegmentationProcessor({
             ...message.processorOptions,
             send,
+            // Module workers load MediaPipe's ES-module runtime natively.
+            wasmModule: true,
         });
         const labels = await candidate.init();
         processor = candidate;

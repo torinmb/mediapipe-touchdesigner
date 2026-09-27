@@ -1,7 +1,11 @@
 import { FilesetResolver, FaceDetector } from "@mediapipe/tasks-vision";
 
 let faceDetectorModelTypes = {
+	// Selfie distance (128x128 input). The default.
 	'shortrange': './mediapipe/models/face_detection/blaze_face_short_range.tflite',
+	// Smaller, farther faces (192x192 input, 2304 anchors); supported since
+	// MediaPipe 0.10.33. Select with Fdmodeltype=fullrange.
+	'fullrange': './mediapipe/models/face_detection/blaze_face_full_range.tflite',
 }
 
 export let faceDetectorState = {
@@ -29,7 +33,7 @@ export const createFaceDetector = async (wasm_path, facesDiv) => {
 			delegate: "GPU",
 		},
 		runningMode: "VIDEO",
-		minSuppressionThreashold: parseFloat(faceDetectorState.minSuppressionThreashold),
+		minSuppressionThreshold: parseFloat(faceDetectorState.minSuppressionThreshold),
 		minDetectionConfidence: parseFloat(faceDetectorState.minDetectionConfidence),
 	});
 	return faceDetector;

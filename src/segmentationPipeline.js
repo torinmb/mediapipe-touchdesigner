@@ -308,6 +308,9 @@ export class SegmentationProcessor {
         this.maxInFlight = options.maxInFlight;
         this.ackTimeoutMs = options.ackTimeoutMs;
         this.send = options.send;
+        // Load MediaPipe's ES-module WASM runtime (needed in module workers,
+        // where the classic runtime cannot be loaded).
+        this.wasmModule = options.wasmModule === true;
         this.compressionEnabled =
             options.compression === true &&
             typeof CompressionStream === "function";
@@ -355,7 +358,10 @@ export class SegmentationProcessor {
     }
 
     async init() {
-        const vision = await FilesetResolver.forVisionTasks(this.wasmPath);
+        const vision = await FilesetResolver.forVisionTasks(
+            this.wasmPath,
+            this.wasmModule,
+        );
         // GPU tasks require a canvas for their internal WebGL context. It is
         // never displayed.
         this.processingCanvas = new OffscreenCanvas(1, 1);

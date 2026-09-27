@@ -72,6 +72,8 @@ export const configMap = {
     'Fdetectconf': value => faceLandmarkState.minDetectionConfidence = value,
     'Ftrackconf': value => faceLandmarkState.minTrackingConfidence = value,
 
+    // TouchDesigner sends Fdmodeltype; Fdtype kept for older URLs.
+    'Fdmodeltype': value => modelCheck(faceDetectorState, value),
     'Fdtype': value => modelCheck(faceDetectorState, value),
     'Fdminconf': value => faceDetectorState.minDetectionConfidence = value,
     'Fdminsuppression': value => faceDetectorState.minSuppressionThreshold = value,
