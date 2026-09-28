@@ -40,6 +40,10 @@ def refresh():
 	arrays = _state['arrays']
 	if arrays is None or arrays.maxHands != maxHands or _state['parser'] is not parser:
 		arrays = _layout(parser, maxHands)
+	# Lock mode: Left hand always in h1, Right hand in h2 (see HandLocker).
+	lock = parent().par.Lockhandedness
+	settle = parent().par.Settleframes
+	arrays.setLock(lock is not None and bool(lock.eval()), int(settle.eval()) if settle is not None else 4)
 	arrays.update(op('in1').text)
 	op('joints_data').copyNumpyArray(arrays.joints)
 	op('gestures_data').copyNumpyArray(arrays.gestures)
@@ -83,7 +87,7 @@ def _writeHandSops(parser, arrays):
 			continue
 		if not sop.lock:
 			sop.lock = True
-		if hand >= arrays.numHands:
+		if not arrays.present[hand]:
 			if sop.numPoints:
 				sop.clear()
 			continue
