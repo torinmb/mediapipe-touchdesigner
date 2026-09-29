@@ -44,6 +44,14 @@ def onReceiveText(dat, rowIndex, message):
 				me.parent().addScriptError('Webcam failed to start. Is it being used somewhere else? Input must also be capable of 720p, 8 bit. Component reloading')
 		if 'success' in data:
 			me.parent().clearScriptErrors(recurse=False, error='Webcam failed*')
+			if 'frameRate' in data:
+				requested = data.get('requestedFrameRate', 0)
+				actual = data['frameRate']
+				print('Webcam started at {}x{} {:g} FPS (requested {:g} FPS)'.format(
+					data.get('width', 0), data.get('height', 0), actual, requested))
+				# Same 2% slack as the browser: 59.94 counts as 60.
+				if actual and requested and actual < requested * 0.98:
+					print('Webcam cannot run at {:g} FPS; using {:g} FPS instead'.format(requested, actual))
 
 	except Exception as e:
 		return

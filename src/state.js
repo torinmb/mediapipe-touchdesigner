@@ -3,6 +3,8 @@ import { DrawingUtils } from "@mediapipe/tasks-vision";
 const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 
+const FRAME_RATE_TOLERANCE = 0.98;
+
 const offscreenCanvas = document.createElement("canvas");
 const offscreenCtx = offscreenCanvas.getContext("2d");
 
@@ -132,32 +134,37 @@ async function startNewWebcam() {
 	try {
 		let stream;
 		try {
+			// An `ideal` frame rate never fails and is traded off against the
+			// ideal size, so a camera that only reaches the target at a lower
+			// resolution would silently stay at 30. Require it first, with 2%
+			// slack so NTSC-timed devices (59.94, 29.97, 119.88) still qualify.
+			constraints.video.frameRate.min = requestedFrameRate * FRAME_RATE_TOLERANCE;
 			stream = await navigator.mediaDevices.getUserMedia(constraints);
 		} catch (preferredFrameRateError) {
-			if (requestedFrameRate <= 30) {
-				throw preferredFrameRateError;
-			}
-
+			// Fall back to whatever the camera does best at the ideal size.
 			console.warn(
-				`Webcam failed at the preferred ${requestedFrameRate} FPS; retrying at 30 FPS`,
+				`Webcam cannot run at ${requestedFrameRate} FPS; using its closest supported rate`,
 				preferredFrameRateError,
 			);
-			constraints.video.frameRate.ideal = 30;
+			delete constraints.video.frameRate.min;
 			stream = await navigator.mediaDevices.getUserMedia(constraints);
 		}
 		webcamState.videoElement.srcObject = stream;
-        stream.getTracks().forEach(function (track) {
-            let trackSettings = track.getSettings();
-            webcamState.frameRate = trackSettings.frameRate;
-            console.log(
-                "Webcam started with following settings: ",
-                trackSettings
-            );
-        });
+		const trackSettings = stream.getVideoTracks()[0]?.getSettings() ?? {};
+		webcamState.frameRate = trackSettings.frameRate;
+		console.log("Webcam started with following settings: ", trackSettings);
         webcamState.webcamRunning = true;
         // webcamState.webcamLabel = webcam;
         webcamState.videoElement.height = webcamState.height;
-        socketState.ws.send(JSON.stringify({ success: "webcamStarted" }));
+		// TouchDesigner logs this so users can see whether the requested rate
+		// took; timers also carry sourceFrameRate every frame.
+		socketState.ws.send(JSON.stringify({
+			success: "webcamStarted",
+			requestedFrameRate,
+			frameRate: trackSettings.frameRate ?? 0,
+			width: trackSettings.width ?? 0,
+			height: trackSettings.height ?? 0,
+		}));
     } catch (err) {
         console.log("Error starting webcam: " + err.name + ": " + err.message);
         socketState.ws.send(JSON.stringify({ error: "webcamStartFail" }));
