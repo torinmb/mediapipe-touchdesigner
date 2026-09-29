@@ -296,6 +296,9 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
     (hasNewFrame || segmentationStats.inFlight > 0);
   if (sendTimers && safeSocketSend(socketState.ws, JSON.stringify({
     timers: {
+      // Must stay the first key: TouchDesigner echoes it back as timersSeq
+      // without parsing the whole message.
+      seq: controlTransport.timersSent + 1,
       detectTime: timeToDetect,
       drawTime: timeToDraw,
       sourceFrameRate: webcamState.frameRate,
@@ -393,7 +396,11 @@ function setupWebSocket(socketURL, socketState) {
       return;
     }
     if (Object.prototype.hasOwnProperty.call(data, 'timersAck')) {
-      acknowledgeTimers(Number(data.timersAck));
+      // Prefer our own echoed sequence number. TouchDesigner's count resets
+      // when its callbacks recompile and falls behind if a message never
+      // reaches the callback; either would stall results. Older callbacks
+      // only send the count.
+      acknowledgeTimers(Number(data.timersSeq ?? data.timersAck));
       return;
     }
     for (let [key, value] of Object.entries(data)) {

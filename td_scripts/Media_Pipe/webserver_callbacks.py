@@ -20,9 +20,11 @@ import zlib
 from pathlib import Path
 
 import json
+import re
 import numpy as np
 clients = {}
 timersReceived = {}
+TIMERS_SEQ = re.compile(r'\{"timers":\{"seq":(\d+)')
 
 SEGMENTATION_MAGIC = b'MPSG'
 SEGMENTATION_HEADER_BYTES = 72
@@ -112,20 +114,32 @@ def _isSegmentationClient(client):
 	uri = str(clients.get(client, ''))
 	return uri.split('?', 1)[0].rstrip('/') == '/segmentation'
 
-def _acknowledgeTimers(webServerDAT, client):
-	# The browser sends one timers message per processed frame. Echoing the
-	# running count lets it see how far behind TouchDesigner is and drop stale
+def _acknowledgeTimers(webServerDAT, client, data):
+	# The browser sends one timers message per processed frame. Echoing it back
+	# lets the browser see how far behind TouchDesigner is and drop stale
 	# results instead of queueing them (latest-wins flow control).
 	count = timersReceived.get(client, 0) + 1
 	timersReceived[client] = count
-	webServerDAT.webSocketSendText(client, '{"timersAck":%d}' % count)
+	# Newer pages number their timers messages. Echo that number: unlike the
+	# local count it stays correct if this module is recompiled (resetting
+	# timersReceived) or a message never reaches this callback. A drifted count
+	# makes the browser believe frames are permanently in flight and throttles
+	# results to about one frame per second.
+	match = TIMERS_SEQ.match(data)
+	if match is None:
+		webServerDAT.webSocketSendText(client, '{"timersAck":%d}' % count)
+	else:
+		webServerDAT.webSocketSendText(
+			client,
+			'{"timersAck":%d,"timersSeq":%s}' % (count, match.group(1)),
+		)
 	return
 
 def onWebSocketReceiveText(webServerDAT, client, data):
 	# Acknowledge before the play check so a paused timeline cannot leave the
 	# browser's flow control waiting on acknowledgements that never arrive.
 	if data.startswith('{"timers"'):
-		_acknowledgeTimers(webServerDAT, client)
+		_acknowledgeTimers(webServerDAT, client, data)
 	if not me.time.play:
 		return
 	# If we receive results data, dump it directly into the relevant DAT
