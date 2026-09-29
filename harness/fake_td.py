@@ -140,8 +140,25 @@ class FakeTD:
 		saveSegDir=None,
 		saveSegEvery=10,
 		frameSync=False,
+		hitchEverySec=0,
+		hitchMs=0,
+		reloadCallbacksAtSec=0,
+		dropTimersEvery=0,
 	):
 		self.port = port
+		# Emulated TD main-thread hitch (a heavy cook, a save, GC): every
+		# hitchEverySec one frame blocks for hitchMs before draining messages.
+		self.hitchEverySec = hitchEverySec
+		self.hitchMs = hitchMs
+		self._nextHitch = time.perf_counter() + hitchEverySec if hitchEverySec else None
+		# Emulate TD recompiling webserver_callbacks.py mid-run (DAT edited or its
+		# synced file touched), which resets the module's globals.
+		self._reloadAt = time.perf_counter() + reloadCallbacksAtSec if reloadCallbacksAtSec else None
+		# Emulate the Web Server DAT never invoking the callback for every Nth
+		# timers message.
+		self.dropTimersEvery = dropTimersEvery
+		self._timersSeen = 0
+		self._scriptsDir = Path(scriptsDir)
 		self.fps = fps
 		self.maxMsgsPerFrame = maxMsgsPerFrame
 		self.maxBytesPerFrame = maxBytesPerFrame
@@ -367,6 +384,14 @@ class FakeTD:
 			self.env.absTime.seconds = frameIndex * period
 
 			workStart = time.perf_counter()
+			if self._reloadAt is not None and workStart >= self._reloadAt:
+				self._reloadAt = None
+				self.server = self.env.loadCallbacks(self._scriptsDir / 'webserver_callbacks.py')
+				self.log('[harness] reloaded webserver_callbacks.py (module globals reset)')
+				print('[harness] reloaded webserver_callbacks.py (module globals reset)', flush=True)
+			if self._nextHitch is not None and workStart >= self._nextHitch:
+				self._nextHitch = workStart + self.hitchEverySec
+				time.sleep(self.hitchMs / 1000.0)
 			self._cookSegOffset()
 			messages, byteCount = self._cookFrame()
 			self._cookDownstream()
@@ -417,6 +442,10 @@ class FakeTD:
 			_, clientId, data, recvMs = event
 			dispatchMs = time.time() * 1000.0
 			label = classifyText(data) if kind == 'text' else classifyBinary(data)
+			if label == 'timers' and self.dropTimersEvery:
+				self._timersSeen += 1
+				if self._timersSeen % self.dropTimersEvery == 0:
+					return
 			start = time.perf_counter()
 			if kind == 'text':
 				self.server.onWebSocketReceiveText(self.webServerDAT, clientId, data)

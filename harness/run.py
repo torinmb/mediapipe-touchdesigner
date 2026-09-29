@@ -15,7 +15,9 @@ Examples:
 
 import argparse
 import asyncio
+import hashlib
 import json
+import shutil
 import socket
 import subprocess
 import sys
@@ -30,7 +32,7 @@ sys.path.insert(0, str(HARNESS))
 from fake_td import REPO, FakeTD, summarize  # noqa: E402
 
 OUT = HARNESS / 'out'
-MEDIA = HARNESS / 'media'
+VIDEO_CACHE = OUT / 'videos'
 
 # feature -> (URL/WS parameter, message kind that proves it is producing output)
 FEATURES = {
@@ -136,6 +138,101 @@ async def sampleFrameMarker(page, td, height, stop):
 		await session.send('Page.stopScreencast')
 	except Exception:
 		pass
+
+
+PAGE_STATS = """(starts) => ({
+  heapMB: performance.memory ? performance.memory.usedJSHeapSize / 1048576 : 0,
+  domNodes: document.getElementsByTagName('*').length,
+  sockets: (window.__harnessSockets || []).map((s, i) => ({
+    url: s.url, total: s.sends.length, sends: s.sends.slice(starts[i] || 0),
+  })),
+})"""
+
+
+async def sampleTimeline(page, td, seconds, interval):
+	"""Soak mode: every `interval` seconds record what changed in that window
+	(per-kind rate, network-recv -> callback queue, browser send -> callback
+	latency, TD backlog, page heap / DOM size, browser flow control)."""
+	timeline = []
+	kindOffsets = {}
+	timerOffsets = {}
+	sendStarts = []
+	frameOffset = 0
+	started = time.time()
+	windowStart = started
+	while time.time() - started < seconds:
+		await asyncio.sleep(min(interval, seconds - (time.time() - started)))
+		now = time.time()
+		metrics = td.metrics
+		window = {'t': round(now - started, 1), 'kinds': {}}
+		span = max(1e-6, now - windowStart)
+		for label, stats in list(metrics.kinds.items()):
+			start = kindOffsets.get(label, 0)
+			queue = stats.queueMs[start:]
+			kindOffsets[label] = start + len(queue)
+			window['kinds'][label] = {
+				'perSec': len(queue) / span,
+				'queueMs': summarize(queue),
+				'callbackMs': summarize(stats.callbackMs[start:]),
+			}
+		timers = {}
+		for key in ('detectTime', 'drawTime', 'control.framesInFlight',
+				'control.droppedResultFrames', 'control.ackSupported'):
+			values = metrics.browserTimers.get(key, [])
+			start = timerOffsets.get(key, 0)
+			timerOffsets[key] = len(values)
+			timers[key] = summarize([float(v) for v in values[start:]])
+		window['browserTimers'] = timers
+		work = metrics.frameWorkMs[frameOffset:]
+		frameOffset += len(work)
+		window['tdFrames'] = {'perSec': len(work) / span, 'workMs': summarize(work)}
+		window['tdBacklog'] = len(td._events)
+
+		page_ = await page.evaluate(PAGE_STATS, sendStarts)
+		window['heapMB'] = page_['heapMB']
+		window['domNodes'] = page_['domNodes']
+		# Browser send -> TD callback for sends made in this window, joined
+		# per socket by order (nth send == nth server receive).
+		e2e, buffered = [], []
+		connections = {}
+		for connection in td.browserConnections():
+			connections.setdefault(connection.path, []).append(connection)
+		for index, sock in enumerate(page_['sockets']):
+			while len(sendStarts) <= index:
+				sendStarts.append(0)
+			first = sendStarts[index]
+			sendStarts[index] = sock['total']
+			path = urllib.parse.urlparse(sock['url']).path or '/'
+			candidates = connections.get(path) or []
+			if not candidates:
+				continue
+			received = candidates[-1].received
+			for offset, send in enumerate(sock['sends']):
+				buffered.append(send[2] / 1024.0)
+				if first + offset < len(received):
+					e2e.append(received[first + offset][3] - send[0])
+		window['sendToCallbackMs'] = summarize(e2e)
+		window['browserBufferedKB'] = summarize(buffered)
+		window['browserSendsPerSec'] = len(buffered) / span
+		timeline.append(window)
+		windowStart = now
+
+		rates = ' '.join(
+			'{}={:.0f}'.format(label.replace('Results', ''), kind['perSec'])
+			for label, kind in sorted(window['kinds'].items()) if kind['perSec'])
+		print('t={:>6.0f}s  {} | e2e p50 {:.0f} p95 {:.0f} ms | q p95 {:.0f} ms | backlog {} | '
+			'buf max {:.0f}KB | inflight {:.1f} drop {:.0f} ack {:.0f} | detect {:.0f} draw {:.0f} ms | '
+			'heap {:.0f}MB dom {}'.format(
+				window['t'], rates,
+				window['sendToCallbackMs'].get('p50', 0), window['sendToCallbackMs'].get('p95', 0),
+				max((k['queueMs'].get('p95', 0) for k in window['kinds'].values()), default=0),
+				window['tdBacklog'], window['browserBufferedKB'].get('max', 0),
+				timers['control.framesInFlight'].get('avg', 0),
+				timers['control.droppedResultFrames'].get('max', 0),
+				timers['control.ackSupported'].get('avg', 0),
+				timers['detectTime'].get('avg', 0), timers['drawTime'].get('avg', 0),
+				window['heapMB'], window['domNodes']), flush=True)
+	return timeline
 
 
 # ----------------------------------------------------------------- reporting
@@ -257,12 +354,37 @@ def printReport(report):
 # ----------------------------------------------------------------- commands
 
 def resolveVideo(name):
-	path = Path(name)
-	if not path.exists():
-		path = MEDIA / (name if name.endswith('.mjpeg') else name + '.mjpeg')
-	if not path.exists():
-		sys.exit('video not found: {} (see harness/README.md to make one)'.format(name))
-	return path.resolve()
+	"""Return a file Chrome's fake webcam can play (MJPEG or Y4M). Any other
+	video is converted once with ffmpeg to 1280x720 30fps MJPEG and cached in
+	harness/out/videos/, keyed on the source's path, size and mtime."""
+	path = Path(name).expanduser()
+	if not path.is_file():
+		sys.exit('video not found: {}'.format(name))
+	path = path.resolve()
+	if path.suffix.lower() in ('.mjpeg', '.mjpg', '.y4m'):
+		return path
+
+	stat = path.stat()
+	key = hashlib.sha1('{}|{}|{}'.format(path, stat.st_size, stat.st_mtime_ns).encode()).hexdigest()[:10]
+	cached = VIDEO_CACHE / '{}-{}.mjpeg'.format(path.stem, key)
+	if cached.exists():
+		return cached
+	if shutil.which('ffmpeg') is None:
+		sys.exit('ffmpeg is needed to convert {} for Chrome (or pass an .mjpeg/.y4m)'.format(path.name))
+	VIDEO_CACHE.mkdir(parents=True, exist_ok=True)
+	partial = cached.with_suffix('.partial')
+	print('converting {} for Chrome\'s fake webcam ...'.format(path.name), flush=True)
+	result = subprocess.run([
+		'ffmpeg', '-y', '-loglevel', 'error', '-i', str(path), '-an',
+		'-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,'
+			'pad=1280:720:(ow-iw)/2:(oh-ih)/2,format=yuvj420p',
+		'-r', '30', '-q:v', '4', '-f', 'mjpeg', str(partial),
+	])
+	if result.returncode != 0:
+		partial.unlink(missing_ok=True)
+		sys.exit('ffmpeg could not convert {}'.format(path))
+	partial.rename(cached)
+	return cached
 
 
 def buildQuery(features, extraParams, webcamLabel):
@@ -298,6 +420,10 @@ async def runCommand(args):
 		scriptsDir=args.td_scripts,
 		saveSegDir=args.save_seg,
 		frameSync=not args.no_frame_sync,
+		hitchEverySec=args.hitch_every,
+		hitchMs=args.hitch_ms,
+		reloadCallbacksAtSec=args.reload_callbacks_at,
+		dropTimersEvery=args.drop_timers_every,
 	).start()
 	print('fake TD listening on http://localhost:{}'.format(td.port))
 	vite = None
@@ -375,7 +501,11 @@ async def runCommand(args):
 		await asyncio.sleep(args.warmup)
 		td.reset()
 		print('measuring for {}s ...'.format(args.seconds), flush=True)
-		await asyncio.sleep(args.seconds)
+		timeline = []
+		if args.interval:
+			timeline = await sampleTimeline(page, td, args.seconds, args.interval)
+		else:
+			await asyncio.sleep(args.seconds)
 		snapshot = td.snapshot()
 		sockets = await page.evaluate('window.__harnessSockets')
 		stopSampling.set()
@@ -390,12 +520,13 @@ async def runCommand(args):
 		'label': label,
 		'features': features,
 		'params': extraParams,
-		'video': video.name,
+		'video': Path(args.video).name,
 		'source': args.source,
 		'gpu': probe['gpu'],
 		'readySec': readySec,
 		'td': snapshot,
 		'latency': joinLatency(td, sockets),
+		'timeline': timeline,
 		# MediaPipe logs its TFLite delegate banner at error level; ignore it.
 		'consoleErrors': [
 			line for line in consoleLines
@@ -564,6 +695,13 @@ def main():
 			help='emulate a TD ingestion limit (0 = unlimited)')
 		p.add_argument('--max-kb-per-frame', type=int, default=0,
 			help='emulate a TD ingestion byte limit per frame (0 = unlimited)')
+		p.add_argument('--hitch-every', type=float, default=0,
+			help='emulate a TD main-thread hitch every N seconds (0 = off)')
+		p.add_argument('--hitch-ms', type=float, default=0, help='length of each emulated hitch')
+		p.add_argument('--reload-callbacks-at', type=float, default=0,
+			help='re-exec webserver_callbacks.py N seconds after start, like TD recompiling the DAT')
+		p.add_argument('--drop-timers-every', type=int, default=0,
+			help='skip the callback for every Nth timers message (0 = off)')
 		p.add_argument('--record', help='write every DAT/TOP output to this JSONL file')
 		p.add_argument('--build', action='store_true', help='run vite build into _mpdist first (only matters for --source dist)')
 		p.add_argument('--verbose', action='store_true', help='echo TD textport output')
@@ -575,7 +713,8 @@ def main():
 	run.add_argument('--features', default='face,seg', help=','.join(FEATURES))
 	run.add_argument('--source', choices=('dev', 'dist'), default='dev',
 		help='dev: page from the Vite dev server (src/); dist: _mpdist via onHTTPRequest')
-	run.add_argument('--video', default='vidtest', help='name in harness/media or path to .mjpeg/.y4m')
+	run.add_argument('--video', required=True,
+		help='clip to use as the webcam (.mov/.mp4/... converted with ffmpeg and cached, or .mjpeg/.y4m as-is)')
 	run.add_argument('--seconds', type=float, default=10)
 	run.add_argument('--warmup', type=float, default=3)
 	run.add_argument('--ready-timeout', type=float, default=90)
@@ -589,6 +728,8 @@ def main():
 		help='skip the Web Render marker emulation; masks commit on arrival')
 	run.add_argument('--save-seg', help='save every 10th committed seg_data array (.npy) to this directory')
 	run.add_argument('--json', action='store_true', help='print the full JSON report')
+	run.add_argument('--interval', type=float, default=0,
+		help='soak mode: print and record a per-window timeline every N seconds')
 
 	serve = sub.add_parser('serve', help='fake TD server only; bring your own browser')
 	tdOptions(serve)

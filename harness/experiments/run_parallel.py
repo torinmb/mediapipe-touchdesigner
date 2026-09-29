@@ -5,8 +5,8 @@ Runs the app's eight default models on the same video frames with N workers
 (0 = all on the page's main thread) and reports the time until every model
 has finished a frame. Close TouchDesigner first: it shares the GPU.
 
-  harness/.venv/bin/python harness/experiments/run_parallel.py [--workers 0,1,2,4,8] [--rounds 2]
-  harness/.venv/bin/python harness/experiments/run_parallel.py --query 'workers=0' --query 'workers=0&cpu=image,embed'
+  harness/.venv/bin/python harness/experiments/run_parallel.py --video clip.mov [--workers 0,1,2,4,8] [--rounds 2]
+  harness/.venv/bin/python harness/experiments/run_parallel.py --video clip.mov --query 'workers=0' --query 'workers=0&cpu=image,embed'
 """
 
 import argparse
@@ -15,14 +15,14 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from run import MEDIA, startViteDev  # noqa: E402
+from run import resolveVideo, startViteDev  # noqa: E402
 
 
 async def main(args):
 	from playwright.async_api import async_playwright
 
+	video = resolveVideo(args.video)
 	vite, base = startViteDev()
-	video = (MEDIA / 'vidtest.mjpeg').resolve()
 	results = {}
 	try:
 		async with async_playwright() as playwright:
@@ -66,6 +66,7 @@ async def main(args):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
+	parser.add_argument('--video', required=True, help='clip to use as the webcam (any format ffmpeg reads)')
 	parser.add_argument('--workers', default='0,1,2,4,8', type=lambda s: [int(x) for x in s.split(',')])
 	parser.add_argument('--rounds', type=int, default=2)
 	parser.add_argument('--seconds', type=int, default=8)

@@ -4,7 +4,7 @@ Runs the whole pipeline (web app → WebSocket → TD callbacks → DAT/TOP outp
 without TouchDesigner, so you can iterate on data delivery quickly.
 
 ```
-headless Chrome ──(fake webcam: harness/media/*.mjpeg)──> web app from the Vite dev server (src/)
+headless Chrome ──(fake webcam: --video clip)──> web app from the Vite dev server (src/)
       │ HTTP + ws://localhost:PORT/  and  /segmentation
       ▼
 fake_td.py   network thread (aiohttp)  ──queue──>  "TD main thread" @ 60fps
@@ -22,10 +22,15 @@ how TD delivers Web Server DAT callbacks during cook.
 
 ```bash
 python3 -m venv harness/.venv
-harness/.venv/bin/pip install aiohttp numpy playwright
-# fake webcam clip (Chrome wants MJPEG or Y4M)
-ffmpeg -i Vidtest.mov -an -vf "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,format=yuvj420p" -r 30 -q:v 4 -f mjpeg harness/media/vidtest.mjpeg
+harness/.venv/bin/pip install aiohttp numpy pillow playwright
+brew install ffmpeg   # converts --video clips for Chrome's fake webcam
 ```
+
+No test video ships with the repo. Pass any clip with `--video` (a person in
+frame gives the models something to find). Chrome's fake webcam only plays MJPEG
+or Y4M, so other formats (.mov, .mp4, ...) are converted once with ffmpeg to
+1280x720 30fps and cached in `harness/out/videos/`. Later runs reuse the cached
+copy until the source file changes. `.mjpeg`/`.y4m` files are used as they are.
 
 Playwright uses your installed Google Chrome (`channel='chrome'`), so no browser
 download is needed. On Apple Silicon, headless Chrome gets the real Metal GPU.
@@ -35,27 +40,37 @@ download is needed. On Apple Silicon, headless Chrome gets the real Metal GPU.
 ```bash
 # automated run: page served live from src/ by the Vite dev server (no build),
 # socket pointed at the fake TD via ?Wsport=, same as the dev TD setup
-harness/.venv/bin/python harness/run.py run --features face,seg --seconds 10
+harness/.venv/bin/python harness/run.py run --video ~/clips/person.mov --features face,seg --seconds 10
 
 # other models / params
-harness/.venv/bin/python harness/run.py run --features face,hands,pose,seg --param Smodeltype=selfieSquare
+harness/.venv/bin/python harness/run.py run --video ~/clips/person.mov --features face,hands,pose,seg --param Smodeltype=selfieSquare
 
 # emulate TD choking on ingestion
-harness/.venv/bin/python harness/run.py run --features face,seg --max-msgs-per-frame 1
-harness/.venv/bin/python harness/run.py run --features face,seg --max-kb-per-frame 256
+harness/.venv/bin/python harness/run.py run --video ~/clips/person.mov --features face,seg --max-msgs-per-frame 1
+harness/.venv/bin/python harness/run.py run --video ~/clips/person.mov --features face,seg --max-kb-per-frame 256
 
-# prove output is unchanged after a transport change
-harness/.venv/bin/python harness/run.py run --features face,seg --record harness/out/before.jsonl
+# soak: print a timeline row every 15s (rate per model, latency, TD backlog,
+# page heap, flow control in-flight/dropped) and save it in the report
+harness/.venv/bin/python harness/run.py run --video ~/clips/person.mov --features face,facedet,hands,pose,objects,image,embed --headed --seconds 300 --interval 15
+
+# TD failure modes: main-thread hitches, callbacks recompiled mid-run (module
+# globals reset), the Web Server DAT skipping a timers callback
+harness/.venv/bin/python harness/run.py run --video ~/clips/person.mov --features face --interval 5 --hitch-every 15 --hitch-ms 1500
+harness/.venv/bin/python harness/run.py run --video ~/clips/person.mov --features face --interval 5 --reload-callbacks-at 20
+harness/.venv/bin/python harness/run.py run --video ~/clips/person.mov --features face --interval 10 --drop-timers-every 250
+
+# prove output is unchanged after a transport change (use the same clip both times)
+harness/.venv/bin/python harness/run.py run --video ~/clips/person.mov --features face,seg --record harness/out/before.jsonl
 #   ...change the encoding in src/ + decoding in webserver_callbacks.py...
-harness/.venv/bin/python harness/run.py run --features face,seg --record harness/out/after.jsonl
+harness/.venv/bin/python harness/run.py run --video ~/clips/person.mov --features face,seg --record harness/out/after.jsonl
 harness/.venv/bin/python harness/run.py compare harness/out/before.jsonl harness/out/after.jsonl
 
 # version skew: new web bundle against callbacks from an older release
 git show v0.5.2:td_scripts/Media_Pipe/webserver_callbacks.py > /tmp/old/webserver_callbacks.py  # etc.
-harness/.venv/bin/python harness/run.py run --features face,seg --td-scripts /tmp/old
+harness/.venv/bin/python harness/run.py run --video ~/clips/person.mov --features face,seg --td-scripts /tmp/old
 
 # save real masks, then prove raw + zlib packets land bit-identical in seg_data
-harness/.venv/bin/python harness/run.py run --features seg --save-seg harness/out/masks
+harness/.venv/bin/python harness/run.py run --video ~/clips/person.mov --features seg --save-seg harness/out/masks
 harness/.venv/bin/python harness/test_seg_packets.py harness/out/masks
 
 # server only: open the printed URL in a real browser with your real webcam
@@ -83,7 +98,7 @@ types, list lengths) in both recordings, that `seg_data` shape/dtype match,
 and that the per-value means over the run agree within `--tolerance`. Values
 with a standard deviation over 1, such as the transformation matrix in cm, are
 compared relative to that spread. Two
-unchanged runs of Vidtest differ by about 0.001. Consumers `json.loads` the
+unchanged runs of the same clip differ by about 0.001. Consumers `json.loads` the
 DAT text, so text formatting doesn't need to match byte for byte.
 
 ## Frame sync (Web Render emulation)
