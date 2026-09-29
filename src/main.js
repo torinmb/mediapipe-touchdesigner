@@ -253,7 +253,7 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
           sendLandmarkerResults(landmarker, video);
         }
         else if (landmarker.resultsName === 'imageEmbedderResults') {
-          landmarker.results = await marker.embedForVideo(video, startTimeMs);
+          landmarker.results = await marker.embedForVideo(flippedVideo, startTimeMs);
           sendLandmarkerResults(landmarker, video);
         }
         else {
