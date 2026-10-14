@@ -65,8 +65,11 @@ p.val = 0.5
 p.default = 0.5
 p.val = 0.5
 
+## Eye tracking calibration (handled by calibrate_eyetracking_parexec.py)
+p = facePage.appendPulse("Calibrateeyetracking", label="Calibrate Eye Tracking", order=None, replace=True)
+
 ## Sort
-facePage.sort("Fnumfaces", "Fblendshapes", "Ftransmtrx", "Fdetectconf", "Fpresconf", "Ftrackconf" )
+facePage.sort("Fnumfaces", "Fblendshapes", "Ftransmtrx", "Fdetectconf", "Fpresconf", "Ftrackconf", "Calibrateeyetracking" )
 
 # Hands
 customPageList = op.customPages

@@ -7,6 +7,8 @@ import { imageState } from "./imageClassification";
 import { segmenterState } from "./imageSegmentation";
 import { imageEmbedderState } from "./imageEmbedder";
 
+import { startGazeCalibration, startGazeTest, loadGazeModel, setUseMotionSamples } from "./gazeCalibration";
+
 import { webcamState, socketState, overlayState, outputState } from './state.js';
 
 // Hands and gestures share one model (the gesture recognizer). Either toggle
@@ -65,6 +67,11 @@ export const configMap = {
     'Ppresconf': value => poseState.minPresenceConfidence = value,
     'Ptrackconf': value => poseState.minTrackingConfidence = value,
 
+    // Pulse from TouchDesigner (Calibrateeyetracking) once the window is open.
+    'Calibrateeyetracking': () => startGazeCalibration(),
+    'Testeyetracking': () => startGazeTest(),
+    'Gazeusemotion': value => setUseMotionSamples(parseInt(value) === 1),
+    'Gazecalibration': value => loadGazeModel(value),
     'Fnumfaces': value => faceLandmarkState.numFaces = value,
     'Fblendshapes': value => faceLandmarkState.outputBlendshapes = parseInt(value) === 1,
     'Ftransmtrx': value => faceLandmarkState.outputTransformationMatrixes = parseInt(value) === 1,

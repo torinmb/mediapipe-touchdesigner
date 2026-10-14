@@ -4,6 +4,29 @@
 createModelData = mod('par_change_handler').createModelData
 
 import json
+import os
+
+# The page sends its fitted calibration once, when calibration finishes. Keep it
+# in a file next to the project (survives component swaps, easy to copy to
+# another machine) and in component storage as a fallback.
+GAZE_FILE = 'gaze_calibration.json'
+
+def _saveGazeCalibration(model):
+	me.parent().store('gazeCalibration', model)
+	try:
+		with open(os.path.join(project.folder, GAZE_FILE), 'w') as f:
+			json.dump(model, f)
+	except Exception as e:
+		print('Could not write {}: {}'.format(GAZE_FILE, e))
+	print('Eye tracking calibration saved ({} samples, error {:.1%} of the screen)'.format(
+		model.get('samples', 0), model.get('cvError', 0)))
+
+def _loadGazeCalibration():
+	try:
+		with open(os.path.join(project.folder, GAZE_FILE)) as f:
+			return json.load(f)
+	except Exception:
+		return me.parent().fetch('gazeCalibration', None)
 
 def onConnect(dat):
 	print('connected')
@@ -32,6 +55,15 @@ def onReceiveText(dat, rowIndex, message):
 
 	try:
 		data = json.loads(message)
+		if 'gazeCalibration' in data:
+			_saveGazeCalibration(data['gazeCalibration'])
+			return
+		if 'gazeRequestCalibration' in data:
+			# The page asks on every load; reply with the saved calibration.
+			saved = _loadGazeCalibration()
+			if saved is not None:
+				dat.sendText(json.dumps({'Gazecalibration': saved}))
+			return
 		if 'type' in data:
 			op('webcam_list').text = json.dumps(data['devices'])
 		

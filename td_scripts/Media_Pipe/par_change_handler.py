@@ -19,6 +19,7 @@ noReloadPars = [
     "Wflip",
     "Autoport",
     "Showoverlays",
+    "Calibrateeyetracking",
     "Detectfacelandmarks",
     "Detectfaces",
     "Detectgestures",

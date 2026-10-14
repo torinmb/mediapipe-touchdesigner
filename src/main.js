@@ -26,6 +26,7 @@ import {
 import { imageEmbedderState, createImageEmbedder } from "./imageEmbedder.js";
 import { webcamState, socketState, overlayState, outputState } from "./state.js";
 import { configMap } from "./modelParams.js";
+import { initGaze, updateGaze } from "./gazeCalibration.js";
 
 const WASM_PATH = "./mediapipe/wasm";
 const video = document.getElementById("webcam");
@@ -70,6 +71,8 @@ const controlTransport = {
 };
 let outputSizeKey = "";
 
+
+initGaze({ send: (message) => safeSocketSend(socketState.ws, JSON.stringify(message)) });
 
 (async function setup() {
   handleQueryParams();
@@ -258,6 +261,14 @@ async function predictWebcam(allModelState, objectState, webcamState, video) {
         }
         else {
           landmarker.results = await marker.detectForVideo(flippedVideo, startTimeMs);
+          if (landmarker === faceLandmarkState) {
+            // Rides along in the face results TouchDesigner already receives.
+            landmarker.results.gaze = updateGaze(
+              landmarker.results,
+              video.videoWidth,
+              video.videoHeight,
+            );
+          }
           sendLandmarkerResults(landmarker, video);
         }
       }
@@ -377,6 +388,8 @@ function setupWebSocket(socketURL, socketState) {
     controlTransport.timersAcked = 0;
     controlTransport.ackSupported = false;
     socketState.ws.send('pong');
+    // Ask TouchDesigner for the saved eye tracking calibration.
+    socketState.ws.send(JSON.stringify({ gazeRequestCalibration: 1 }));
 
     getWebcamDevices().then(devices => {
       // console.log('Availalbe webcam devices: ', devices)
